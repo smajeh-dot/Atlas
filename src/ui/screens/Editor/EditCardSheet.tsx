@@ -70,7 +70,8 @@ export function EditCardSheet({ cardId, onClose }: { cardId: number; onClose(sav
         <div
           className={styles.sheetBody}
           onKeyDown={(e) => {
-            if (matchKey(e.nativeEvent, 'Ctrl+Enter')) {
+            // A field editor already handled Ctrl+Enter itself (and marked the key as used).
+            if (!e.defaultPrevented && matchKey(e.nativeEvent, 'Ctrl+Enter')) {
               e.preventDefault();
               void save();
             }
@@ -93,6 +94,7 @@ export function EditCardSheet({ cardId, onClose }: { cardId: number; onClose(sav
             tagSuggestions={data.tags}
             deckFullName={fullName(decks, nowDeck, '::')}
             autoFocus
+            onSubmit={() => void save()}
           />
         </div>
       </Sheet>

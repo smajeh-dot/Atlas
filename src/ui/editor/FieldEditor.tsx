@@ -17,15 +17,17 @@ export interface FieldEditorProps {
   /** Receives the editor once it exists (and null when it goes), for the toolbar and focus. */
   editorRef?: (e: Editor | null) => void;
   onFocusEditor?(e: Editor): void;
+  /** Ctrl+Enter: add or save the note. */
+  onSubmit?(): void;
   autoFocus?: boolean;
 }
 
-export function FieldEditor({ label, value, onChange, mediaUrl, onImage, getAllText, editorRef, onFocusEditor, autoFocus }: FieldEditorProps) {
+export function FieldEditor({ label, value, onChange, mediaUrl, onImage, getAllText, editorRef, onFocusEditor, onSubmit, autoFocus }: FieldEditorProps) {
   const labelId = useId();
   const toast = useToast();
   const lastEmitted = useRef(value);
-  const props = useRef({ onChange, onImage, getAllText, onFocusEditor, editorRef });
-  props.current = { onChange, onImage, getAllText, onFocusEditor, editorRef };
+  const props = useRef({ onChange, onImage, getAllText, onFocusEditor, editorRef, onSubmit });
+  props.current = { onChange, onImage, getAllText, onFocusEditor, editorRef, onSubmit };
   const self = useRef<Editor | null>(null);
 
   const insertFiles = (files: FileList | File[] | undefined | null): boolean => {
@@ -41,7 +43,7 @@ export function FieldEditor({ label, value, onChange, mediaUrl, onImage, getAllT
   };
 
   const editor = useEditor({
-    extensions: atlasExtensions({ mediaUrl, getAllText: () => props.current.getAllText() }),
+    extensions: atlasExtensions({ mediaUrl, getAllText: () => props.current.getAllText(), onSubmit: () => props.current.onSubmit?.() }),
     content: toEditorHtml(value),
     immediatelyRender: true,
     autofocus: autoFocus ? 'end' : false,

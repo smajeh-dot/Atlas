@@ -26,6 +26,9 @@
   overflow: hidden;
 }
 
-.main:focus {
+/* The panel takes focus after navigation so keys reach the screen; it isn't a control, so no ring. */
+.main:focus,
+.main:focus-visible {
   outline: none;
+  box-shadow: none;
 }

@@ -14,7 +14,7 @@ import { Toolbar } from './Toolbar';
 const CLOZE_HINT = 'Select text and press Ctrl+Shift+C to hide it. Ctrl+Alt+Shift+C hides it in the same card as the last one.';
 
 /** Fields, toolbar, tags and live preview: the body of Add card and Edit card (spec 10.5). */
-export function NoteEditor({ noteType, fields, onFields, tags, onTags, tagSuggestions, deckFullName, firstFieldRef, autoFocus }: {
+export function NoteEditor({ noteType, fields, onFields, tags, onTags, tagSuggestions, deckFullName, firstFieldRef, autoFocus, onSubmit }: {
   noteType: NoteType;
   fields: string[];
   onFields(f: string[]): void;
@@ -25,6 +25,8 @@ export function NoteEditor({ noteType, fields, onFields, tags, onTags, tagSugges
   deckFullName: string;
   firstFieldRef?: React.MutableRefObject<Editor | null>;
   autoFocus?: boolean;
+  /** Ctrl+Enter inside a field. */
+  onSubmit?(): void;
 }) {
   const { deps } = useAtlas();
   const toast = useToast();
@@ -79,6 +81,7 @@ export function NoteEditor({ noteType, fields, onFields, tags, onTags, tagSugges
               mediaUrl={deps.media.url}
               getAllText={allText}
               onImage={onImage}
+              onSubmit={onSubmit}
               onFocusEditor={setFocused}
               editorRef={(e) => {
                 editors.current[i] = e;

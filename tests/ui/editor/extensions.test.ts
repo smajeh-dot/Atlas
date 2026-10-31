@@ -7,10 +7,10 @@ import { fromEditorHtml, toEditorHtml } from '../../../src/ui/editor/fieldHtml';
 const editors: Editor[] = [];
 afterEach(() => editors.splice(0).forEach((e) => e.destroy()));
 
-function editor(field: string, allText = () => field) {
+function editor(field: string, allText = () => field, onSubmit?: () => void) {
   const element = document.createElement('div');
   document.body.append(element);
-  const e = new Editor({ element, extensions: atlasExtensions({ mediaUrl: (n) => `media://${n}`, getAllText: allText }), content: toEditorHtml(field) });
+  const e = new Editor({ element, extensions: atlasExtensions({ mediaUrl: (n) => `media://${n}`, getAllText: allText, onSubmit }), content: toEditorHtml(field) });
   editors.push(e);
   return e;
 }
@@ -93,4 +93,13 @@ test('Ctrl+Shift+= is superscript and Ctrl+= is subscript', () => {
   f.commands.setTextSelection({ from: 2, to: 3 });
   f.commands.keyboardShortcut('Mod-=');
   expect(fromEditorHtml(f.getHTML())).toBe('x<sub>2</sub>');
+});
+
+test('Ctrl+Enter submits the note instead of inserting a line break', () => {
+  let submitted = 0;
+  const e = editor('Front text', undefined, () => submitted++);
+  e.commands.setTextSelection(11);
+  e.commands.keyboardShortcut('Mod-Enter');
+  expect(submitted).toBe(1);
+  expect(fromEditorHtml(e.getHTML())).toBe('Front text');
 });

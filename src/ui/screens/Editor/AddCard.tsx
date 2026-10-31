@@ -125,6 +125,7 @@ export function AddCard({ deckId }: { deckId?: number }) {
         deckFullName={deckFullName}
         firstFieldRef={firstField}
         autoFocus
+        onSubmit={() => void add()}
       />
       <footer className={styles.footer}>
         <div className={styles.status} aria-live="polite">

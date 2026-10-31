@@ -208,7 +208,7 @@ function clozeKeys(getAllText: () => string) {
   });
 }
 
-export function atlasExtensions(opts: { mediaUrl(name: string): string; getAllText(): string }): AnyExtension[] {
+export function atlasExtensions(opts: { mediaUrl(name: string): string; getAllText(): string; onSubmit?(): void }): AnyExtension[] {
   return [
     StarterKit.configure({ heading: false, codeBlock: false, blockquote: false, horizontalRule: false, link: false, code: false, strike: false }),
     Superscript,
@@ -228,5 +228,19 @@ export function atlasExtensions(opts: { mediaUrl(name: string): string; getAllTe
     atlasImage(opts.mediaUrl),
     MathNode,
     clozeKeys(opts.getAllText),
+    // Ctrl+Enter adds or saves the note (spec 11). The editor would otherwise insert a line break
+    // and keep the key from ever reaching the screen.
+    Extension.create({
+      name: 'atlasSubmit',
+      priority: 1000,
+      addKeyboardShortcuts() {
+        return {
+          'Mod-Enter': () => {
+            opts.onSubmit?.();
+            return true;
+          },
+        };
+      },
+    }),
   ];
 }
