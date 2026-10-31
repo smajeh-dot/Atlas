@@ -61,3 +61,10 @@ export function renderCloze(text: string, active: number, side: 'front' | 'back'
   }
   return out + text.slice(pos);
 }
+
+/** Number for a new cloze: one more than the highest used, or the highest itself when `same` is set. */
+export function nextClozeNumber(text: string, same: boolean): number {
+  const nums = clozeNumbers(text);
+  const max = nums.length ? nums[nums.length - 1]! : 0;
+  return same ? Math.max(1, max) : max + 1;
+}

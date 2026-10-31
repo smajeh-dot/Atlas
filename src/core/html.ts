@@ -24,3 +24,10 @@ const ESCAPES: Record<string, string> = { '&': '&amp;', '<': '&lt;', '>': '&gt;'
 export function escapeHtml(s: string): string {
   return s.replace(/[&<>"']/g, (c) => ESCAPES[c]!);
 }
+
+const BLOCK = /<(div|p|ul|ol|li|table|pre|blockquote|h[1-6]|hr|details|br)\b/i;
+
+/** Short enough, and simple enough, to show in the large display font (spec 10.4). */
+export function isShortHtml(html: string, maxChars: number): boolean {
+  return stripHtml(html).length <= maxChars && !/<img\b/i.test(html) && !BLOCK.test(html) && !html.includes('\\[');
+}

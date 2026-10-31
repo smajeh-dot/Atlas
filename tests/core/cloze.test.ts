@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import { clozeNumbers, renderCloze } from '../../src/core/cloze';
+import { clozeNumbers, nextClozeNumber, renderCloze } from '../../src/core/cloze';
 
 test('finds distinct cloze numbers in order, including two digits', () => {
   expect(clozeNumbers('{{c1::a}} {{c2::b}} {{c1::c}} {{c10::d}}')).toEqual([1, 2, 10]);
@@ -30,4 +30,11 @@ test('malformed cloze is left as plain text', () => {
 
 test('answers may contain single braces', () => {
   expect(renderCloze('{{c1::f(x) = {x}}} done', 1, 'back')).toBe('<span class="cloze">f(x) = {x}</span> done');
+});
+
+test('nextClozeNumber', () => {
+  expect(nextClozeNumber('', false)).toBe(1);
+  expect(nextClozeNumber('{{c1::a}} {{c3::b}}', false)).toBe(4);
+  expect(nextClozeNumber('{{c1::a}} {{c3::b}}', true)).toBe(3);
+  expect(nextClozeNumber('', true)).toBe(1);
 });

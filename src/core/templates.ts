@@ -99,3 +99,10 @@ export function renderCard(
     unknownFilters: [...new Set([...q.unknownFilters, ...a.unknownFilters])],
   };
 }
+
+/** Splits a rendered back at the Answer divider; with no divider the whole back is the answer. */
+export function splitAnswer(answerHtml: string): { front: string | null; answer: string } {
+  const at = answerHtml.indexOf(ANSWER_MARKER);
+  if (at < 0) return { front: null, answer: answerHtml };
+  return { front: answerHtml.slice(0, at), answer: answerHtml.slice(at + ANSWER_MARKER.length) };
+}
