@@ -46,7 +46,7 @@ test('A opens Add card, but not while typing', async () => {
   stray.remove();
   await user.keyboard('a');
   expect(await screen.findByRole('heading', { name: 'Add card' })).toBeTruthy();
-  expect(screen.getByRole('button', { name: 'Add card' }).getAttribute('aria-current')).toBe('page');
+  expect(within(screen.getByRole('complementary')).getByRole('button', { name: 'Add card' }).getAttribute('aria-current')).toBe('page');
 });
 
 test('Ctrl+, opens Settings', async () => {
