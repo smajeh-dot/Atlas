@@ -18,9 +18,9 @@ Everything Atlas stores lives in `%APPDATA%\Atlas` (paste that into File Explore
 
 - `atlas.db`: your decks, cards and review history
 - `media\`: images and audio used on your cards
-- `backups\`: automatic backups of `atlas.db`
+- `backups\`: reserved for automatic backups, which arrive in a later version
 
-Replacing or moving `Atlas.exe` never touches this folder. To move to a new laptop, copy the whole `Atlas` folder into `%APPDATA%` on the new one.
+Replacing or moving `Atlas.exe` never touches this folder. To back up your cards or move to a new laptop, close Atlas and copy the whole `Atlas` folder (into `%APPDATA%` on the new laptop).
 
 ## Coming from Anki
 
