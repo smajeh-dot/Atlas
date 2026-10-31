@@ -10,10 +10,11 @@ export function revlogInsertStatement(e: RevlogEntry): Statement {
   };
 }
 
-/** Revlog ids are answer times in ms, bumped past the last id so two quick answers never collide. */
+/** Revlog ids are answer times in ms, bumped by 1 only when that exact id is already taken. */
 export async function nextRevlogId(db: Db, now: number): Promise<number> {
-  const [row] = await db.query<{ m: number | null }>(`SELECT MAX(id) AS m FROM revlog`);
-  return Math.max(now, (row?.m ?? 0) + 1);
+  let id = Math.round(now);
+  while ((await db.query(`SELECT 1 FROM revlog WHERE id = ?`, [id])).length) id++;
+  return id;
 }
 
 export async function revlogForCard(db: Db, cardId: number): Promise<RevlogEntry[]> {

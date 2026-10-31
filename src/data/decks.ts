@@ -79,22 +79,18 @@ export async function setDeckCollapsed(db: Db, id: number, collapsed: boolean): 
 
 /** Deletes the deck, its subdecks and their cards; notes are deleted only when no card of theirs is left. */
 export async function deleteDeck(db: Db, id: number): Promise<{ deletedCards: number; deletedNotes: number }> {
+  // Only deck ids are bound as parameters; note and card ids stay inside subqueries,
+  // so a deck with tens of thousands of notes never hits SQLite's parameter limit.
   const ids = descendantIds(await listDecks(db), id);
-  const marks = ids.map(() => '?').join(',');
-  const cards = await db.query<{ note_id: number }>(`SELECT note_id FROM cards WHERE deck_id IN (${marks})`, ids);
-  const noteIds = [...new Set(cards.map((c) => c.note_id))];
-  const orphaned = noteIds.length
-    ? await db.query(
-        `SELECT n.id FROM notes n WHERE n.id IN (${noteIds.map(() => '?').join(',')})
-         AND NOT EXISTS (SELECT 1 FROM cards c WHERE c.note_id = n.id AND c.deck_id NOT IN (${marks}))`,
-        [...noteIds, ...ids],
-      )
-    : [];
-  const orphanIds = orphaned.map((r) => Number(r.id));
+  const sub = `(${ids.map(() => '?').join(',')})`;
+  const onlyHere = `id IN (SELECT note_id FROM cards WHERE deck_id IN ${sub})
+    AND NOT EXISTS (SELECT 1 FROM cards c WHERE c.note_id = notes.id AND c.deck_id NOT IN ${sub})`;
+  const [cards] = await db.query<{ n: number }>(`SELECT COUNT(*) AS n FROM cards WHERE deck_id IN ${sub}`, ids);
+  const [notes] = await db.query<{ n: number }>(`SELECT COUNT(*) AS n FROM notes WHERE ${onlyHere}`, [...ids, ...ids]);
   await db.batch([
-    { sql: `DELETE FROM cards WHERE deck_id IN (${marks})`, params: ids },
-    ...(orphanIds.length ? [{ sql: `DELETE FROM notes WHERE id IN (${orphanIds.map(() => '?').join(',')})`, params: orphanIds }] : []),
+    { sql: `DELETE FROM notes WHERE ${onlyHere}`, params: [...ids, ...ids] },
+    { sql: `DELETE FROM cards WHERE deck_id IN ${sub}`, params: ids },
     { sql: `DELETE FROM decks WHERE id = ?`, params: [id] },
   ]);
-  return { deletedCards: cards.length, deletedNotes: orphanIds.length };
+  return { deletedCards: Number(cards?.n ?? 0), deletedNotes: Number(notes?.n ?? 0) };
 }

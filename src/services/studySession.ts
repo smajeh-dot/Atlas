@@ -1,6 +1,5 @@
 import { fullName } from '../core/deckTree';
 import type { Card, Deck, Note, NoteType, PresetConfig, Rating } from '../core/model';
-import { seededShuffle } from '../core/random';
 import { mixEvenly, orderReviews } from '../core/queue';
 import { answerCard, isIntraday, previewAll } from '../core/scheduler';
 import { nextRollover, studyDay } from '../core/studyDay';
@@ -66,7 +65,7 @@ export class StudySession {
     const plan = await planStudy(db, deckId, now);
     const seed = studyDay(now, settings.dayStartHour);
     const reviews = orderReviews(plan.reviewCards, settings.dayStartHour, seed);
-    const news = plan.preset.newCardOrder === 'random' ? seededShuffle(plan.newCards, seed) : plan.newCards;
+    const news = plan.newCards;
     const mixed =
       plan.preset.newReviewMix === 'newFirst' ? [...news, ...reviews]
       : plan.preset.newReviewMix === 'reviewsFirst' ? [...reviews, ...news]
@@ -146,11 +145,14 @@ export class StudySession {
     return { main: this.main.slice(), learning: this.learning.slice() };
   }
 
-  /** Grades the current card. Returns null if there is no card or an answer is already being saved. */
-  async answer(rating: Rating, durationMs: number): Promise<{ leech: boolean } | null> {
+  /**
+   * Grades the current card. Returns null if there is no card, an answer is already being saved,
+   * or `expectedCardId` is given and is not the card on screen (a stray second key press).
+   */
+  async answer(rating: Rating, durationMs: number, expectedCardId?: number): Promise<{ leech: boolean } | null> {
     if (this.busy) return null;
     const card = this.pick(this.deps.clock.now());
-    if (!card) return null;
+    if (!card || (expectedCardId !== undefined && card.id !== expectedCardId)) return null;
     this.busy = true;
     try {
       return await this.grade(card, rating, durationMs);
@@ -262,10 +264,32 @@ export class StudySession {
     return this.changeCurrent('flag', (c) => ({ ...c, flag }), false);
   }
 
+  /** Undo of an action from outside the session (such as "add card") can delete queued cards. */
+  private async dropMissingCards(): Promise<void> {
+    const queued = [...this.main, ...this.learning].map((c) => c.id);
+    if (!queued.length) return;
+    const rows = await this.deps.db.query<{ id: number }>(
+      `SELECT id FROM cards WHERE id IN (${queued.map(() => '?').join(',')})`,
+      queued,
+    );
+    const alive = new Set(rows.map((r) => Number(r.id)));
+    this.remove(new Set(queued.filter((id) => !alive.has(id))));
+  }
+
   /** Undoes the most recent action. Returns its label, or null when there is nothing to undo. */
   async undo(): Promise<string | null> {
+    if (this.busy) return null;
     const entry = this.deps.undo.pop();
     if (!entry) return null;
+    this.busy = true;
+    try {
+      return await this.restore(entry);
+    } finally {
+      this.busy = false;
+    }
+  }
+
+  private async restore(entry: UndoEntry): Promise<string> {
     await this.deps.db.batch(entry.restore);
     const snap = this.snapshots.get(entry);
     if (snap) {
@@ -282,6 +306,7 @@ export class StudySession {
         // The card no longer exists (for example, its note was deleted later); nothing to show.
       }
     }
+    await this.dropMissingCards();
     return entry.label;
   }
 }

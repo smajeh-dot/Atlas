@@ -1,5 +1,6 @@
 import { buildDeckTree, descendantIds, treeOrder, type DeckNode } from '../core/deckTree';
 import { planCards, type LimitNode } from '../core/limits';
+import { seededShuffle } from '../core/random';
 import type { Card, Deck, PresetConfig } from '../core/model';
 import { nextRollover, startOfStudyDay, studyDay } from '../core/studyDay';
 import type { Db } from '../data/db';
@@ -42,14 +43,17 @@ const sumBy = (rows: { deck_id: number; n: number }[]) => new Map(rows.map((r) =
 export async function getLimitNodes(db: Db, now: number, dayStartHour: number, decks?: Deck[]): Promise<LimitNode[]> {
   const all = decks ?? (await listDecks(db));
   const presets = new Map((await listPresets(db)).map((p) => [p.id, p.config]));
-  const start = startOfStudyDay(studyDay(now, dayStartHour), dayStartHour);
+  const today = studyDay(now, dayStartHour);
+  const start = startOfStudyDay(today, dayStartHour);
+  // An upper bound too, so answers logged under a wrong (future) clock never count as today.
+  const end = startOfStudyDay(today + 1, dayStartHour);
   const newDone = sumBy(await db.query(
     `SELECT c.deck_id, COUNT(*) AS n FROM cards c
      JOIN (SELECT card_id, MIN(id) AS first FROM revlog GROUP BY card_id) f ON f.card_id = c.id
-     WHERE f.first >= ? GROUP BY c.deck_id`, [start]));
+     WHERE f.first >= ? AND f.first < ? GROUP BY c.deck_id`, [start, end]));
   const reviewsDone = sumBy(await db.query(
     `SELECT c.deck_id, COUNT(*) AS n FROM revlog r JOIN cards c ON c.id = r.card_id
-     WHERE r.id >= ? AND r.state_before = 2 GROUP BY c.deck_id`, [start]));
+     WHERE r.id >= ? AND r.id < ? AND r.state_before = 2 GROUP BY c.deck_id`, [start, end]));
   return all.map((d) => {
     const sub = descendantIds(all, d.id);
     const used = (m: Map<number, number>) => sub.reduce((s, id) => s + (m.get(id) ?? 0), 0);
@@ -83,6 +87,7 @@ export async function getDueCandidates(db: Db, deckIds: number[], now: number, d
 }
 
 interface Context {
+  seed: number;
   decks: Deck[];
   presets: Map<number, PresetConfig>;
   nodes: LimitNode[];
@@ -99,6 +104,7 @@ async function loadContext(db: Db, now: number): Promise<Context> {
     (order.get(a.deckId) ?? 0) - (order.get(b.deckId) ?? 0) || (a.newPosition ?? 0) - (b.newPosition ?? 0) || a.ord - b.ord);
   candidates.reviewCards.sort((a, b) => (a.dueAt ?? 0) - (b.dueAt ?? 0) || a.id - b.id);
   return {
+    seed: studyDay(now, dayStartHour),
     decks,
     presets: new Map((await listPresets(db)).map((p) => [p.id, p.config])),
     nodes: await getLimitNodes(db, now, dayStartHour, decks),
@@ -111,8 +117,10 @@ function planFor(ctx: Context, deckId: number | null): StudyPlan {
   const inScope = (cards: Card[]) => cards.filter((c) => ids.has(c.deckId));
   const deck = ctx.decks.find((d) => d.id === deckId);
   const preset = ctx.presets.get(deck?.presetId ?? 1) ?? ctx.presets.get(1)!;
+  const scopedNew = inScope(ctx.candidates.newCards);
   const picked = planCards({
-    newCards: inScope(ctx.candidates.newCards),
+    // Shuffle before the daily limit so "random" can reach any new card, not just the next ones added.
+    newCards: preset.newCardOrder === 'random' ? seededShuffle(scopedNew, ctx.seed) : scopedNew,
     reviewCards: inScope(ctx.candidates.reviewCards),
     nodes: ctx.nodes,
     options: preset,
