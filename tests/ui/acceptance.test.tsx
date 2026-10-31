@@ -63,4 +63,4 @@ test('a new user creates a deck, adds four kinds of card and studies them by key
   const studied = await db.query<{ due_at: number }>('SELECT due_at FROM cards WHERE id IN (SELECT card_id FROM revlog)');
   expect(studied).toHaveLength(4);
   expect(studied.every((c) => Number(c.due_at) > T0)).toBe(true);
-});
+}, 60_000);

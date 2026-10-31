@@ -25,7 +25,9 @@ if (typeof window !== 'undefined') {
 
 if (typeof window !== 'undefined') {
   const { afterEach, vi } = await import('vitest');
-  const { cleanup } = await import('@testing-library/react');
+  const { cleanup, configure } = await import('@testing-library/react');
+  // findBy/waitFor default to 1 s, too tight for screens on slow CI runners.
+  configure({ asyncUtilTimeout: 5000 });
   afterEach(() => {
     cleanup();
     vi.useRealTimers();

@@ -65,5 +65,7 @@ export default defineConfig({
     include: ['tests/**/*.test.ts', 'tests/**/*.test.tsx'],
     environment: 'node',
     setupFiles: ['tests/setup.ts'],
+    // UI tests drive whole screens; GitHub's Windows runners are several times slower than a laptop.
+    testTimeout: 20_000,
   },
 });
