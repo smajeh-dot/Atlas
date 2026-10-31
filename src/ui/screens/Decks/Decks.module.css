@@ -94,6 +94,15 @@
   font-size: var(--fs-ui);
 }
 
+/* Tangerine: give the rename box room for its ring, and make the ring thin and bright. */
+:global([data-theme='tangerine']) .tree [role='treeitem']:has(.rename) {
+  min-height: 48px;
+}
+
+:global([data-theme='tangerine']) .rename input:focus {
+  box-shadow: 0 0 0 2px var(--focus-edit);
+}
+
 .boxTitle {
   font-weight: 600;
   font-size: var(--fs-body);

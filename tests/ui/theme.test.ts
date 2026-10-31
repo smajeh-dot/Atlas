@@ -31,6 +31,7 @@ const SPEC: [string, string, string][] = [
   ['--grade-good-bg', '#FFFFFF', '#3DD68C'], ['--grade-good-ink', '#1E7D32', '#141414'],
   ['--grade-easy-bg', '#FFFFFF', '#7FA2FF'], ['--grade-easy-ink', '#2F5FCE', '#141414'],
   ['--focus', '#2F5FCE', '#141414'], ['--focus-soft', 'rgba(47,95,206,0.14)', 'rgba(255,91,20,0.35)'],
+  ['--focus-edit', 'rgba(47,95,206,0.14)', '#FF7A1F'],
   ['--danger', '#D32F2F', '#E5341B'], ['--danger-ink', '#FFFFFF', '#141414'], ['--success', '#1E7D32', '#0E8F45'],
   ['--warning-bg', '#FDF3DC', '#FFC53D'], ['--warning-ink', '#7A5300', '#141414'], ['--overlay', 'rgba(0,0,0,0.40)', 'rgba(20,20,20,0.45)'],
   ['--text-answer', '#1C1C1F', '#141414'],
