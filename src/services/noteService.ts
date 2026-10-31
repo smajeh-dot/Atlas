@@ -6,7 +6,9 @@ import type { Db, Statement } from '../data/db';
 import { getNoteType } from '../data/noteTypes';
 import { getNote, normaliseTags, noteInsertStatement, noteUpdateStatement } from '../data/notes';
 import { revlogForCard, revlogInsertStatement } from '../data/revlog';
-import type { UndoStack } from './undo';
+import type { UndoEntry, UndoStack } from './undo';
+
+export { normaliseTags } from '../data/notes';
 
 export class NoCardsError extends Error {}
 
@@ -86,16 +88,18 @@ export async function updateNote(
   return { addedCardIds };
 }
 
-export async function deleteNote(deps: NoteServiceDeps, noteId: number): Promise<void> {
+export async function deleteNote(deps: NoteServiceDeps, noteId: number): Promise<UndoEntry> {
   const { db } = deps;
   const note = await getNote(db, noteId);
   const cards = await cardsOfNote(db, noteId);
   const revlog = (await Promise.all(cards.map((c) => revlogForCard(db, c.id)))).flat();
   await db.execute(`DELETE FROM notes WHERE id = ?`, [noteId]);
-  deps.undo.push({
+  const entry: UndoEntry = {
     label: 'delete note',
     restore: [noteInsertStatement(note), ...cards.map((c) => cardInsertStatement(c)), ...revlog.map(revlogInsertStatement)],
-  });
+  };
+  deps.undo.push(entry);
+  return entry;
 }
 
 export async function findDuplicates(db: Db, noteTypeId: number, firstField: string, excludeNoteId?: number): Promise<number[]> {
@@ -106,4 +110,12 @@ export async function findDuplicates(db: Db, noteTypeId: number, firstField: str
     [noteTypeId, text, excludeNoteId ?? -1],
   );
   return rows.map((r) => r.id);
+}
+
+/** The deck holding the first card of the first possible duplicate, or null when there is none. */
+export async function findDuplicateDeck(db: Db, noteTypeId: number, firstField: string, excludeNoteId?: number): Promise<number | null> {
+  const [noteId] = await findDuplicates(db, noteTypeId, firstField, excludeNoteId);
+  if (noteId === undefined) return null;
+  const [card] = await cardsOfNote(db, noteId);
+  return card ? card.deckId : null;
 }

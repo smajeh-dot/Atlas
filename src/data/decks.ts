@@ -1,6 +1,6 @@
 import { descendantIds } from '../core/deckTree';
 import type { Deck } from '../core/model';
-import type { Db } from './db';
+import type { Db, Statement } from './db';
 import { toDeck } from './rows';
 
 export class DeckNameError extends Error {}
@@ -93,4 +93,41 @@ export async function deleteDeck(db: Db, id: number): Promise<{ deletedCards: nu
     { sql: `DELETE FROM decks WHERE id = ?`, params: [id] },
   ]);
   return { deletedCards: Number(cards?.n ?? 0), deletedNotes: Number(notes?.n ?? 0) };
+}
+
+/**
+ * Puts a deck under `parentId` at sibling position `index` (clamped), renumbering that parent's
+ * children 0…n−1. Nested decks lose their colour; a deck that becomes top-level gets the next free one.
+ */
+export async function placeDeck(db: Db, id: number, parentId: number | null, index: number): Promise<void> {
+  const decks = await listDecks(db);
+  if (parentId !== null && descendantIds(decks, id).includes(parentId)) {
+    throw new DeckMoveError('A deck cannot go inside itself or one of its own subdecks.');
+  }
+  const deck = await getDeck(db, id);
+  await checkName(db, deck.name, parentId, id);
+  const siblings = decks
+    .filter((d) => d.parentId === parentId && d.id !== id)
+    .sort((a, b) => a.position - b.position || a.name.localeCompare(b.name));
+  const at = Math.max(0, Math.min(Math.trunc(index), siblings.length));
+  const ordered = [...siblings.slice(0, at).map((d) => d.id), id, ...siblings.slice(at).map((d) => d.id)];
+  const others = decks.filter((d) => d.id !== id);
+  const colour = parentId !== null ? null : deck.parentId === null ? deck.colour : nextColour(others);
+  const statements: Statement[] = [{ sql: `UPDATE decks SET parent_id = ?, colour = ? WHERE id = ?`, params: [parentId, colour, id] }];
+  ordered.forEach((deckId, position) => statements.push({ sql: `UPDATE decks SET position = ? WHERE id = ?`, params: [position, deckId] }));
+  await db.batch(statements);
+}
+
+export async function setDeckColour(db: Db, id: number, colour: number): Promise<void> {
+  if (!Number.isInteger(colour) || colour < 1 || colour > DECK_COLOURS) throw new Error(`Deck colour ${colour} is not 1-${DECK_COLOURS}`);
+  const deck = await getDeck(db, id);
+  if (deck.parentId !== null) throw new DeckMoveError('Only top-level decks have a colour.');
+  await db.execute(`UPDATE decks SET colour = ? WHERE id = ?`, [colour, id]);
+}
+
+/** What deleting a deck would remove, for the confirmation message. */
+export async function deckDeletionSummary(db: Db, id: number): Promise<{ subdecks: number; cards: number }> {
+  const ids = descendantIds(await listDecks(db), id);
+  const [r] = await db.query<{ n: number }>(`SELECT COUNT(*) AS n FROM cards WHERE deck_id IN (${ids.map(() => '?').join(',')})`, ids);
+  return { subdecks: ids.length - 1, cards: Number(r?.n ?? 0) };
 }

@@ -151,3 +151,29 @@ export async function getDeckTreeWithCounts(db: Db, now: number): Promise<DeckTr
     });
   return walk(buildDeckTree(ctx.decks));
 }
+
+export interface DeckSummary {
+  total: number;
+  new: number;
+  learning: number;
+  young: number;
+  mature: number;
+  suspended: number;
+}
+
+/** Card counts for a deck and its subdecks. Suspended cards count only as suspended. */
+export async function getDeckSummary(db: Db, deckId: number): Promise<DeckSummary> {
+  const ids = descendantIds(await listDecks(db), deckId);
+  const [r] = await db.query<Record<keyof DeckSummary, number | null>>(
+    `SELECT COUNT(*) AS total,
+       SUM(suspended = 0 AND state = 0) AS new,
+       SUM(suspended = 0 AND state IN (1, 3)) AS learning,
+       SUM(suspended = 0 AND state = 2 AND scheduled_days < 21) AS young,
+       SUM(suspended = 0 AND state = 2 AND scheduled_days >= 21) AS mature,
+       SUM(suspended = 1) AS suspended
+     FROM cards WHERE deck_id IN (${ids.map(() => '?').join(',')})`,
+    ids,
+  );
+  const n = (v: number | null | undefined) => Number(v ?? 0);
+  return { total: n(r?.total), new: n(r?.new), learning: n(r?.learning), young: n(r?.young), mature: n(r?.mature), suspended: n(r?.suspended) };
+}

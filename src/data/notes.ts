@@ -1,6 +1,6 @@
 import type { Note } from '../core/model';
 import type { Db, Statement } from './db';
-import { encodeTags, toNote } from './rows';
+import { decodeTags, encodeTags, toNote } from './rows';
 
 export async function getNote(db: Db, id: number): Promise<Note> {
   const [row] = await db.query(`SELECT * FROM notes WHERE id = ?`, [id]);
@@ -33,4 +33,12 @@ export function noteUpdateStatement(n: Note): Statement {
     sql: `UPDATE notes SET fields = ?, sort_field = ?, tags = ?, updated_at = ? WHERE id = ?`,
     params: [JSON.stringify(n.fields), n.sortField, encodeTags(n.tags), n.updatedAt, n.id],
   };
+}
+
+/** Every tag in the collection once (the first spelling seen wins), sorted for suggestions. */
+export async function listTags(db: Db): Promise<string[]> {
+  const rows = await db.query<{ tags: string }>(`SELECT tags FROM notes WHERE tags != ' ' ORDER BY id`);
+  const seen = new Map<string, string>();
+  for (const r of rows) for (const t of decodeTags(r.tags)) if (!seen.has(t.toLowerCase())) seen.set(t.toLowerCase(), t);
+  return [...seen.values()].sort((a, b) => a.localeCompare(b, 'en-GB', { sensitivity: 'base' }));
 }
