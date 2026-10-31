@@ -1,28 +1,40 @@
-import Database from 'better-sqlite3';
+import { DatabaseSync, type SQLInputValue } from 'node:sqlite';
 import type { Db, Statement } from '../../src/data/db';
 import { migrate } from '../../src/data/migrations';
 import { T0 } from './fixtures';
 
-// Mirrors the Rust bridge: booleans become 0/1 and undefined becomes NULL.
-function bind(params: unknown[] = []): unknown[] {
-  return params.map((p) => (typeof p === 'boolean' ? (p ? 1 : 0) : p === undefined ? null : p));
+// Binds values the way the Rust bridge does: whole numbers as INTEGER, other numbers as REAL,
+// booleans as 0/1 and undefined as NULL.
+function bind(params: unknown[] = []): SQLInputValue[] {
+  return params.map((p) => {
+    if (typeof p === 'boolean') return p ? 1n : 0n;
+    if (typeof p === 'number' && Number.isInteger(p)) return BigInt(p);
+    if (p === undefined) return null;
+    return p as SQLInputValue;
+  });
 }
 
 export function createTestDb(): Db {
-  const raw = new Database(':memory:');
-  raw.pragma('foreign_keys = ON');
+  const raw = new DatabaseSync(':memory:');
+  raw.exec('PRAGMA foreign_keys = ON');
   const run = (s: Statement) => raw.prepare(s.sql).run(...bind(s.params));
-  const tx = raw.transaction((statements: Statement[]) => statements.forEach(run));
   return {
     async query<T>(sql: string, params?: unknown[]) {
-      return raw.prepare(sql).all(...bind(params)) as T[];
+      return raw.prepare(sql).all(...bind(params)).map((r) => ({ ...r })) as T[];
     },
     async execute(sql: string, params?: unknown[]) {
       const r = run({ sql, params });
-      return { changes: r.changes, lastInsertId: Number(r.lastInsertRowid) };
+      return { changes: Number(r.changes), lastInsertId: Number(r.lastInsertRowid) };
     },
     async batch(statements: Statement[]) {
-      tx(statements);
+      raw.exec('BEGIN');
+      try {
+        statements.forEach(run);
+        raw.exec('COMMIT');
+      } catch (e) {
+        raw.exec('ROLLBACK');
+        throw e;
+      }
     },
   };
 }
