@@ -18,3 +18,14 @@ if (typeof window !== 'undefined') {
   Range.prototype.getClientRects ??= () => ({ length: 0, item: () => null, [Symbol.iterator]: [][Symbol.iterator] }) as unknown as DOMRectList;
   document.elementFromPoint ??= () => null;
 }
+
+if (typeof window !== 'undefined') {
+  const { afterEach, vi } = await import('vitest');
+  const { cleanup } = await import('@testing-library/react');
+  afterEach(() => {
+    cleanup();
+    vi.useRealTimers();
+  });
+}
+
+export {};

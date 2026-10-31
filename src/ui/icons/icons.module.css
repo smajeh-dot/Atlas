@@ -1,0 +1,13 @@
+.icon {
+  flex: none;
+  display: block;
+}
+
+.placeholder {
+  flex: none;
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 1px dashed var(--text-faint);
+  border-radius: 4px;
+}
