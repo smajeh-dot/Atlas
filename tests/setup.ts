@@ -17,6 +17,10 @@ if (typeof window !== 'undefined') {
   Range.prototype.getBoundingClientRect ??= rect;
   Range.prototype.getClientRects ??= () => ({ length: 0, item: () => null, [Symbol.iterator]: [][Symbol.iterator] }) as unknown as DOMRectList;
   document.elementFromPoint ??= () => null;
+  // jsdom has no DragEvent; without it drag events lose their mouse position.
+  window.DragEvent ??= class DragEvent extends MouseEvent {
+    readonly dataTransfer: DataTransfer | null = null;
+  } as unknown as typeof DragEvent;
 }
 
 if (typeof window !== 'undefined') {
