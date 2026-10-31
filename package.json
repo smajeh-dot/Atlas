@@ -19,6 +19,8 @@
     "@fontsource/source-serif-4": "5.3.1",
     "@tauri-apps/api": "2.12.3",
     "@tauri-apps/plugin-opener": "2.7.2",
+    "dompurify": "3.4.17",
+    "katex": "0.19.0",
     "react": "19.2.9",
     "react-dom": "19.2.9",
     "ts-fsrs": "5.4.2"

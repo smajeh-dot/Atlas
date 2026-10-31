@@ -1,0 +1,134 @@
+/* Card base styles (spec 10.4). Loaded inside each card's shadow root; tokens inherit from the page. */
+:host {
+  display: block;
+  color: var(--text);
+  font-family: var(--font-body);
+}
+
+.atlas-card {
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  overflow-wrap: anywhere;
+}
+
+.atlas-question[data-size='short'],
+.atlas-card[data-size='short'] {
+  font-family: var(--font-display);
+  font-weight: var(--weight-display);
+  letter-spacing: var(--tracking-display);
+  font-size: var(--fs-2xl);
+  line-height: var(--lh-2xl);
+  text-wrap: balance;
+}
+
+.atlas-question[data-size='long'],
+.atlas-card[data-size='long'] {
+  font-size: var(--fs-xl);
+  line-height: var(--lh-xl);
+}
+
+.atlas-answer[data-size='short'] {
+  font-family: var(--font-display);
+  font-weight: var(--weight-display);
+  letter-spacing: var(--tracking-display);
+  font-size: var(--fs-3xl);
+  line-height: var(--lh-3xl);
+  color: var(--text-answer);
+}
+
+.atlas-answer[data-size='long'] {
+  font-size: var(--fs-xl);
+  line-height: 1.5;
+}
+
+.atlas-answer {
+  animation: reveal var(--dur-reveal) ease-out;
+}
+
+@keyframes reveal {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.atlas-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 22px 0 18px;
+  color: var(--text-faint);
+  font-family: var(--font-body);
+  font-size: var(--fs-label);
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.atlas-divider::before,
+.atlas-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border-soft);
+}
+
+code,
+pre {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 17px;
+  background: var(--bg-raised);
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+}
+
+b,
+strong {
+  font-weight: 600;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+  max-height: 320px;
+  margin: 8px auto;
+  border-radius: var(--radius-sm);
+}
+
+.katex {
+  font-size: 1em;
+}
+
+.cloze {
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.atlas-typein {
+  width: 100%;
+  margin-top: 12px;
+  padding: 12px 14px;
+  font: inherit;
+  font-size: var(--fs-body);
+  border: var(--border-w) solid var(--border);
+  border-radius: var(--radius-field);
+  background: var(--bg-panel);
+}
+
+.atlas-typein-compare {
+  font-family: var(--font-mono);
+  font-size: var(--fs-lg);
+}
+
+.atlas-typein-compare .ok { color: var(--success); }
+.atlas-typein-compare .wrong { color: var(--danger); text-decoration: line-through; }
+.atlas-typein-compare .missing { color: var(--text-faint); }
+
+.atlas-typein-answer {
+  margin-top: 6px;
+}
+
+details.atlas-hint summary {
+  cursor: pointer;
+  color: var(--accent);
+  font-size: var(--fs-ui);
+}
