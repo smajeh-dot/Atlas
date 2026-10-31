@@ -7,7 +7,10 @@ use std::sync::Mutex;
 
 /// One connection guarded by a mutex: the app is single-user, and a single
 /// connection keeps multi-statement transactions on the same handle.
-pub struct DbState(pub Mutex<Connection>);
+/// None when start-up could not open the database (see StartupError in main.rs).
+pub struct DbState(pub Mutex<Option<Connection>>);
+
+const NO_DB: &str = "Atlas couldn't open its database.";
 
 pub fn open(path: &Path) -> rusqlite::Result<Connection> {
     let conn = Connection::open(path)?;
@@ -70,7 +73,8 @@ pub fn db_query(
     sql: String,
     params: Vec<Value>,
 ) -> Result<Vec<Map<String, Value>>, String> {
-    let conn = state.0.lock().map_err(|e| e.to_string())?;
+    let guard = state.0.lock().map_err(|e| e.to_string())?;
+    let conn = guard.as_ref().ok_or(NO_DB)?;
     let mut stmt = conn.prepare(&sql).map_err(err)?;
     let names: Vec<String> = stmt.column_names().iter().map(|s| s.to_string()).collect();
     let mut rows = stmt.query(params_from_iter(self::params(&params)?)).map_err(err)?;
@@ -91,7 +95,8 @@ pub fn db_execute(
     sql: String,
     params: Vec<Value>,
 ) -> Result<ExecResult, String> {
-    let conn = state.0.lock().map_err(|e| e.to_string())?;
+    let guard = state.0.lock().map_err(|e| e.to_string())?;
+    let conn = guard.as_ref().ok_or(NO_DB)?;
     let changes = conn
         .execute(&sql, params_from_iter(self::params(&params)?))
         .map_err(err)?;
@@ -103,7 +108,8 @@ pub fn db_execute(
 
 #[tauri::command]
 pub fn db_batch(state: tauri::State<DbState>, statements: Vec<Statement>) -> Result<(), String> {
-    let mut conn = state.0.lock().map_err(|e| e.to_string())?;
+    let mut guard = state.0.lock().map_err(|e| e.to_string())?;
+    let conn = guard.as_mut().ok_or(NO_DB)?;
     let tx = conn.transaction().map_err(err)?;
     for s in &statements {
         tx.execute(&s.sql, params_from_iter(params(&s.params)?))
