@@ -1,5 +1,8 @@
 import { DEFAULT_SETTINGS, type Settings } from '../core/model';
+import { validateSettingsPatch } from '../core/validate';
 import type { Db } from './db';
+
+export class SettingsError extends Error {}
 
 export async function getSettings(db: Db): Promise<Settings> {
   const [row] = await db.query<{ value: string }>(`SELECT value FROM meta WHERE key = 'settings'`);
@@ -12,6 +15,8 @@ export async function getSettings(db: Db): Promise<Settings> {
 }
 
 export async function updateSettings(db: Db, patch: Partial<Settings>): Promise<Settings> {
+  const problem = validateSettingsPatch(patch);
+  if (problem) throw new SettingsError(problem);
   const next = { ...(await getSettings(db)), ...patch };
   await db.execute(`INSERT OR REPLACE INTO meta (key, value) VALUES ('settings', ?)`, [JSON.stringify(next)]);
   return next;

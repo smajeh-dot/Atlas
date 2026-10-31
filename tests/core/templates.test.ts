@@ -58,3 +58,13 @@ test('cloze card uses the ord as the cloze number', () => {
   expect(r.question).toBe('a <span class="cloze">[…]</span>');
   expect(r.answer).toBe(`a <span class="cloze">b</span>${ANSWER_MARKER}extra`);
 });
+
+test('{{text:}} strips tags but keeps escaped characters escaped', () => {
+  const r = renderTemplate('{{text:Front}}', ctx({ Front: '<i>a</i> &lt;b&gt; x' }));
+  expect(r.html).toBe('a &lt;b&gt; x');
+});
+
+test('empty {{hint:}} renders nothing', () => {
+  expect(renderTemplate('{{hint:Extra}}', ctx({ Extra: '' })).html).toBe('');
+  expect(renderTemplate('{{hint:Extra}}', ctx({ Extra: '<br>' })).html).toBe('');
+});

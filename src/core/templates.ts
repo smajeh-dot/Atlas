@@ -1,5 +1,5 @@
 import { renderCloze } from './cloze';
-import { stripHtml } from './html';
+import { escapeHtml, stripHtml } from './html';
 import type { Note, NoteType } from './model';
 
 export interface TemplateContext {
@@ -53,8 +53,9 @@ export function renderTemplate(template: string, ctx: TemplateContext): { html: 
     let value = ctx.fields[name] ?? '';
     for (const filter of parts.reverse().map((f) => f.trim())) {
       if (filter === 'cloze') value = renderCloze(value, ctx.clozeOrd ?? 1, ctx.side);
-      else if (filter === 'text') value = stripHtml(value);
-      else if (filter === 'hint') value = `<details class="atlas-hint"><summary>Show hint</summary>${value}</details>`;
+      // stripHtml decodes entities; re-escape so "&lt;b&gt;" stays text instead of becoming live markup.
+      else if (filter === 'text') value = escapeHtml(stripHtml(value));
+      else if (filter === 'hint') value = !hasContent(value) ? '' : `<details class="atlas-hint"><summary>Show hint</summary>${value}</details>`;
       else if (filter === 'type') {
         value = ctx.side === 'front'
           ? `<input class="atlas-typein" data-field="${name}">`
