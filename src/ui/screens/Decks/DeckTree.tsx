@@ -80,7 +80,7 @@ export function DeckTree({ tree, selected, onSelect }: { tree: DeckTreeWithCount
 
   const inTree = (e: KeyboardEvent) => {
     const t = e.target as HTMLElement | null;
-    return !t || t === document.body || ref.current?.contains(t) === true;
+    return !t || t === document.body || t.tagName === 'MAIN' || ref.current?.contains(t) === true;
   };
 
   useHotkeys({

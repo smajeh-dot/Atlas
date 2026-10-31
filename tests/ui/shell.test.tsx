@@ -76,3 +76,12 @@ test('with no decks, Today and Decks are disabled and Welcome shows', async () =
   expect(within(nav).getByRole('button', { name: 'Decks' }).getAttribute('aria-disabled')).toBe('true');
   expect(within(nav).queryByRole('button', { name: 'Browse' })).toBeNull();
 });
+
+test('after clicking a sidebar item, keys go to the new screen', async () => {
+  const { user } = await renderApp({ db: await seeded(), route: { name: 'settings' } });
+  await user.click(within(await screen.findByRole('navigation', { name: 'Main' })).getByRole('button', { name: 'Today' }));
+  await screen.findByRole('heading', { name: '2 cards due today' });
+  expect(document.activeElement?.tagName).toBe('MAIN');
+  await user.keyboard(' ');
+  expect(await screen.findByRole('button', { name: 'Leave study' })).toBeTruthy();
+});

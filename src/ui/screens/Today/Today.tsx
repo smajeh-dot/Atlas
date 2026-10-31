@@ -35,7 +35,7 @@ export function Today() {
   // Keys belong to the deck table unless focus is on some other control.
   const forTable = (e: KeyboardEvent) => {
     const t = e.target as HTMLElement | null;
-    return !t || t === document.body || treeRef.current?.contains(t) === true;
+    return !t || t === document.body || t.tagName === 'MAIN' || treeRef.current?.contains(t) === true;
   };
 
   useHotkeys({

@@ -59,6 +59,8 @@ export default defineConfig({
   // Tauri expects a fixed port and prints its own output.
   clearScreen: false,
   server: { port: 1420, strictPort: true },
+  // The bundle loads from inside Atlas.exe, never over a network, so one large chunk is fine.
+  build: { chunkSizeWarningLimit: 2000 },
   test: {
     include: ['tests/**/*.test.ts', 'tests/**/*.test.tsx'],
     environment: 'node',

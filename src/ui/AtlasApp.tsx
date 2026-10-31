@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import type { Settings as SettingsModel } from '../core/model';
 import { getDeckTreeWithCounts } from '../services/deckService';
 import { undoLast } from '../services/undo';
@@ -41,6 +41,14 @@ function Frame() {
   const { data: tree } = useData(() => getDeckTreeWithCounts(deps.db, deps.clock.now()), []);
   const hasDecks = (tree?.length ?? 0) > 0;
   const studying = route.name === 'study';
+  const main = useRef<HTMLElement>(null);
+
+  // After moving to another screen, keys go to that screen (Space on Today, for example), not to the
+  // sidebar button that was clicked. A field the new screen focused itself keeps its focus.
+  useEffect(() => {
+    const el = main.current;
+    if (el && !el.contains(document.activeElement)) el.focus({ preventScroll: true });
+  }, [route]);
 
   useHotkeys({
     A: () => navigate({ name: 'add' }),
@@ -56,10 +64,10 @@ function Frame() {
     },
   }, { enabled: !studying });
 
-  if (!tree) return <Shell sidebar={null}>{null}</Shell>;
+  if (!tree) return <Shell ref={main} sidebar={null}>{null}</Shell>;
   const showWelcome = !hasDecks && route.name !== 'settings';
   return (
-    <Shell sidebar={studying ? null : <Sidebar tree={tree} hasDecks={hasDecks} />}>
+    <Shell ref={main} sidebar={studying ? null : <Sidebar tree={tree} hasDecks={hasDecks} />}>
       {showWelcome ? <Welcome /> : <Screen route={route} />}
     </Shell>
   );
