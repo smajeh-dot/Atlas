@@ -1,11 +1,13 @@
 import { render } from '@testing-library/react';
+import type { ReactElement } from 'react';
 import userEvent from '@testing-library/user-event';
 import { vi } from 'vitest';
 import type { Db } from '../../src/data/db';
 import { getSettings } from '../../src/data/settings';
 import type { MediaPort } from '../../src/services/mediaService';
 import { UndoStack } from '../../src/services/undo';
-import type { Route } from '../../src/ui/app/AtlasContext';
+import { AtlasProvider, type Route } from '../../src/ui/app/AtlasContext';
+import { ToastProvider } from '../../src/ui/components/Toast';
 import { AtlasApp } from '../../src/ui/AtlasApp';
 import { fixedClock, T0 } from './fixtures';
 import { createMigratedDb } from './testDb';
@@ -35,4 +37,21 @@ export async function renderApp(opts: { db?: Db; clock?: ReturnType<typeof fixed
   const user = userEvent.setup(opts.fakeTimers ? { advanceTimers: (ms) => vi.advanceTimersByTime(ms) } : {});
   const result = render(<AtlasApp deps={deps} initialSettings={await getSettings(db)} initialRoute={opts.route} />);
   return { ...result, user, db, clock, deps, media, opened };
+}
+
+/** Renders one component inside the app's providers, for screens and sheets tested on their own. */
+export async function renderInApp(ui: ReactElement, opts: { db?: Db; clock?: ReturnType<typeof fixedClock> } = {}) {
+  const db = opts.db ?? (await createMigratedDb());
+  const clock = opts.clock ?? fixedClock(T0);
+  const deps = {
+    db, clock, undo: new UndoStack(), media: fakeMedia(), openUrl: async () => {},
+    appInfo: { dataDir: '', dbPath: '', version: '0.2.0', startupError: null },
+  };
+  const user = userEvent.setup();
+  const result = render(
+    <AtlasProvider deps={deps} initialSettings={await getSettings(db)}>
+      <ToastProvider>{ui}</ToastProvider>
+    </AtlasProvider>,
+  );
+  return { ...result, user, db, clock, deps };
 }

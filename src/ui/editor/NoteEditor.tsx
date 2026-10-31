@@ -5,7 +5,7 @@ import { saveImage } from '../../services/mediaService';
 import { useAtlas } from '../app/AtlasContext';
 import { TagInput } from '../components/TagInput';
 import { useToast } from '../components/Toast';
-import { useHotkeys } from '../keys';
+import { matchKey } from '../keys';
 import { Preview } from '../screens/Editor/Preview';
 import styles from '../screens/Editor/Editor.module.css';
 import { FieldEditor } from './FieldEditor';
@@ -39,10 +39,17 @@ export function NoteEditor({ noteType, fields, onFields, tags, onTags, tagSugges
   const onImage = async (file: File) => saveImage(deps.media, new Uint8Array(await file.arrayBuffer()), file.type);
   const allText = () => latest.current.join('\n');
 
-  useHotkeys({ 'Ctrl+Shift+T': () => tagsInput.current?.focus() }, { allowInInputs: ['Ctrl+Shift+T'] });
-
   return (
-    <div className={styles.columns}>
+    <div
+      className={styles.columns}
+      onKeyDown={(e) => {
+        // Handled here rather than app-wide so it also works inside the Edit card sheet.
+        if (matchKey(e.nativeEvent, 'Ctrl+Shift+T')) {
+          e.preventDefault();
+          tagsInput.current?.focus();
+        }
+      }}
+    >
       <div className={styles.fieldsColumn}>
         <Toolbar editor={focused ?? editors.current[0] ?? null} isCloze={isCloze} onPickImage={() => fileInput.current?.click()} getAllText={allText} />
         <input
