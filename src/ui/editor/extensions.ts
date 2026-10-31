@@ -211,8 +211,9 @@ function clozeKeys(getAllText: () => string) {
 export function atlasExtensions(opts: { mediaUrl(name: string): string; getAllText(): string; onSubmit?(): void }): AnyExtension[] {
   return [
     StarterKit.configure({ heading: false, codeBlock: false, blockquote: false, horizontalRule: false, link: false, code: false, strike: false }),
-    Superscript,
-    Subscript,
+    // Their built-in Ctrl+. and Ctrl+, are replaced by the spec's keys below; Ctrl+, opens Settings.
+    Superscript.extend({ addKeyboardShortcuts: () => ({}) }),
+    Subscript.extend({ addKeyboardShortcuts: () => ({}) }),
     // One keymap for both, so Ctrl+Shift+= is never read as Ctrl+= by a keymap that ignores Shift.
     Extension.create({
       name: 'atlasScripts',

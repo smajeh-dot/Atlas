@@ -85,3 +85,14 @@ test('after clicking a sidebar item, keys go to the new screen', async () => {
   await user.keyboard(' ');
   expect(await screen.findByRole('button', { name: 'Leave study' })).toBeTruthy();
 });
+
+test('Ctrl+, opens Settings even while typing in a field', async () => {
+  const { user } = await renderApp({ db: await seeded() });
+  await screen.findByRole('list', { name: 'Subjects' });
+  const field = document.createElement('input');
+  document.body.append(field);
+  field.focus();
+  await user.keyboard('{Control>},{/Control}');
+  expect(await screen.findByRole('heading', { name: 'Settings' })).toBeTruthy();
+  field.remove();
+});

@@ -62,7 +62,7 @@ function Frame() {
       }
       changed();
     },
-  }, { enabled: !studying });
+  }, { enabled: !studying, allowInInputs: ['Ctrl+,'] });
 
   if (!tree) return <Shell ref={main} sidebar={null}>{null}</Shell>;
   const showWelcome = !hasDecks && route.name !== 'settings';

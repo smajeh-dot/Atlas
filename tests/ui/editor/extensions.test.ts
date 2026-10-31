@@ -103,3 +103,11 @@ test('Ctrl+Enter submits the note instead of inserting a line break', () => {
   expect(submitted).toBe(1);
   expect(fromEditorHtml(e.getHTML())).toBe('Front text');
 });
+
+test("TipTap's own Ctrl+, and Ctrl+. shortcuts are off, so Ctrl+, can open Settings", () => {
+  const e = editor('x2');
+  e.commands.setTextSelection({ from: 2, to: 3 });
+  e.commands.keyboardShortcut('Mod-,');
+  e.commands.keyboardShortcut('Mod-.');
+  expect(fromEditorHtml(e.getHTML())).toBe('x2');
+});
