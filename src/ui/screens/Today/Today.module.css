@@ -92,7 +92,7 @@
 
 .head {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 54px 54px 54px 78px;
+  grid-template-columns: minmax(0, 1fr) 54px 54px 54px 104px;
   padding: 4px var(--sp-8) 8px calc(var(--sp-8) + 26px);
   font-size: var(--fs-label);
   font-weight: 500;

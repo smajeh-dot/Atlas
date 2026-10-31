@@ -103,19 +103,6 @@ export function AddCard({ deckId }: { deckId?: number }) {
         <h1 className={styles.title}>Add card</h1>
         {added > 0 && <span className={styles.counter}>{added} {added === 1 ? 'card' : 'cards'} added this session</span>}
       </header>
-      <div className={styles.selectors}>
-        <Select label="Type" value={noteType.id} options={types.map((t) => ({ value: t.id, label: t.name }))}
-          onChange={(id) => {
-            setTypeId(id);
-            setProblem(null);
-            void saveSettings({ lastNoteTypeId: id });
-          }} />
-        <Select label="Deck" filterable value={deck} options={treeOrder(decks).map((id) => ({ value: id, label: fullName(decks, id), depth: depth(id) }))}
-          onChange={(id) => {
-            setChosenDeck(id);
-            void saveSettings({ lastDeckId: id });
-          }} />
-      </div>
       <NoteEditor
         key={noteType.id}
         noteType={noteType}
@@ -129,6 +116,21 @@ export function AddCard({ deckId }: { deckId?: number }) {
         tagSuggestions={data?.tags ?? []}
         deckFullName={deckFullName}
         firstFieldRef={firstField}
+        header={(
+          <div className={styles.selectors}>
+            <Select label="Type" value={noteType.id} options={types.map((t) => ({ value: t.id, label: t.name }))}
+              onChange={(id) => {
+                setTypeId(id);
+                setProblem(null);
+                void saveSettings({ lastNoteTypeId: id });
+              }} />
+            <Select label="Deck" filterable value={deck} options={treeOrder(decks).map((id) => ({ value: id, label: fullName(decks, id), depth: depth(id) }))}
+              onChange={(id) => {
+                setChosenDeck(id);
+                void saveSettings({ lastDeckId: id });
+              }} />
+          </div>
+        )}
         autoFocus
         onSubmit={() => void add()}
       />

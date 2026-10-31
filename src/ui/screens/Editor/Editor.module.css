@@ -39,6 +39,12 @@
   flex: 0 1 320px;
 }
 
+/* In Add card the selectors sit above the fields, so they share that column's width exactly. */
+.fieldsColumn .selectors > * {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
 .columns {
   flex: 1;
   min-height: 0;
