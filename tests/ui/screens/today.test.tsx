@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
-import { beforeEach, expect, test } from 'vitest';
+import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 import type { Db } from '../../../src/data/db';
 import { listDecks } from '../../../src/data/decks';
 import { UndoStack } from '../../../src/services/undo';
@@ -12,6 +12,8 @@ import { renderApp } from '../../helpers/renderApp';
 const HOUR = 3_600_000;
 let db: Db;
 let deps: { db: Db; clock: ReturnType<typeof fixedClock>; undo: UndoStack };
+
+afterEach(() => vi.useRealTimers());
 
 beforeEach(async () => {
   db = await createMigratedDb();
@@ -152,4 +154,27 @@ test('Today recomputes after the day rolls over when the window regains focus', 
   act(() => void window.dispatchEvent(new Event('focus')));
   expect(await screen.findByRole('heading', { name: '1 card due today' })).toBeTruthy();
   expect(screen.getByText('SUNDAY 1 NOVEMBER')).toBeTruthy();
+});
+
+test('Today catches up with a new study day by itself, without the window being refocused', async () => {
+  vi.useFakeTimers({ shouldAdvanceTime: true });
+  const bio = await seedDeck(db, 'Biology');
+  await review(bio, 'a', T0 + 25 * HOUR);
+  const clock = fixedClock(T0 + 14 * HOUR);
+  await renderApp({ db, clock, fakeTimers: true });
+  expect(await screen.findByRole('heading', { name: 'All done for today' })).toBeTruthy();
+  clock.advance(10 * HOUR);
+  await act(async () => vi.advanceTimersByTime(61_000));
+  expect(await screen.findByRole('heading', { name: '1 card due today' })).toBeTruthy();
+});
+
+test('Today refreshes when the window becomes visible again', async () => {
+  const bio = await seedDeck(db, 'Biology');
+  await review(bio, 'a', T0 + 25 * HOUR);
+  const clock = fixedClock(T0 + 14 * HOUR);
+  await renderApp({ db, clock });
+  expect(await screen.findByRole('heading', { name: 'All done for today' })).toBeTruthy();
+  clock.advance(10 * HOUR);
+  act(() => void document.dispatchEvent(new Event('visibilitychange')));
+  expect(await screen.findByRole('heading', { name: '1 card due today' })).toBeTruthy();
 });

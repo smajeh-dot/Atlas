@@ -110,11 +110,12 @@ test('Dialog traps focus, Esc cancels and focus returns', async () => {
   expect(dialog.getAttribute('aria-modal')).toBe('true');
   const cancel = screen.getByRole('button', { name: 'Cancel' });
   const confirm = screen.getByRole('button', { name: 'Delete deck' });
-  expect(document.activeElement).toBe(confirm);
-  await user.tab();
+  // A destructive dialog starts on Cancel, so a stray Enter or Space never deletes anything.
   expect(document.activeElement).toBe(cancel);
   await user.tab();
   expect(document.activeElement).toBe(confirm);
+  await user.tab();
+  expect(document.activeElement).toBe(cancel);
   await user.keyboard('{Escape}');
   expect(onCancel).toHaveBeenCalled();
   expect(screen.getByRole('button', { name: 'Open' })).toBe(document.activeElement);
@@ -210,4 +211,9 @@ test('TagInput suggests existing tags by prefix', async () => {
   expect(screen.getAllByRole('option').map((o) => o.textContent)).toEqual(['paper-1', 'paper-2']);
   await user.keyboard('{ArrowDown}{ArrowDown}{Enter}');
   expect(onChange).toHaveBeenCalledWith(['organic', 'paper-2']);
+});
+
+test('a non-destructive dialog starts on its confirm button', () => {
+  render(<Dialog title="Card info" confirmLabel="Close" hideCancel onConfirm={() => {}} onCancel={() => {}}>x</Dialog>);
+  expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Close' }));
 });

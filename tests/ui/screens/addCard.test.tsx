@@ -141,3 +141,22 @@ test('a failed save keeps the fields and says why', async () => {
   expect(screen.getByLabelText('Front')).toHaveProperty('value', 'Keep me');
   act(() => {});
 });
+
+test("the toast's Undo confirms what it undid", async () => {
+  const { user } = await open();
+  await user.type(screen.getByLabelText('Front'), 'one');
+  await user.keyboard('{Control>}{Enter}{/Control}');
+  await user.click(within(await screen.findByRole('status')).getByRole('button', { name: 'Undo' }));
+  await waitFor(() => expect(screen.getByRole('status').textContent).toContain('Undid: add card'));
+  expect(screen.queryByText(/added this session/)).toBeNull();
+});
+
+test('the Back preview of a type-the-answer card shows the correct answer', async () => {
+  const { user } = await open();
+  await user.click(screen.getByRole('button', { name: /^Type/ }));
+  await user.click(screen.getByRole('option', { name: 'Type the answer' }));
+  await user.type(screen.getByLabelText('Front'), 'Capital of France?');
+  await user.type(screen.getByLabelText('Back'), 'Paris');
+  await user.click(screen.getByRole('radio', { name: 'Back' }));
+  await waitFor(() => expect(preview().querySelector('.atlas-typein-answer')?.textContent).toBe('Paris'));
+});

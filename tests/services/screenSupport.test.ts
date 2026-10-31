@@ -1,9 +1,11 @@
 import { beforeEach, expect, test } from 'vitest';
 import { getCardInfo } from '../../src/services/cardInfo';
 import { getDeckSummary } from '../../src/services/deckService';
-import { findDuplicateDeck } from '../../src/services/noteService';
+import { findDuplicateDeck, updateNote } from '../../src/services/noteService';
+import { getCard } from '../../src/data/cards';
+import { getNote } from '../../src/data/notes';
 import { StudySession } from '../../src/services/studySession';
-import { UndoStack, undoLast } from '../../src/services/undo';
+import { UndoStack, undoIfLatest, undoLast } from '../../src/services/undo';
 import { createMigratedDb } from '../helpers/testDb';
 import { DAY, fixedClock, MIN, T0 } from '../helpers/fixtures';
 import { countRows, makeReview, seedDeck, seedNote } from '../helpers/seed';
@@ -69,4 +71,26 @@ test('findDuplicateDeck returns the deck of the duplicate', async () => {
   expect(await findDuplicateDeck(deps.db, basicId, 'osmosis')).toBe(bio);
   expect(await findDuplicateDeck(deps.db, basicId, 'unique')).toBeNull();
   expect(await findDuplicateDeck(deps.db, basicId, 'Osmosis', noteId)).toBeNull();
+});
+
+test('undoIfLatest undoes an entry only while it is still the most recent action', async () => {
+  const deck = await seedDeck(deps.db, 'A');
+  const first = await seedNote(deps, deck, 'basic', ['one', 'x']);
+  await seedNote(deps, deck, 'basic', ['two', 'x']);
+  expect(await undoIfLatest(deps.db, deps.undo, first.undoEntry)).toBeNull();
+  expect(await countRows(deps.db, 'notes')).toBe(2);
+  await undoLast(deps.db, deps.undo);
+  expect(await undoIfLatest(deps.db, deps.undo, first.undoEntry)).toBe('add card');
+  expect(await countRows(deps.db, 'notes')).toBe(0);
+});
+
+test('updateNote can move a card in the same transaction, and a failure saves neither change', async () => {
+  const a = await seedDeck(deps.db, 'A');
+  const b = await seedDeck(deps.db, 'B');
+  const { noteId, cardIds } = await seedNote(deps, a, 'basic', ['old', 'x']);
+  await updateNote(deps, noteId, { fields: ['new', 'x'], tags: [] }, { moveCard: { cardId: cardIds[0]!, deckId: b } });
+  expect((await getNote(deps.db, noteId)).fields[0]).toBe('new');
+  expect((await getCard(deps.db, cardIds[0]!)).deckId).toBe(b);
+  await expect(updateNote(deps, noteId, { fields: ['newer', 'x'], tags: [] }, { moveCard: { cardId: cardIds[0]!, deckId: 9999 } })).rejects.toThrow();
+  expect((await getNote(deps.db, noteId)).fields[0]).toBe('new');
 });

@@ -45,44 +45,46 @@ export function Study({ deckId }: { deckId: number | null }) {
   const toast = useToast();
   const [session, setSession] = useState<StudySession | null>(null);
   const [deckName, setDeckName] = useState('');
-  const [, setTick] = useState(0);
-  const refresh = useCallback(() => setTick((t) => t + 1), []);
   const [phase, setPhase] = useState<'question' | 'answer'>('question');
   const [typed, setTyped] = useState('');
   const [overlay, setOverlay] = useState<Overlay>(null);
+  /**
+   * The card on screen. It changes only when Atlas moves on (start, after an action, undo, edit,
+   * or a learning card coming back), never just because time passed, so keys act on what is shown.
+   */
+  const [current, setCurrent] = useState<SessionCard | null>(null);
   const shownAt = useRef(deps.clock.now());
-  const shownId = useRef<number | null>(null);
   const busy = useRef(false);
   const [startError, setStartError] = useState<string | null>(null);
 
+  const show = useCallback((s: StudySession | null, keepPhase = false) => {
+    setCurrent(s?.current() ?? null);
+    if (!keepPhase) {
+      setPhase('question');
+      setTyped('');
+      shownAt.current = deps.clock.now();
+    }
+  }, [deps.clock]);
+
   useEffect(() => {
     let alive = true;
-    StudySession.start(deps, deckId).then((s) => alive && setSession(s), (e: unknown) => alive && setStartError(message(e)));
+    StudySession.start(deps, deckId).then((s) => {
+      if (!alive) return;
+      setSession(s);
+      show(s);
+    }, (e: unknown) => alive && setStartError(message(e)));
     if (deckId !== null) listDecks(deps.db).then((d) => alive && setDeckName(d.find((x) => x.id === deckId)?.name ?? ''), () => {});
     return () => {
       alive = false;
     };
   }, []);
 
-  const current: SessionCard | null = session?.current() ?? null;
-  // A new card on screen restarts the answer timer and the question state.
-  if (current && current.card.id !== shownId.current) {
-    shownId.current = current.card.id;
-    shownAt.current = deps.clock.now();
-  }
-  if (!current && shownId.current !== null) shownId.current = null;
-
   const leave = () => {
     changed();
     navigate({ name: 'today' });
   };
 
-  const next = () => {
-    setPhase('question');
-    setTyped('');
-    shownId.current = null;
-    refresh();
-  };
+  const next = () => show(session);
 
   const run = async (work: () => Promise<void>, failure: string) => {
     if (busy.current || !session) return;
@@ -102,8 +104,8 @@ export function Study({ deckId }: { deckId: number | null }) {
     const ms = deps.clock.now() - shownAt.current;
     void run(async () => {
       const r = await session!.answer(rating, ms, id);
-      if (!r) return;
       next();
+      if (!r) return;
       if (r.leech) {
         const suspended = (await getCard(deps.db, id)).suspended;
         toast.show({
@@ -134,7 +136,7 @@ export function Study({ deckId }: { deckId: number | null }) {
       toast.show({ message: label ? `Undid: ${label}` : 'Nothing to undo' });
     }, "Atlas couldn't undo that");
 
-  const flag = (n: number) => current && change(() => session!.setFlag(n));
+  const flag = (n: number) => current && change(() => session!.setFlag(n, current.card.id));
   const askDelete = async () => {
     if (!current) return;
     setOverlay({ kind: 'delete', cards: (await cardsOfNote(deps.db, current.note.id)).length });
@@ -155,23 +157,24 @@ export function Study({ deckId }: { deckId: number | null }) {
       4: () => grade(4),
       E: () => setOverlay({ kind: 'edit', cardId: current.card.id }),
       I: () => setOverlay({ kind: 'info', cardId: current.card.id, unknownFilters: current.unknownFilters }),
-      '-': () => change(() => session!.buryCurrent(), 'Card buried until tomorrow'),
-      '@': () => change(() => session!.suspendCurrent(), 'Card suspended'),
+      '-': () => change(() => session!.buryCurrent(current.card.id), 'Card buried until tomorrow'),
+      '@': () => change(() => session!.suspendCurrent(current.card.id), 'Card suspended'),
       'Ctrl+Delete': () => void askDelete(),
       'Ctrl+0': () => flag(0),
     });
     for (let n = 1; n <= 7; n++) keys[`Ctrl+${n}`] = () => flag(n);
   }
-  useHotkeys(keys);
+  // Esc leaves Study from anywhere (spec 11), including the type-in box.
+  useHotkeys(keys, { allowInInputs: ['Esc'] });
 
   // Learning cards due soon bring the session back by themselves (spec 10.4).
   const learnAhead = settings.learnAheadMinutes * MIN;
   const nextDue = done ? session!.nextLearningDueAt() : null;
   useEffect(() => {
     if (nextDue === null) return;
-    const t = setTimeout(refresh, Math.max(0, nextDue - learnAhead - deps.clock.now()));
+    const t = setTimeout(() => show(session), Math.max(0, nextDue - learnAhead - deps.clock.now()));
     return () => clearTimeout(t);
-  }, [nextDue, learnAhead]);
+  }, [nextDue, learnAhead, session]);
 
   if (startError) {
     return <div className={styles.page}><EmptyState title="Atlas couldn't start this session" text={startError} action={{ label: 'Back to Today', onClick: leave }} /></div>;
@@ -222,13 +225,16 @@ export function Study({ deckId }: { deckId: number | null }) {
       <div className={styles.stage}>
         {current ? (
           <StudyCard card={current} phase={phase} typed={typed} onTyped={setTyped} onReveal={reveal} mediaUrl={deps.media.url} />
-        ) : summary.answers === 0 && nextDue === null ? (
+        ) : summary.answers === 0 ? (
           <div className={styles.box}>
             <EmptyState
               title={deckName ? `Nothing to study in ${deckName} right now` : 'Nothing to study right now'}
               text="New cards you add will show up here."
               action={{ label: 'Add card', onClick: () => navigate({ name: 'add', deckId: deckId ?? undefined }) }}
             />
+            {nextDue !== null && left.learn > 0 && (
+              <p className={`${styles.plain} ${styles.returning}`}>{returnText(left.learn, nextDue, learnAhead, deps.clock.now())}</p>
+            )}
           </div>
         ) : (
           <Complete summary={summary} learning={left.learn} nextDue={nextDue} learnAhead={learnAhead} now={deps.clock.now()} onBack={leave} />
@@ -262,8 +268,8 @@ export function Study({ deckId }: { deckId: number | null }) {
       )}
       {overlay?.kind === 'more' && current && (
         <Menu anchor={overlay.anchor} label="More" onClose={() => setOverlay(null)} items={[
-          { label: 'Bury card', icon: 'bury', shortcut: '-', onSelect: () => change(() => session.buryCurrent(), 'Card buried until tomorrow') },
-          { label: 'Suspend card', icon: 'suspend', shortcut: '@', onSelect: () => change(() => session.suspendCurrent(), 'Card suspended') },
+          { label: 'Bury card', icon: 'bury', shortcut: '-', onSelect: () => change(() => session.buryCurrent(current.card.id), 'Card buried until tomorrow') },
+          { label: 'Suspend card', icon: 'suspend', shortcut: '@', onSelect: () => change(() => session.suspendCurrent(current.card.id), 'Card suspended') },
           { label: 'Card info', icon: 'info', shortcut: 'I', onSelect: () => setOverlay({ kind: 'info', cardId: current.card.id, unknownFilters: current.unknownFilters }) },
           'divider',
           { label: 'Delete note', icon: 'trash', shortcut: 'Ctrl+Delete', danger: true, onSelect: () => void askDelete() },
@@ -273,7 +279,12 @@ export function Study({ deckId }: { deckId: number | null }) {
         <EditCardSheet cardId={overlay.cardId} onClose={(saved) => {
           const id = overlay.cardId;
           setOverlay(null);
-          if (saved) void session.refreshCard(id).then(refresh, () => refresh());
+          if (saved) {
+            void session.refreshCard(id).then(
+              () => setCurrent((c) => (c?.card.id === id ? session.cardView(id) ?? session.current() : c)),
+              () => show(session),
+            );
+          }
         }} />
       )}
       {overlay?.kind === 'info' && <CardInfoDialog cardId={overlay.cardId} unknownFilters={overlay.unknownFilters} onClose={() => setOverlay(null)} />}
@@ -281,7 +292,8 @@ export function Study({ deckId }: { deckId: number | null }) {
         <Dialog title="Delete this note?" confirmLabel="Delete note" confirmVariant="danger" onCancel={() => setOverlay(null)}
           onConfirm={() => {
             setOverlay(null);
-            change(() => session.deleteCurrentNote(), 'Note deleted');
+            const id = current?.card.id;
+            change(() => session.deleteCurrentNote(id), 'Note deleted');
           }}>
           <p className={styles.plain}>This deletes its {plural(overlay.cards, 'card', 'cards')} and their review history. Ctrl+Z brings it back.</p>
         </Dialog>
@@ -351,19 +363,20 @@ function Complete({ summary, learning, nextDue, learnAhead, now, onBack }: {
 }) {
   const minutes = Math.max(1, Math.round(summary.durationMs / MIN));
   const pct = summary.answers ? Math.round(((summary.answers - summary.again) / summary.answers) * 100) : 0;
-  const back = nextDue === null ? null : Math.max(1, Math.ceil((nextDue - learnAhead - now) / MIN));
+
   return (
     <div className={`${styles.box} ${styles.complete}`}>
       <h2 className={styles.completeTitle}>Session complete</h2>
       <p className={styles.stats}>{plural(summary.answers, 'card', 'cards')} · {plural(minutes, 'minute', 'minutes')} · {pct}% remembered</p>
-      {back !== null && learning > 0 && (
-        <p className={styles.plain}>
-          {learning === 1 ? '1 card comes' : `${learning} cards come`} back in {plural(back, 'minute', 'minutes')}. Atlas will bring them up if you stay here.
-        </p>
-      )}
+      {nextDue !== null && learning > 0 && <p className={styles.plain}>{returnText(learning, nextDue, learnAhead, now)}</p>}
       <Button variant="primary" kbd="Enter" autoFocus onClick={onBack}>Back to Today</Button>
     </div>
   );
+}
+
+function returnText(learning: number, nextDue: number, learnAhead: number, now: number): string {
+  const back = Math.max(1, Math.ceil((nextDue - learnAhead - now) / MIN));
+  return `${learning === 1 ? '1 card comes' : `${learning} cards come`} back in ${plural(back, 'minute', 'minutes')}. Atlas will bring them up if you stay here.`;
 }
 
 function Timer({ since, clock }: { since: number; clock: { now(): number } }) {

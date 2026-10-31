@@ -7,7 +7,7 @@ import { listDecks } from '../../../data/decks';
 import { listNoteTypes } from '../../../data/noteTypes';
 import { listTags } from '../../../data/notes';
 import { addNote, findDuplicateDeck, NoCardsError } from '../../../services/noteService';
-import { undoLast } from '../../../services/undo';
+import { undoIfLatest } from '../../../services/undo';
 import { useAtlas, useData } from '../../app/AtlasContext';
 import { Button } from '../../components/Button';
 import { Select } from '../../components/Select';
@@ -60,7 +60,7 @@ export function AddCard({ deckId }: { deckId?: number }) {
     if (!noteType || deck === null || saving) return;
     setSaving(true);
     try {
-      const { cardIds } = await addNote(deps, { noteTypeId: noteType.id, deckId: deck, fields: noteType.fields.map((_, i) => fields[i] ?? ''), tags });
+      const { cardIds, undoEntry } = await addNote(deps, { noteTypeId: noteType.id, deckId: deck, fields: noteType.fields.map((_, i) => fields[i] ?? ''), tags });
       setAdded((n) => n + cardIds.length);
       setFields([]);
       setProblem(null);
@@ -71,10 +71,15 @@ export function AddCard({ deckId }: { deckId?: number }) {
         message: `Added to ${leaf}`,
         action: {
           label: 'Undo',
-          onClick: () => void undoLast(deps.db, deps.undo).then(() => {
-            setAdded((n) => Math.max(0, n - cardIds.length));
-            changed();
-          }),
+          onClick: () => void undoIfLatest(deps.db, deps.undo, undoEntry).then(
+            (label) => {
+              if (!label) return;
+              setAdded((n) => Math.max(0, n - cardIds.length));
+              toast.show({ message: `Undid: ${label}` });
+              changed();
+            },
+            (e: unknown) => toast.show({ message: `Atlas couldn't undo that: ${e instanceof Error ? e.message : String(e)}` }),
+          ),
         },
       });
       firstField.current?.commands.focus();

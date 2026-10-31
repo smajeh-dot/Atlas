@@ -31,6 +31,14 @@ export class UndoStack {
   }
 }
 
+/**
+ * Undoes `entry` only if it is still the most recent action, so an Undo button on an old toast
+ * never undoes something else. Returns its label, or null when it was no longer on top.
+ */
+export async function undoIfLatest(db: Db, undo: UndoStack, entry: UndoEntry): Promise<string | null> {
+  return undo.peek() === entry ? undoLast(db, undo) : null;
+}
+
 /** Undoes the most recent action outside a study session. Returns its label, or null when there is nothing to undo. */
 export async function undoLast(db: Db, undo: UndoStack): Promise<string | null> {
   const entry = undo.pop();

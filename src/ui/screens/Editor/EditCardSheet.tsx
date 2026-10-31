@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { fullName, treeOrder } from '../../../core/deckTree';
-import { getCard, setCardDeck } from '../../../data/cards';
+import { getCard } from '../../../data/cards';
 import { listDecks } from '../../../data/decks';
 import { getNoteType } from '../../../data/noteTypes';
 import { getNote, listTags } from '../../../data/notes';
@@ -44,8 +44,8 @@ export function EditCardSheet({ cardId, onClose }: { cardId: number; onClose(sav
     if (saving) return;
     setSaving(true);
     try {
-      await updateNote(deps, note.id, { fields: noteType.fields.map((_, i) => nowFields[i] ?? ''), tags: nowTags });
-      if (nowDeck !== card.deckId) await setCardDeck(deps.db, card.id, nowDeck, deps.clock.now());
+      await updateNote(deps, note.id, { fields: noteType.fields.map((_, i) => nowFields[i] ?? ''), tags: nowTags },
+        nowDeck !== card.deckId ? { moveCard: { cardId: card.id, deckId: nowDeck } } : {});
       changed();
       onClose(true);
     } catch (e) {

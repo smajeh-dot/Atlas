@@ -267,3 +267,9 @@
   padding: 8px 10px;
   border-radius: var(--radius-sm);
 }
+
+.returning {
+  padding: 0 var(--sp-32) var(--sp-32);
+  text-align: center;
+  color: var(--text-muted);
+}

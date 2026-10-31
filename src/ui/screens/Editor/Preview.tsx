@@ -32,7 +32,10 @@ export function Preview({ noteType, fields, tags, deckFullName }: { noteType: No
     if (side === 'front') {
       body = <CardView html={r.question} size={q.size} css={noteType.css} mediaUrl={deps.media.url} />;
     } else {
-      const a = answerView(r.answer);
+      const byName: Record<string, string> = {};
+      noteType.fields.forEach((f, i) => (byName[f.name] = fields[i] ?? ''));
+      // Nothing typed yet, so a type-in card shows the correct answer under the divider, as Study does.
+      const a = answerView(r.answer, { text: '', fields: byName });
       body = a.front === null
         ? <CardView html={a.answer} size={a.size} css={noteType.css} mediaUrl={deps.media.url} />
         : <CardView html={questionView(a.front).html} size={q.size} answer={a.answer} answerSize={a.size} css={noteType.css} mediaUrl={deps.media.url} />;

@@ -3,6 +3,7 @@ import type { Db } from '../../src/data/db';
 import { createDeck } from '../../src/data/decks';
 import { getBuiltinNoteType } from '../../src/data/noteTypes';
 import { addNote, type NoteServiceDeps } from '../../src/services/noteService';
+import type { UndoEntry } from '../../src/services/undo';
 import { DAY, T0 } from './fixtures';
 
 export function seedDeck(db: Db, name: string, parentId: number | null = null): Promise<number> {
@@ -15,7 +16,7 @@ export async function seedNote(
   type: Exclude<BuiltinNoteType, 'image_occlusion'>,
   fields: string[],
   tags: string[] = [],
-): Promise<{ noteId: number; cardIds: number[] }> {
+): Promise<{ noteId: number; cardIds: number[]; undoEntry: UndoEntry }> {
   const t = await getBuiltinNoteType(deps.db, type);
   return addNote(deps, { noteTypeId: t.id, deckId, fields, tags });
 }

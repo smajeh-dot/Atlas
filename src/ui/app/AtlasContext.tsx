@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { Settings } from '../../core/model';
+import { studyDay } from '../../core/studyDay';
 import type { Db } from '../../data/db';
 import { updateSettings } from '../../data/settings';
 import type { MediaPort } from '../../services/mediaService';
@@ -52,6 +53,26 @@ export function AtlasProvider({ deps, initialSettings, initialRoute, children }:
     setSettings(await updateSettings(deps.db, patch));
   }, [deps.db]);
   const navigate = useCallback((r: Route) => setRoute(r), []);
+
+  // A laptop that sleeps overnight may wake with Atlas in front and no focus event, so screens also
+  // refresh when the window becomes visible and when the study day turns over.
+  const day = useRef(studyDay(deps.clock.now(), settings.dayStartHour));
+  useEffect(() => {
+    const check = () => {
+      const today = studyDay(deps.clock.now(), settings.dayStartHour);
+      if (today !== day.current) {
+        day.current = today;
+        changed();
+      }
+    };
+    const timer = setInterval(check, 60_000);
+    const onVisible = () => document.visibilityState !== 'hidden' && changed();
+    document.addEventListener('visibilitychange', onVisible);
+    return () => {
+      clearInterval(timer);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
+  }, [deps.clock, settings.dayStartHour, changed]);
   const value = useMemo(
     () => ({ deps, route, navigate, settings, saveSettings, version, changed }),
     [deps, route, navigate, settings, saveSettings, version, changed],

@@ -1,8 +1,9 @@
 // @vitest-environment jsdom
 import { act, screen, waitFor, within } from '@testing-library/react';
-import { afterEach, beforeEach, expect, test, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { formatInterval } from '../../../src/core/format';
 import type { Db } from '../../../src/data/db';
+import { getCard } from '../../../src/data/cards';
 import { updateSettings } from '../../../src/data/settings';
 import { StudySession } from '../../../src/services/studySession';
 import { UndoStack } from '../../../src/services/undo';
@@ -191,4 +192,64 @@ test('Esc leaves Study', async () => {
   await screen.findByRole('button', { name: 'Show answer' });
   await user.keyboard('{Escape}');
   expect(await screen.findByText('SATURDAY 31 OCTOBER')).toBeTruthy();
+});
+
+describe('a learning card falling due does not change the card being studied', () => {
+  async function twoCards() {
+    await updateSettings(db, { learnAheadMinutes: 0 });
+    const first = (await seedNote(seedDeps, deck, 'basic', ['first', 'x'])).cardIds[0]!;
+    const second = (await seedNote(seedDeps, deck, 'basic', ['second', 'x'])).cardIds[0]!;
+    const r = await study();
+    await waitFor(() => expect(card().textContent).toContain('first'));
+    await r.user.keyboard(' ');
+    await screen.findByRole('button', { name: /^Again/ });
+    await r.user.keyboard('1');
+    await waitFor(() => expect(card().textContent).toContain('second'));
+    return { ...r, first, second };
+  }
+
+  test('in the answer phase, 3 grades the card on screen', async () => {
+    const { user, clock, second } = await twoCards();
+    await user.keyboard(' ');
+    await screen.findByRole('button', { name: /^Good/ });
+    clock.advance(2 * MIN);
+    await user.keyboard('3');
+    await waitFor(async () => expect(await countRows(db, 'revlog')).toBe(2));
+    const [last] = await db.query<{ card_id: number }>('SELECT card_id FROM revlog ORDER BY id DESC LIMIT 1');
+    expect(last!.card_id).toBe(second);
+    await waitFor(() => expect(card().textContent).toContain('first'));
+  });
+
+  test('in the question phase, Space reveals the card on screen', async () => {
+    const { user, clock } = await twoCards();
+    clock.advance(2 * MIN);
+    await user.keyboard(' ');
+    await screen.findByRole('button', { name: /^Good/ });
+    expect(card().textContent).toContain('second');
+  });
+
+  test('bury hides the card on screen', async () => {
+    const { user, clock, first, second } = await twoCards();
+    clock.advance(2 * MIN);
+    await user.keyboard('-');
+    await waitFor(async () => expect((await getCard(db, second)).buriedKind).toBe('manual'));
+    expect((await getCard(db, first)).buriedKind).toBeNull();
+  });
+});
+
+test('Esc leaves Study even from the type-in box', async () => {
+  await seedNote(seedDeps, deck, 'basic_typein', ['Capital of France?', 'Paris']);
+  const { user } = await study();
+  await user.type(await screen.findByPlaceholderText('Type your answer, then press Enter'), 'Par{Escape}');
+  expect(await screen.findByText('SATURDAY 31 OCTOBER')).toBeTruthy();
+});
+
+test('re-entering a deck whose only card returns later shows the empty state with when it returns', async () => {
+  await updateSettings(db, { learnAheadMinutes: 0 });
+  const id = (await seedNote(seedDeps, deck, 'basic', ['later', 'x'])).cardIds[0]!;
+  await db.execute(`UPDATE cards SET state = 1, due_at = ?, new_position = NULL, scheduled_days = 0, reps = 1, last_review_at = ? WHERE id = ?`, [T0 + 10 * MIN, T0, id]);
+  await study();
+  expect(await screen.findByRole('heading', { name: 'Nothing to study in Chemistry right now' })).toBeTruthy();
+  expect(screen.getByText('1 card comes back in 10 minutes. Atlas will bring them up if you stay here.')).toBeTruthy();
+  expect(screen.queryByText(/remembered/)).toBeNull();
 });

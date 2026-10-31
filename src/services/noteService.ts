@@ -34,7 +34,7 @@ function newCard(noteId: number, ord: number, deckId: number, newPosition: numbe
 export async function addNote(
   deps: NoteServiceDeps,
   input: { noteTypeId: number; deckId: number; fields: string[]; tags: string[] },
-): Promise<{ noteId: number; cardIds: number[] }> {
+): Promise<{ noteId: number; cardIds: number[]; undoEntry: UndoEntry }> {
   const { db } = deps;
   const now = deps.clock.now();
   const noteType = await getNoteType(db, input.noteTypeId);
@@ -53,8 +53,9 @@ export async function addNote(
     noteInsertStatement(note),
     ...ords.map((ord, i) => cardInsertStatement({ id: cardIds[i]!, ...newCard(noteId, ord, input.deckId, newPosition, now) })),
   ]);
-  deps.undo.push({ label: 'add card', restore: [{ sql: `DELETE FROM notes WHERE id = ?`, params: [noteId] }] });
-  return { noteId, cardIds };
+  const undoEntry: UndoEntry = { label: 'add card', restore: [{ sql: `DELETE FROM notes WHERE id = ?`, params: [noteId] }] };
+  deps.undo.push(undoEntry);
+  return { noteId, cardIds, undoEntry };
 }
 
 /** Saves new field contents and tags. New templates or clozes get new cards; cards are never deleted here. */
@@ -62,6 +63,7 @@ export async function updateNote(
   deps: NoteServiceDeps,
   noteId: number,
   input: { fields: string[]; tags: string[] },
+  opts: { moveCard?: { cardId: number; deckId: number } } = {},
 ): Promise<{ addedCardIds: number[] }> {
   const { db } = deps;
   const now = deps.clock.now();
@@ -84,6 +86,10 @@ export async function updateNote(
       cardInsertStatement({ id: addedCardIds[i]!, ...newCard(noteId, ord, first?.deckId ?? 1, newPosition, now) }),
     ),
   ];
+  // Moving the edited card to another deck happens in the same transaction (spec 12.1).
+  if (opts.moveCard) {
+    statements.push({ sql: `UPDATE cards SET deck_id = ?, updated_at = ? WHERE id = ? AND note_id = ?`, params: [opts.moveCard.deckId, now, opts.moveCard.cardId, noteId] });
+  }
   await db.batch(statements);
   return { addedCardIds };
 }

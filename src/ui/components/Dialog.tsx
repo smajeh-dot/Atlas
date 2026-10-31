@@ -28,7 +28,11 @@ export function Dialog({ title, children, confirmLabel, confirmVariant = 'primar
     if (field) {
       field.focus();
       if (field instanceof HTMLInputElement) field.select();
-    } else focusables(root).find((el) => el.dataset.confirm === 'true')?.focus();
+    } else {
+      // Destructive dialogs start on Cancel: one stray Enter or Space must never delete anything.
+      const start = confirmVariant === 'danger' && !hideCancel ? 'cancel' : 'confirm';
+      focusables(root).find((el) => el.dataset.role === start)?.focus();
+    }
   }, []);
 
   return createPortal(
@@ -55,8 +59,8 @@ export function Dialog({ title, children, confirmLabel, confirmVariant = 'primar
         <h2 id={titleId} className={styles.title}>{title}</h2>
         <div className={styles.body}>{children}</div>
         <div className={styles.buttons}>
-          {!hideCancel && <Button variant="secondary" onClick={onCancel}>{cancelLabel}</Button>}
-          <Button variant={confirmVariant} type="submit" data-confirm="true" disabled={confirmDisabled}>{confirmLabel}</Button>
+          {!hideCancel && <Button variant="secondary" data-role="cancel" onClick={onCancel}>{cancelLabel}</Button>}
+          <Button variant={confirmVariant} type="submit" data-role="confirm" disabled={confirmDisabled}>{confirmLabel}</Button>
         </div>
       </form>
     </div>,

@@ -119,10 +119,33 @@ export class StudySession {
     );
   }
 
+  /**
+   * The queued card with this id if the person may act on it now: any card waiting in the main
+   * queue, a learning card that is due, or whatever pick() would show. A learning card answered a
+   * moment ago (not due yet) is refused, so a stray second key press never grades it again.
+   */
+  private available(cardId: number, now: number): Card | null {
+    const main = this.main.find((c) => c.id === cardId);
+    if (main) return main;
+    const learning = this.learning.find((c) => c.id === cardId && (c.dueAt ?? 0) <= now);
+    if (learning) return learning;
+    const picked = this.pick(now);
+    return picked?.id === cardId ? picked : null;
+  }
+
   current(): SessionCard | null {
+    const card = this.pick(this.deps.clock.now());
+    return card ? this.view(card) : null;
+  }
+
+  /** How a queued card looks right now, or null if it is no longer in the session. */
+  cardView(cardId: number): SessionCard | null {
+    const card = [...this.main, ...this.learning].find((c) => c.id === cardId);
+    return card ? this.view(card) : null;
+  }
+
+  private view(card: Card): SessionCard {
     const now = this.deps.clock.now();
-    const card = this.pick(now);
-    if (!card) return null;
     const note = this.notes.get(card.noteId)!;
     const noteType = this.noteTypes.get(note.noteTypeId)!;
     const rendered = renderCard(noteType, note, card.ord, fullName(this.decks, card.deckId, '::'));
@@ -172,8 +195,9 @@ export class StudySession {
    */
   async answer(rating: Rating, durationMs: number, expectedCardId?: number): Promise<{ leech: boolean } | null> {
     if (this.busy) return null;
-    const card = this.pick(this.deps.clock.now());
-    if (!card || (expectedCardId !== undefined && card.id !== expectedCardId)) return null;
+    const now = this.deps.clock.now();
+    const card = expectedCardId === undefined ? this.pick(now) : this.available(expectedCardId, now);
+    if (!card) return null;
     this.busy = true;
     try {
       return await this.grade(card, rating, durationMs);
@@ -250,10 +274,10 @@ export class StudySession {
     return { leech };
   }
 
-  private async changeCurrent(label: string, change: (c: Card, today: number) => Card, leaveQueue: boolean): Promise<void> {
+  private async changeCurrent(label: string, change: (c: Card, today: number) => Card, leaveQueue: boolean, cardId?: number): Promise<void> {
     if (this.busy) return;
     const now = this.deps.clock.now();
-    const card = this.pick(now);
+    const card = cardId === undefined ? this.pick(now) : this.available(cardId, now);
     if (!card) return;
     this.busy = true;
     try {
@@ -279,17 +303,18 @@ export class StudySession {
   }
 
   /** Hides the current card until the next study day. */
-  buryCurrent(): Promise<void> {
-    return this.changeCurrent('bury', (c, today) => ({ ...c, buriedDay: today, buriedKind: 'manual' }), true);
+  /** `cardId` is the card on screen; without it, the card pick() would show. */
+  buryCurrent(cardId?: number): Promise<void> {
+    return this.changeCurrent('bury', (c, today) => ({ ...c, buriedDay: today, buriedKind: 'manual' }), true, cardId);
   }
 
-  suspendCurrent(): Promise<void> {
-    return this.changeCurrent('suspend', (c) => ({ ...c, suspended: true }), true);
+  suspendCurrent(cardId?: number): Promise<void> {
+    return this.changeCurrent('suspend', (c) => ({ ...c, suspended: true }), true, cardId);
   }
 
   /** 0 clears the flag; 1-7 are the flag colours. */
-  setFlag(flag: number): Promise<void> {
-    return this.changeCurrent('flag', (c) => ({ ...c, flag }), false);
+  setFlag(flag: number, cardId?: number): Promise<void> {
+    return this.changeCurrent('flag', (c) => ({ ...c, flag }), false, cardId);
   }
 
   /** Reloads a card and its note after they were edited elsewhere (Edit card), so the screen shows the change. */
@@ -304,9 +329,10 @@ export class StudySession {
   }
 
   /** Deletes the note of the card on screen. Undo restores it and shows that card again. */
-  async deleteCurrentNote(): Promise<void> {
+  async deleteCurrentNote(cardId?: number): Promise<void> {
     if (this.busy) return;
-    const card = this.pick(this.deps.clock.now());
+    const now = this.deps.clock.now();
+    const card = cardId === undefined ? this.pick(now) : this.available(cardId, now);
     if (!card) return;
     this.busy = true;
     try {
