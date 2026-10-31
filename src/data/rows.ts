@@ -1,4 +1,4 @@
-import type { Card, Deck, Note, NoteType, Preset, RevlogEntry, StateValue } from '../core/model';
+import { DEFAULT_PRESET, type Card, type Deck, type Note, type NoteType, type Preset, type RevlogEntry, type StateValue } from '../core/model';
 
 type Row = Record<string, unknown>;
 const num = (v: unknown) => Number(v);
@@ -28,7 +28,8 @@ export function toDeck(r: Row): Deck {
 }
 
 export function toPreset(r: Row): Preset {
-  return { id: num(r.id), name: String(r.name), config: JSON.parse(String(r.config)) };
+  // Merging over the defaults lets older presets pick up options added later.
+  return { id: num(r.id), name: String(r.name), config: { ...DEFAULT_PRESET, ...JSON.parse(String(r.config)) } };
 }
 
 export function toNoteType(r: Row): NoteType {
