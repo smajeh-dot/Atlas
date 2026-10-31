@@ -220,6 +220,48 @@ export class StudySession {
     return { leech };
   }
 
+  private async changeCurrent(label: string, change: (c: Card, today: number) => Card, leaveQueue: boolean): Promise<void> {
+    if (this.busy) return;
+    const now = this.deps.clock.now();
+    const card = this.pick(now);
+    if (!card) return;
+    this.busy = true;
+    try {
+      const changed = { ...change(card, studyDay(now, this.settings.dayStartHour)), updatedAt: now };
+      const before = this.snapshot();
+      await this.deps.db.batch([cardUpdateStatement(changed)]);
+      const entry: UndoEntry = {
+        label,
+        restore: [cardUpdateStatement(card)],
+        ...(leaveQueue ? { cardId: card.id } : {}),
+      };
+      this.snapshots.set(entry, before);
+      this.deps.undo.push(entry);
+      if (leaveQueue) this.remove(new Set([card.id]));
+      else {
+        const swap = (list: Card[]) => list.map((c) => (c.id === card.id ? changed : c));
+        this.main = swap(this.main);
+        this.learning = swap(this.learning);
+      }
+    } finally {
+      this.busy = false;
+    }
+  }
+
+  /** Hides the current card until the next study day. */
+  buryCurrent(): Promise<void> {
+    return this.changeCurrent('bury', (c, today) => ({ ...c, buriedDay: today, buriedKind: 'manual' }), true);
+  }
+
+  suspendCurrent(): Promise<void> {
+    return this.changeCurrent('suspend', (c) => ({ ...c, suspended: true }), true);
+  }
+
+  /** 0 clears the flag; 1-7 are the flag colours. */
+  setFlag(flag: number): Promise<void> {
+    return this.changeCurrent('flag', (c) => ({ ...c, flag }), false);
+  }
+
   /** Undoes the most recent action. Returns its label, or null when there is nothing to undo. */
   async undo(): Promise<string | null> {
     const entry = this.deps.undo.pop();
