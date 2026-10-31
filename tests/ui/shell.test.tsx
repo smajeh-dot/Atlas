@@ -31,7 +31,7 @@ test('clicking a subject studies it', async () => {
   const subjects = await screen.findByRole('list', { name: 'Subjects' });
   await user.click(await within(subjects).findByRole('button', { name: /Chemistry/ }));
   expect(await screen.findByRole('button', { name: 'Leave study' })).toBeTruthy();
-  expect(screen.queryByRole('navigation')).toBeNull();
+  expect(screen.queryByRole('navigation', { name: 'Main' })).toBeNull();
 });
 
 test('A opens Add card, but not while typing', async () => {

@@ -5,12 +5,14 @@ import styles from './Dialog.module.css';
 import { focusables, trapTab, useOverlayLayer, useRestoreFocus } from './overlayStack';
 
 /** Every confirmation in Atlas (spec 9). Esc cancels; Enter in a field confirms; focus stays inside. */
-export function Dialog({ title, children, confirmLabel, confirmVariant = 'primary', cancelLabel = 'Cancel', confirmDisabled, onConfirm, onCancel }: {
+export function Dialog({ title, children, confirmLabel, confirmVariant = 'primary', cancelLabel = 'Cancel', hideCancel, confirmDisabled, onConfirm, onCancel }: {
   title: string;
   children: ReactNode;
   confirmLabel: string;
   confirmVariant?: 'primary' | 'danger';
   cancelLabel?: string;
+  /** For dialogs that only inform, such as Card info. */
+  hideCancel?: boolean;
   confirmDisabled?: boolean;
   onConfirm(): void;
   onCancel(): void;
@@ -53,7 +55,7 @@ export function Dialog({ title, children, confirmLabel, confirmVariant = 'primar
         <h2 id={titleId} className={styles.title}>{title}</h2>
         <div className={styles.body}>{children}</div>
         <div className={styles.buttons}>
-          <Button variant="secondary" onClick={onCancel}>{cancelLabel}</Button>
+          {!hideCancel && <Button variant="secondary" onClick={onCancel}>{cancelLabel}</Button>}
           <Button variant={confirmVariant} type="submit" data-confirm="true" disabled={confirmDisabled}>{confirmLabel}</Button>
         </div>
       </form>
