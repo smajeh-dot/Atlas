@@ -1,0 +1,245 @@
+import { fullName } from '../core/deckTree';
+import type { Card, Deck, Note, NoteType, PresetConfig, Rating } from '../core/model';
+import { seededShuffle } from '../core/random';
+import { mixEvenly, orderReviews } from '../core/queue';
+import { answerCard, isIntraday, previewAll } from '../core/scheduler';
+import { nextRollover, studyDay } from '../core/studyDay';
+import { renderCard } from '../core/templates';
+import { cardsOfNote, cardUpdateStatement, getCard } from '../data/cards';
+import type { Db, Statement } from '../data/db';
+import { listDecks } from '../data/decks';
+import { listNoteTypes } from '../data/noteTypes';
+import { getNote, noteUpdateStatement } from '../data/notes';
+import { listPresets } from '../data/presets';
+import { toNote } from '../data/rows';
+import { nextRevlogId, revlogInsertStatement } from '../data/revlog';
+import { getSettings } from '../data/settings';
+import type { Settings } from '../core/model';
+import { planStudy, type DeckCounts } from './deckService';
+import type { UndoEntry, UndoStack } from './undo';
+
+export interface SessionCard {
+  card: Card;
+  note: Note;
+  noteType: NoteType;
+  question: string;
+  answer: string;
+  /** Interval each rating would give, in ms from now. */
+  previews: Record<Rating, number>;
+}
+
+export interface SessionDeps {
+  db: Db;
+  clock: { now(): number };
+  undo: UndoStack;
+}
+
+const RATING_NAMES = ['Again', 'Hard', 'Good', 'Easy'] as const;
+const MIN_MS = 60_000;
+
+interface Snapshot {
+  main: Card[];
+  learning: Card[];
+}
+
+export class StudySession {
+  private busy = false;
+  private readonly snapshots = new WeakMap<UndoEntry, Snapshot>();
+
+  private constructor(
+    private readonly deps: SessionDeps,
+    private readonly settings: Settings,
+    private readonly decks: Deck[],
+    private readonly presets: Map<number, PresetConfig>,
+    private readonly noteTypes: Map<number, NoteType>,
+    private readonly notes: Map<number, Note>,
+    /** Interday learning, then reviews mixed with new cards. */
+    private main: Card[],
+    /** Same-day learning cards, shown when due. */
+    private learning: Card[],
+  ) {}
+
+  static async start(deps: SessionDeps, deckId: number | null): Promise<StudySession> {
+    const { db } = deps;
+    const now = deps.clock.now();
+    const settings = await getSettings(db);
+    const plan = await planStudy(db, deckId, now);
+    const seed = studyDay(now, settings.dayStartHour);
+    const reviews = orderReviews(plan.reviewCards, settings.dayStartHour, seed);
+    const news = plan.preset.newCardOrder === 'random' ? seededShuffle(plan.newCards, seed) : plan.newCards;
+    const mixed =
+      plan.preset.newReviewMix === 'newFirst' ? [...news, ...reviews]
+      : plan.preset.newReviewMix === 'reviewsFirst' ? [...reviews, ...news]
+      : mixEvenly(reviews, news);
+    const byDue = (a: Card, b: Card) => (a.dueAt ?? 0) - (b.dueAt ?? 0);
+    const main = [...plan.interdayLearning.sort(byDue), ...mixed];
+    const learning = plan.learning.sort(byDue);
+    const noteIds = [...new Set([...main, ...learning].map((c) => c.noteId))];
+    const notes = noteIds.length
+      ? (await db.query(`SELECT * FROM notes WHERE id IN (${noteIds.map(() => '?').join(',')})`, noteIds)).map(toNote)
+      : [];
+    return new StudySession(
+      deps,
+      settings,
+      await listDecks(db),
+      new Map((await listPresets(db)).map((p) => [p.id, p.config])),
+      new Map((await listNoteTypes(db)).map((t) => [t.id, t])),
+      new Map(notes.map((n) => [n.id, n])),
+      main,
+      learning,
+    );
+  }
+
+  private presetOf(card: Card): PresetConfig {
+    const deck = this.decks.find((d) => d.id === card.deckId);
+    return this.presets.get(deck?.presetId ?? 1) ?? this.presets.get(1)!;
+  }
+
+  private pick(now: number): Card | null {
+    const earliest = (limit: number) =>
+      this.learning.filter((c) => (c.dueAt ?? 0) <= limit).sort((a, b) => (a.dueAt ?? 0) - (b.dueAt ?? 0))[0];
+    return (
+      earliest(now) ??
+      this.main[0] ??
+      earliest(now + this.settings.learnAheadMinutes * MIN_MS) ??
+      null
+    );
+  }
+
+  current(): SessionCard | null {
+    const now = this.deps.clock.now();
+    const card = this.pick(now);
+    if (!card) return null;
+    const note = this.notes.get(card.noteId)!;
+    const noteType = this.noteTypes.get(note.noteTypeId)!;
+    const rendered = renderCard(noteType, note, card.ord, fullName(this.decks, card.deckId, '::'));
+    const outcomes = previewAll(card, now, this.presetOf(card));
+    const previews = {} as Record<Rating, number>;
+    for (const r of [1, 2, 3, 4] as Rating[]) previews[r] = (outcomes[r].card.dueAt ?? now) - now;
+    return { card, note, noteType, question: rendered.question, answer: rendered.answer, previews };
+  }
+
+  remaining(): DeckCounts {
+    const all = [...this.main, ...this.learning];
+    return {
+      new: all.filter((c) => c.state === 0).length,
+      learn: all.filter((c) => c.state === 1 || c.state === 3).length,
+      review: all.filter((c) => c.state === 2).length,
+    };
+  }
+
+  isComplete(): boolean {
+    return this.main.length === 0 && this.learning.length === 0;
+  }
+
+  nextLearningDueAt(): number | null {
+    const due = this.learning.map((c) => c.dueAt ?? 0);
+    return due.length ? Math.min(...due) : null;
+  }
+
+  private remove(ids: Set<number>): void {
+    this.main = this.main.filter((c) => !ids.has(c.id));
+    this.learning = this.learning.filter((c) => !ids.has(c.id));
+  }
+
+  private snapshot(): Snapshot {
+    return { main: this.main.slice(), learning: this.learning.slice() };
+  }
+
+  /** Grades the current card. Returns null if there is no card or an answer is already being saved. */
+  async answer(rating: Rating, durationMs: number): Promise<{ leech: boolean } | null> {
+    if (this.busy) return null;
+    const card = this.pick(this.deps.clock.now());
+    if (!card) return null;
+    this.busy = true;
+    try {
+      return await this.grade(card, rating, durationMs);
+    } finally {
+      this.busy = false;
+    }
+  }
+
+  private async grade(card: Card, rating: Rating, durationMs: number): Promise<{ leech: boolean }> {
+    const { db } = this.deps;
+    const now = this.deps.clock.now();
+    const preset = this.presetOf(card);
+    const today = studyDay(now, this.settings.dayStartHour);
+    const rollover = nextRollover(now, this.settings.dayStartHour);
+    const outcome = answerCard(card, now, rating, preset);
+    const updated: Card = { ...card, ...outcome.card, newPosition: null, buriedDay: null, buriedKind: null, updatedAt: now };
+
+    const lapsed = card.state === 2 && rating === 1;
+    const t = preset.leechThreshold;
+    const leech = lapsed && updated.lapses >= t && (updated.lapses - t) % Math.ceil(t / 2) === 0;
+    const note = this.notes.get(card.noteId) ?? (await getNote(db, card.noteId));
+    const statements: Statement[] = [];
+    const restore: Statement[] = [cardUpdateStatement(card)];
+    if (leech) {
+      if (preset.leechAction === 'suspend') updated.suspended = true;
+      if (!note.tags.some((x) => x.toLowerCase() === 'leech')) {
+        const tagged = { ...note, tags: [...note.tags, 'leech'], updatedAt: now };
+        statements.push(noteUpdateStatement(tagged));
+        restore.push(noteUpdateStatement(note));
+        this.notes.set(note.id, tagged);
+      }
+    }
+
+    const siblings = (await cardsOfNote(db, card.noteId)).filter((s) => s.id !== card.id && !s.suspended && s.buriedDay !== today);
+    const toBury = siblings.filter(
+      (s) =>
+        (s.state === 0 && preset.buryNewSiblings) ||
+        (s.state === 2 && (s.dueAt ?? 0) < rollover && preset.buryReviewSiblings) ||
+        ((s.state === 1 || s.state === 3) && s.scheduledDays >= 1 && (s.dueAt ?? 0) < rollover && preset.buryInterdaySiblings),
+    );
+    for (const s of toBury) {
+      statements.push(cardUpdateStatement({ ...s, buriedDay: today, buriedKind: 'sibling', updatedAt: now }));
+      restore.push(cardUpdateStatement(s));
+    }
+
+    const revlogId = await nextRevlogId(db, now);
+    statements.unshift(
+      cardUpdateStatement(updated),
+      revlogInsertStatement({
+        id: revlogId,
+        cardId: card.id,
+        ...outcome.log,
+        durationMs: Math.min(Math.max(0, Math.round(durationMs)), preset.maxAnswerSeconds * 1000),
+      }),
+    );
+    restore.push({ sql: `DELETE FROM revlog WHERE id = ?`, params: [revlogId] });
+
+    const before = this.snapshot();
+    await db.batch(statements);
+
+    const entry: UndoEntry = { label: `answer ${RATING_NAMES[rating - 1]}`, restore, cardId: card.id };
+    this.snapshots.set(entry, before);
+    this.deps.undo.push(entry);
+
+    this.remove(new Set([card.id, ...toBury.map((s) => s.id)]));
+    if (!updated.suspended && isIntraday(updated) && (updated.dueAt ?? 0) < rollover) this.learning.push(updated);
+    return { leech };
+  }
+
+  /** Undoes the most recent action. Returns its label, or null when there is nothing to undo. */
+  async undo(): Promise<string | null> {
+    const entry = this.deps.undo.pop();
+    if (!entry) return null;
+    await this.deps.db.batch(entry.restore);
+    const snap = this.snapshots.get(entry);
+    if (snap) {
+      this.main = snap.main;
+      this.learning = snap.learning;
+    }
+    if (entry.cardId !== undefined) {
+      try {
+        const card = await getCard(this.deps.db, entry.cardId);
+        this.notes.set(card.noteId, await getNote(this.deps.db, card.noteId));
+        this.remove(new Set([card.id]));
+        this.main.unshift(card);
+      } catch {
+        // The card no longer exists (for example, its note was deleted later); nothing to show.
+      }
+    }
+    return entry.label;
+  }
+}
