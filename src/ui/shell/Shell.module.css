@@ -1,0 +1,27 @@
+.shell {
+  height: 100%;
+  display: flex;
+  gap: var(--shell-gap);
+  padding: var(--shell-pad);
+  background: var(--bg-app);
+}
+
+.side {
+  display: flex;
+  border: var(--panel-border);
+  border-right: var(--sidebar-divider);
+  border-radius: var(--radius-panel-side);
+  overflow: hidden;
+  background: var(--sidebar-bg);
+}
+
+.main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  border: var(--panel-border);
+  border-radius: var(--radius-panel-main);
+  background: var(--bg-main);
+  overflow: hidden;
+}

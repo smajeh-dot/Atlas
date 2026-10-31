@@ -1,4 +1,8 @@
-import { DatabaseSync, type SQLInputValue } from 'node:sqlite';
+import type { SQLInputValue } from 'node:sqlite';
+
+// Loaded through getBuiltinModule rather than an import so UI tests, which Vite transforms for
+// the browser (jsdom), can still use Node's built-in SQLite without Vite trying to bundle it.
+const { DatabaseSync } = process.getBuiltinModule('node:sqlite') as typeof import('node:sqlite');
 import type { Db, Statement } from '../../src/data/db';
 import { migrate } from '../../src/data/migrations';
 import { T0 } from './fixtures';
