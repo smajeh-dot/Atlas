@@ -5,6 +5,7 @@ import { answerCard, isIntraday, previewAll } from '../core/scheduler';
 import { nextRollover, studyDay } from '../core/studyDay';
 import { renderCard } from '../core/templates';
 import { cardsOfNote, cardUpdateStatement, getCard } from '../data/cards';
+import { deleteNote } from './noteService';
 import type { Db, Statement } from '../data/db';
 import { listDecks } from '../data/decks';
 import { listNoteTypes } from '../data/noteTypes';
@@ -25,6 +26,16 @@ export interface SessionCard {
   answer: string;
   /** Interval each rating would give, in ms from now. */
   previews: Record<Rating, number>;
+  /** Template filters Atlas does not know; they render the raw field (shown in Card info). */
+  unknownFilters: string[];
+  /** Full deck name for the breadcrumb, e.g. "Chemistry › Organic". */
+  deckName: string;
+}
+
+export interface SessionSummary {
+  answers: number;
+  durationMs: number;
+  again: number;
 }
 
 export interface SessionDeps {
@@ -44,11 +55,14 @@ interface Snapshot {
 export class StudySession {
   private busy = false;
   private readonly snapshots = new WeakMap<UndoEntry, Snapshot>();
+  /** What each undoable answer added to the summary, so undo can take it back. */
+  private readonly answered = new WeakMap<UndoEntry, { rating: Rating; ms: number }>();
+  private totals: SessionSummary = { answers: 0, durationMs: 0, again: 0 };
 
   private constructor(
     private readonly deps: SessionDeps,
     private readonly settings: Settings,
-    private readonly decks: Deck[],
+    private decks: Deck[],
     private readonly presets: Map<number, PresetConfig>,
     private readonly noteTypes: Map<number, NoteType>,
     private readonly notes: Map<number, Note>,
@@ -115,7 +129,10 @@ export class StudySession {
     const outcomes = previewAll(card, now, this.presetOf(card));
     const previews = {} as Record<Rating, number>;
     for (const r of [1, 2, 3, 4] as Rating[]) previews[r] = (outcomes[r].card.dueAt ?? now) - now;
-    return { card, note, noteType, question: rendered.question, answer: rendered.answer, previews };
+    return {
+      card, note, noteType, question: rendered.question, answer: rendered.answer, previews,
+      unknownFilters: rendered.unknownFilters, deckName: fullName(this.decks, card.deckId),
+    };
   }
 
   remaining(): DeckCounts {
@@ -125,6 +142,10 @@ export class StudySession {
       learn: all.filter((c) => c.state === 1 || c.state === 3).length,
       review: all.filter((c) => c.state === 2).length,
     };
+  }
+
+  summary(): SessionSummary {
+    return { ...this.totals };
   }
 
   isComplete(): boolean {
@@ -199,13 +220,14 @@ export class StudySession {
     }
 
     const revlogId = await nextRevlogId(db, now);
+    const ms = Math.min(Math.max(0, Math.round(durationMs)), preset.maxAnswerSeconds * 1000);
     statements.unshift(
       cardUpdateStatement(updated),
       revlogInsertStatement({
         id: revlogId,
         cardId: card.id,
         ...outcome.log,
-        durationMs: Math.min(Math.max(0, Math.round(durationMs)), preset.maxAnswerSeconds * 1000),
+        durationMs: ms,
       }),
     );
     restore.push({ sql: `DELETE FROM revlog WHERE id = ?`, params: [revlogId] });
@@ -215,7 +237,13 @@ export class StudySession {
 
     const entry: UndoEntry = { label: `answer ${RATING_NAMES[rating - 1]}`, restore, cardId: card.id };
     this.snapshots.set(entry, before);
+    this.answered.set(entry, { rating, ms });
     this.deps.undo.push(entry);
+    this.totals = {
+      answers: this.totals.answers + 1,
+      durationMs: this.totals.durationMs + ms,
+      again: this.totals.again + (rating === 1 ? 1 : 0),
+    };
 
     this.remove(new Set([card.id, ...toBury.map((s) => s.id)]));
     if (!updated.suspended && isIntraday(updated) && (updated.dueAt ?? 0) < rollover) this.learning.push(updated);
@@ -264,6 +292,35 @@ export class StudySession {
     return this.changeCurrent('flag', (c) => ({ ...c, flag }), false);
   }
 
+  /** Reloads a card and its note after they were edited elsewhere (Edit card), so the screen shows the change. */
+  async refreshCard(cardId: number): Promise<void> {
+    const { db } = this.deps;
+    const card = await getCard(db, cardId);
+    this.notes.set(card.noteId, await getNote(db, card.noteId));
+    this.decks = await listDecks(db);
+    const swap = (list: Card[]) => list.map((c) => (c.id === cardId ? card : c));
+    this.main = swap(this.main);
+    this.learning = swap(this.learning);
+  }
+
+  /** Deletes the note of the card on screen. Undo restores it and shows that card again. */
+  async deleteCurrentNote(): Promise<void> {
+    if (this.busy) return;
+    const card = this.pick(this.deps.clock.now());
+    if (!card) return;
+    this.busy = true;
+    try {
+      const before = this.snapshot();
+      const entry = await deleteNote(this.deps, card.noteId);
+      entry.cardId = card.id;
+      this.snapshots.set(entry, before);
+      const gone = new Set([...this.main, ...this.learning].filter((c) => c.noteId === card.noteId).map((c) => c.id));
+      this.remove(gone);
+    } finally {
+      this.busy = false;
+    }
+  }
+
   /** Undo of an action from outside the session (such as "add card") can delete queued cards. */
   private async dropMissingCards(): Promise<void> {
     const queued = [...this.main, ...this.learning].map((c) => c.id);
@@ -291,6 +348,14 @@ export class StudySession {
 
   private async restore(entry: UndoEntry): Promise<string> {
     await this.deps.db.batch(entry.restore);
+    const done = this.answered.get(entry);
+    if (done) {
+      this.totals = {
+        answers: this.totals.answers - 1,
+        durationMs: this.totals.durationMs - done.ms,
+        again: this.totals.again - (done.rating === 1 ? 1 : 0),
+      };
+    }
     const snap = this.snapshots.get(entry);
     if (snap) {
       this.main = snap.main;
