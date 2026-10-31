@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:browser": "vite --config dev/vite.browser.config.ts",
     "build": "vite build",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
