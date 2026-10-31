@@ -1,0 +1,81 @@
+.row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 54px 54px 54px 78px;
+  align-items: center;
+  min-height: 33px;
+  padding: 0 var(--sp-8);
+  border-radius: var(--radius-sm);
+  font-size: var(--fs-ui);
+  cursor: default;
+  user-select: none;
+}
+
+.row:hover,
+.row[data-selected='true'] {
+  background: var(--bg-raised);
+}
+
+.name {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-6);
+  min-width: 0;
+}
+
+.chevron,
+.chevronSpace {
+  flex: none;
+  width: 20px;
+  height: 20px;
+}
+
+.chevron {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.dot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.strong {
+  font-weight: 600;
+}
+
+.num {
+  text-align: right;
+  padding-right: var(--sp-8);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--sp-4);
+  visibility: hidden;
+}
+
+.row:hover .actions,
+.row[data-selected='true'] .actions {
+  visibility: visible;
+}
+
+.more {
+  width: 28px;
+  height: 28px;
+}

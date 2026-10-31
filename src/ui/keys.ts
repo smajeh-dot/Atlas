@@ -36,7 +36,7 @@ export function matchKey(e: KeyboardEvent, combo: string): boolean {
  * and nothing fires while a menu, dialog or sheet is open (they handle their own keys).
  */
 export function useHotkeys(
-  bindings: Record<string, (e: KeyboardEvent) => void>,
+  bindings: Record<string, (e: KeyboardEvent) => unknown>,
   opts: { enabled?: boolean; allowInInputs?: string[] } = {},
 ): void {
   const ref = useRef({ bindings, opts });
@@ -49,8 +49,9 @@ export function useHotkeys(
       for (const [combo, run] of Object.entries(b)) {
         if (!matchKey(e, combo)) continue;
         if (typing && !(o.allowInInputs ?? []).includes(combo)) return;
+        // A handler returns false when the key isn't for it right now (the browser keeps its default).
+        if (run(e) === false) return;
         e.preventDefault();
-        run(e);
         return;
       }
     };

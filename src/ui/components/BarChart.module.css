@@ -1,0 +1,46 @@
+.chart {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: var(--sp-6);
+  height: 120px;
+}
+
+.bar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-4);
+  min-width: 0;
+}
+
+.value {
+  font-size: var(--fs-sm);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+}
+
+.track {
+  flex: 1;
+  width: 100%;
+  display: flex;
+  align-items: flex-end;
+}
+
+.fill {
+  width: 100%;
+  border-radius: 4px 4px 0 0;
+  background: var(--bar);
+}
+
+.bar[data-highlight='true'] .fill {
+  background: var(--accent);
+}
+
+.label {
+  font-size: var(--fs-sm);
+  color: var(--text-faint);
+}
