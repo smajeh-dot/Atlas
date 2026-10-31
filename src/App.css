@@ -1,0 +1,44 @@
+/* Placeholder styling for the Phase 1 self-check screen; the design system arrives in Phase 2. */
+:root {
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  color: #1c1c1f;
+  background: #fefefe;
+}
+
+body {
+  margin: 0;
+}
+
+.setup {
+  max-width: 560px;
+  margin: 15vh auto 0;
+  padding: 0 24px;
+  line-height: 1.5;
+}
+
+.setup h1 {
+  font-size: 30px;
+  font-weight: 600;
+  margin: 0 0 24px;
+}
+
+.setup dl {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  gap: 8px 16px;
+  margin: 0;
+}
+
+.setup dt {
+  color: #6b6b74;
+}
+
+.setup dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.setup .path,
+.setup .problem {
+  overflow-wrap: anywhere;
+}
