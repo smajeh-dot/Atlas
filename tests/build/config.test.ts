@@ -34,3 +34,10 @@ test('the workflow refuses a tag that does not match the app version', () => {
   expect(wf).toMatch(/does not match/);
   expect(wf).toMatch(/tauri\.conf\.json/);
 });
+
+test('dev mode allows the inline script Vite adds for live reloading; the release CSP does not', () => {
+  const dev: string = conf.app.security.devCsp;
+  expect(dev).toContain("script-src 'self' 'unsafe-inline'");
+  expect(dev).toContain('ws://localhost:1420');
+  expect(conf.app.security.csp).toContain("script-src 'self';");
+});
