@@ -21,6 +21,12 @@
 .right {
   overflow-y: auto;
   padding-right: 4px;
+  /* Still scrolls with the wheel or trackpad; the bar itself just gets in the way. */
+  scrollbar-width: none;
+}
+
+.right::-webkit-scrollbar {
+  display: none;
 }
 
 .head {
