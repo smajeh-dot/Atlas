@@ -17,7 +17,7 @@ test('learnAheadMinutes must be 0-1440 whole minutes', () => {
 });
 
 test('unknown theme is rejected', () => {
-  expect(validateSettingsPatch({ theme: 'graphite' as never })).toBe('Choose Workbench or Tangerine.');
+  expect(validateSettingsPatch({ theme: 'graphite' as never })).toBe('Choose Light or Tangerine.');
 });
 
 test('non-boolean toggles and bad ids are rejected', () => {

@@ -5,7 +5,7 @@ import styles from './ThemeCards.module.css';
 type Theme = Settings['theme'];
 
 const THEMES: { value: Theme; label: string }[] = [
-  { value: 'workbench', label: 'Workbench' },
+  { value: 'workbench', label: 'Light' },
   { value: 'tangerine', label: 'Tangerine' },
 ];
 

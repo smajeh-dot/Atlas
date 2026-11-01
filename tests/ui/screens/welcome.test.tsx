@@ -9,7 +9,7 @@ test('Welcome explains Atlas and offers the two looks', async () => {
   await renderApp();
   expect(await screen.findByRole('heading', { name: 'Welcome to Atlas' })).toBeTruthy();
   expect(screen.getByText("Atlas shows you each flashcard just before you'd forget it, so you remember more with less revision.")).toBeTruthy();
-  expect(screen.getByRole('radio', { name: 'Workbench' }).getAttribute('aria-checked')).toBe('true');
+  expect(screen.getByRole('radio', { name: 'Light' }).getAttribute('aria-checked')).toBe('true');
   expect(screen.queryByRole('button', { name: /Import from Anki/ })).toBeNull();
 });
 
