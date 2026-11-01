@@ -1,8 +1,8 @@
 /* Workbench: near-white floating panels, hairline borders, serif headings, cobalt used sparingly. */
 :root,
 [data-theme='workbench'] {
-  --bg-app: #FEFEFE;
-  --bg-main: #FFFFFF;
+  --bg-app: #F9F9F7;
+  --bg-main: #F9F9F7;
   --bg-panel: #FFFFFF;
   --bg-raised: #F4F4F2;
   --bg-preview: #F7F7F5;
@@ -70,7 +70,7 @@
   --radius-lg: 12px;
   --radius-card: 14px 14px 14px 0;
   --radius-field: 8px;
-  --radius-panel-side: 12px 12px 12px 0;
+  --radius-panel-side: 0 12px 0 0;
   --radius-panel-main: 12px 12px 0 12px;
   --radius-hero: 0;
   --shadow-box: none;
@@ -83,7 +83,10 @@
   --shell-gap: 12px;
   /* Workbench draws the sidebar and main area as two outlined panels */
   --panel-border: 1px solid #E2E2E6;
-  --sidebar-divider: none;
+  --sidebar-divider: 1px solid #E2E2E6;
+  /* The sidebar runs flush to the window's left and bottom edges, so those two borders are not drawn. */
+  --sidebar-edge: none;
+  --sidebar-bleed: 12px;
   --segment-border: transparent;
 
   /* Pressed buttons darken; they do not move */

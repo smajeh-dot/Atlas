@@ -12,7 +12,7 @@ function declared(file: string, token: string): string | undefined {
 
 // Spec 8.3, 8.4 and 8.5, copied verbatim. --text-answer fills a gap (used in 10.4, missing from 8.3).
 const SPEC: [string, string, string][] = [
-  ['--bg-app', '#FEFEFE', '#EFEFEC'], ['--bg-main', '#FFFFFF', '#EFEFEC'], ['--bg-panel', '#FFFFFF', '#FFFFFF'],
+  ['--bg-app', '#F9F9F7', '#EFEFEC'], ['--bg-main', '#F9F9F7', '#EFEFEC'], ['--bg-panel', '#FFFFFF', '#FFFFFF'],
   ['--bg-raised', '#F4F4F2', '#F5F5F2'], ['--bg-preview', '#F7F7F5', '#FFE2D2'], ['--border', '#E2E2E6', '#141414'],
   ['--border-soft', '#E2E2E6', '#DADAD5'], ['--text', '#1C1C1F', '#141414'], ['--text-muted', '#6B6B74', '#4E4E4E'],
   ['--text-faint', '#9A9AA2', '#8A8A8A'], ['--accent', '#2F5FCE', '#FF5B14'], ['--accent-ink', '#FFFFFF', '#141414'],
@@ -37,10 +37,10 @@ const SPEC: [string, string, string][] = [
   ['--text-answer', '#1C1C1F', '#141414'],
   ['--border-w', '1px', '2px'], ['--radius-sm', '8px', '8px'], ['--radius-btn', '999px', '10px'], ['--radius-btn-lg', '12px', '12px'],
   ['--radius-lg', '12px', '14px'], ['--radius-card', '14px 14px 14px 0', '14px'], ['--radius-field', '8px', '10px'],
-  ['--radius-panel-side', '12px 12px 12px 0', '0'], ['--radius-panel-main', '12px 12px 0 12px', '0'], ['--radius-hero', '0', '14px'],
+  ['--radius-panel-side', '0 12px 0 0', '0'], ['--radius-panel-main', '12px 12px 0 12px', '0'], ['--radius-hero', '0', '14px'],
   ['--shadow-box', 'none', '4px 4px 0 #141414'], ['--shadow-primary', 'none', '3px 3px 0 #FF5B14'],
   ['--shadow-hero', 'none', '5px 5px 0 #141414'], ['--shadow-grade', 'none', '3px 3px 0 #141414'],
-  ['--shadow-popover', '0 8px 24px rgba(0,0,0,0.08)', '4px 4px 0 #141414'], ['--shell-pad', '12px', '0'], ['--shell-gap', '12px', '0'],
+  ['--shadow-popover', '0 8px 24px rgba(0,0,0,0.08)', '4px 4px 0 #141414'], ['--shell-pad', '12px', '0'], ['--sidebar-bleed', '12px', '0'], ['--sidebar-edge', 'none', 'none'], ['--sidebar-divider', '1px solid #E2E2E6', '2px solid #141414'], ['--shell-gap', '12px', '0'],
   ['--font-display', "'Source Serif 4', Georgia, serif", "'Bricolage Grotesque', 'Segoe UI', sans-serif"],
   ['--font-body', "'Instrument Sans', 'Segoe UI', sans-serif", "'DM Sans', 'Segoe UI', sans-serif"],
   ['--font-mono', "'JetBrains Mono', Consolas, monospace", "'DM Mono', Consolas, monospace"],
