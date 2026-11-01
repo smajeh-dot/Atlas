@@ -68,22 +68,6 @@
 .tree [data-drop='after'] { box-shadow: inset 0 -2px 0 var(--accent); }
 .tree [data-drop='inside'] { background: var(--accent-soft); }
 
-.handle {
-  flex: none;
-  width: 8px;
-  height: 14px;
-  margin-right: 2px;
-  cursor: grab;
-  background-image: radial-gradient(circle, var(--text-faint) 1px, transparent 1.5px);
-  background-size: 4px 4px;
-  opacity: 0;
-}
-
-.tree [role='treeitem']:hover .handle,
-.tree [role='treeitem'][data-selected='true'] .handle {
-  opacity: 1;
-}
-
 .rename {
   flex: 1;
   min-width: 0;

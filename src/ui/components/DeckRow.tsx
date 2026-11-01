@@ -20,10 +20,9 @@ export interface DeckRowProps {
   onMenu(anchor: HTMLElement | { x: number; y: number }): void;
   /** Replaces the name, e.g. with an inline rename box. */
   nameSlot?: React.ReactNode;
-  dragHandle?: React.ReactNode;
 }
 
-export function DeckRow({ node, depth, selected, showStudy, id, onSelect, onStudy, onActivate, onToggle, onMenu, nameSlot, dragHandle, ...rest }: DeckRowProps & React.HTMLAttributes<HTMLDivElement>) {
+export function DeckRow({ node, depth, selected, showStudy, id, onSelect, onStudy, onActivate, onToggle, onMenu, nameSlot, ...rest }: DeckRowProps & React.HTMLAttributes<HTMLDivElement>) {
   const { deck, counts, children } = node;
   const parent = children.length > 0;
   return (
@@ -46,7 +45,6 @@ export function DeckRow({ node, depth, selected, showStudy, id, onSelect, onStud
       }}
     >
       <div className={styles.name} style={{ paddingLeft: depth * 26 }}>
-        {dragHandle}
         {parent ? (
           <button
             type="button"

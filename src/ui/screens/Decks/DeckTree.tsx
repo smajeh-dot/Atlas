@@ -186,7 +186,6 @@ export function DeckTree({ tree, selected, onSelect }: { tree: DeckTreeWithCount
               e.preventDefault();
               drop(node.deck.id, zoneOf(e));
             }}
-            dragHandle={<span className={styles.handle} aria-hidden="true" />}
             onSelect={() => onSelect(node.deck.id)}
             onActivate={() => startRename(node.deck.id)}
             onToggle={() => void setDeckCollapsed(deps.db, node.deck.id, !node.deck.collapsed).then(changed)}

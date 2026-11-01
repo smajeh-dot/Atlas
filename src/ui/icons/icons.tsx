@@ -44,6 +44,15 @@ const PATHS: Partial<Record<IconName, string[]>> = {
   newDeck: [
     'M12 5V19M5 12H19',
   ],
+  bold: [
+    'M6 12H14C16.2091 12 18 10.2091 18 8C18 5.79086 16.2091 4 14 4H6V12ZM6 12H15C17.2091 12 19 13.7909 19 16C19 18.2091 17.2091 20 15 20H6V12Z',
+  ],
+  italic: [
+    'M19 4H10M14 20H5M15 4L9 20',
+  ],
+  underline: [
+    'M18 4V11C18 14.3137 15.3137 17 12 17C8.68629 17 6 14.3137 6 11V4M4 21H20',
+  ],
 };
 
 export function Icon({ name, size = 16 }: { name: IconName; size?: 16 | 18 }) {
