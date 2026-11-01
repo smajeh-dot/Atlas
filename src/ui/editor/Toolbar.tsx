@@ -36,7 +36,7 @@ export function Toolbar({ editor, isCloze, onPickImage, getAllText }: { editor: 
       { label: 'Underline', shortcut: 'Ctrl+U', icon: 'underline', active: editor?.isActive('underline'), run: () => chain()?.toggleUnderline().run() },
     ],
     [
-      { label: 'Superscript', shortcut: 'Ctrl+Shift+=', text: 'x²', active: editor?.isActive('superscript'), run: () => chain()?.toggleSuperscript().run() },
+      { label: 'Superscript', shortcut: 'Ctrl+Shift+=', icon: 'superscript', active: editor?.isActive('superscript'), run: () => chain()?.toggleSuperscript().run() },
       { label: 'Subscript', shortcut: 'Ctrl+=', text: 'x₂', active: editor?.isActive('subscript'), run: () => chain()?.toggleSubscript().run() },
     ],
     [

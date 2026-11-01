@@ -4,7 +4,7 @@ import styles from './icons.module.css';
  * Every icon Atlas draws (spec Appendix A). Untitled UI line icons, 24 × 24, stroke inherits the text colour.
  * Icons not yet supplied render a dashed placeholder; supplying one is a one-line change here.
 */
-export const ICON_NAMES = ['today', 'decks', 'browse', 'stats', 'settings', 'plus', 'chevronDown', 'chevronRight', 'back', 'more', 'newDeck', 'edit', 'flag', 'undo', 'bury', 'suspend', 'trash', 'info', 'checkCircle', 'check', 'close', 'warning', 'error', 'sigma', 'bold', 'italic', 'underline', 'image', 'tag', 'filter', 'sort', 'folder', 'reset', 'reschedule', 'clock', 'target', 'forecast', 'streak', 'import', 'export', 'backup', 'restore', 'audio', 'help'] as const;
+export const ICON_NAMES = ['today', 'decks', 'browse', 'stats', 'settings', 'plus', 'chevronDown', 'chevronRight', 'back', 'more', 'newDeck', 'edit', 'flag', 'undo', 'bury', 'suspend', 'trash', 'info', 'checkCircle', 'check', 'close', 'warning', 'error', 'sigma', 'superscript', 'bold', 'italic', 'underline', 'image', 'tag', 'filter', 'sort', 'folder', 'reset', 'reschedule', 'clock', 'target', 'forecast', 'streak', 'import', 'export', 'backup', 'restore', 'audio', 'help'] as const;
 export type IconName = (typeof ICON_NAMES)[number];
 
 const PATHS: Partial<Record<IconName, string[]>> = {
@@ -46,6 +46,11 @@ const PATHS: Partial<Record<IconName, string[]>> = {
   ],
   sigma: [
     'M18 7V5a1 1 0 0 0-1-1H6.5a.5.5 0 0 0-.4.8l4.5 6a2 2 0 0 1 0 2.4l-4.5 6a.5.5 0 0 0 .4.8H17a1 1 0 0 0 1-1v-2',
+  ],
+  superscript: [
+    'm4 19 8-8',
+    'm12 19-8-8',
+    'M20 12h-4c0-1.5.442-2 1.5-2.5S20 8.334 20 7.002c0-.472-.17-.93-.484-1.29a2.105 2.105 0 0 0-2.617-.436c-.42.239-.738.614-.899 1.06',
   ],
   bold: [
     'M6 12H14C16.2091 12 18 10.2091 18 8C18 5.79086 16.2091 4 14 4H6V12ZM6 12H15C17.2091 12 19 13.7909 19 16C19 18.2091 17.2091 20 15 20H6V12Z',
