@@ -40,7 +40,7 @@ export function Toolbar({ editor, isCloze, onPickImage, getAllText }: { editor: 
       { label: 'Subscript', shortcut: 'Ctrl+=', text: 'x₂', active: editor?.isActive('subscript'), run: () => chain()?.toggleSubscript().run() },
     ],
     [
-      { label: 'Equation', shortcut: 'Ctrl+M', text: '∑', run: () => chain()?.insertMath().run() },
+      { label: 'Equation', shortcut: 'Ctrl+M', icon: 'sigma', run: () => chain()?.insertMath().run() },
       { label: 'Image', icon: 'image', run: onPickImage },
     ],
     ...(isCloze
