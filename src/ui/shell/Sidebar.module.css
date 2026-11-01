@@ -71,11 +71,7 @@
 .nav {
   display: flex;
   flex-direction: column;
-  gap: var(--sp-2);
-}
-
-/* Tangerine's 2px active outline would touch the next item at the default 2px gap. */
-:global([data-theme='tangerine']) .nav {
+  /* Wide enough that an outlined active item never touches its neighbour. */
   gap: 6px;
 }
 
