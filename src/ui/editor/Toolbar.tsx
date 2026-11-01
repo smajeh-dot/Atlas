@@ -37,7 +37,7 @@ export function Toolbar({ editor, isCloze, onPickImage, getAllText }: { editor: 
     ],
     [
       { label: 'Superscript', shortcut: 'Ctrl+Shift+=', icon: 'superscript', active: editor?.isActive('superscript'), run: () => chain()?.toggleSuperscript().run() },
-      { label: 'Subscript', shortcut: 'Ctrl+=', text: 'x₂', active: editor?.isActive('subscript'), run: () => chain()?.toggleSubscript().run() },
+      { label: 'Subscript', shortcut: 'Ctrl+=', icon: 'subscript', active: editor?.isActive('subscript'), run: () => chain()?.toggleSubscript().run() },
     ],
     [
       { label: 'Equation', shortcut: 'Ctrl+M', icon: 'sigma', run: () => chain()?.insertMath().run() },
