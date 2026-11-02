@@ -10,15 +10,15 @@ const NAV: { name: 'today' | 'decks'; label: string; icon: IconName }[] = [
   { name: 'decks', label: 'Decks', icon: 'decks' },
 ];
 
+// Placeholder until real user profiles exist.
+const USER_NAME = 'Harry';
+
 export function Sidebar({ tree, hasDecks }: { tree: DeckTreeWithCounts[]; hasDecks: boolean }) {
   const { route, navigate } = useAtlas();
   const go = (r: Route, enabled = true) => () => enabled && navigate(r);
   return (
     <div className={styles.sidebar}>
-      <div className={styles.wordmark}>
-        <span className={styles.mark} aria-hidden="true">A</span>
-        <span className={styles.name}>Atlas</span>
-      </div>
+      <div className={styles.user} data-testid="sidebar-user">{USER_NAME}</div>
       <button
         type="button"
         className={styles.add}

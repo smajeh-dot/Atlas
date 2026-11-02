@@ -314,13 +314,13 @@ function StudyCard({ card, phase, typed, onTyped, onReveal, mediaUrl }: {
   const fields: Record<string, string> = {};
   card.noteType.fields.forEach((f, i) => (fields[f.name] = card.note.fields[i] ?? ''));
   const a = phase === 'answer' ? answerView(card.answer, q.typeIn ? { text: typed, fields } : undefined) : null;
-  const leaf = card.deckName.split(' › ').pop() ?? '';
   return (
     <div className={styles.card} data-testid="study-card">
-      <div className={styles.chips} data-testid="study-chips">
-        <Chip>{leaf}</Chip>
-        {card.note.tags.slice(0, 2).map((t) => <Chip key={t}>{t}</Chip>)}
-      </div>
+      {card.note.tags.length > 0 && (
+        <div className={styles.chips} data-testid="study-chips">
+          {card.note.tags.slice(0, 2).map((t) => <Chip key={t}>{t}</Chip>)}
+        </div>
+      )}
       <div key={card.card.id} className={styles.cardBody}>
         {!a ? (
           <>

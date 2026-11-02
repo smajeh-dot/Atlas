@@ -60,7 +60,7 @@ test('shows the breadcrumb, chips, progress and hint line', async () => {
   const top = await screen.findByRole('navigation', { name: 'Breadcrumb' });
   expect(top.textContent).toBe('Chemistry›Organic Mechanisms');
   const chips = within(screen.getByTestId('study-chips')).getAllByText(/./).map((c) => c.textContent);
-  expect(chips).toEqual(['Organic Mechanisms', 'paper-1', 'organic']);
+  expect(chips).toEqual(['paper-1', 'organic']);
   expect(screen.getByText('2 left')).toBeTruthy();
   expect(screen.getByText('Space = Good · Ctrl+Z undoes the last answer · E edits this card')).toBeTruthy();
 });

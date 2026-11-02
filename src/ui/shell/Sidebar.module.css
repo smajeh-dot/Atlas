@@ -10,32 +10,15 @@
   overflow-y: auto;
 }
 
-.wordmark {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-10);
+.user {
   padding: 2px 4px 14px;
-}
-
-.mark {
-  width: 26px;
-  height: 26px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: var(--radius-sm);
-  background: var(--mark-bg);
-  color: var(--mark-ink);
-  font-family: var(--font-display);
-  font-weight: var(--weight-display);
-  font-size: 16px;
-}
-
-.name {
   font-family: var(--font-display);
   font-weight: var(--weight-display);
   letter-spacing: var(--tracking-display);
   font-size: 20px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .add {
