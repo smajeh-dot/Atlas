@@ -20,7 +20,7 @@ export function Sidebar() {
         <Icon name="search" />
         <span>Search</span>
       </button>
-      <button type="button" className={styles.action}>
+      <button type="button" className={`${styles.action} ${styles.search}`}>
         <Icon name="bell" />
         <span>Today</span>
       </button>
