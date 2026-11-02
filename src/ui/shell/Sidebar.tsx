@@ -14,7 +14,9 @@ const RAIL_PLACEHOLDERS = [
   { name: 'Maths', colour: 3, subdecks: ['Sub-deck one', 'Sub-deck two', 'Sub-deck three'] },
 ];
 
-/** Blank card that opens under a subject's triple-dot button. The dropdown options go inside it. */
+const SUBJECT_MENU_ITEMS = ['New Deck', 'Rename', 'Colour'];
+
+/** Card that opens under a subject's triple-dot button. The dropdown options go inside it. */
 function SubjectMenuCard({ anchor, label, onClose }: { anchor: HTMLElement; label: string; onClose(): void }) {
   const isTop = useOverlayLayer();
   const rect = anchor.getBoundingClientRect();
@@ -40,7 +42,13 @@ function SubjectMenuCard({ anchor, label, onClose }: { anchor: HTMLElement; labe
     };
   });
   return createPortal(
-    <div ref={ref} className={styles.menuCard} role="menu" aria-label={label} style={{ top: rect.bottom + 4, left: rect.left }} />,
+    <div ref={ref} className={styles.menuCard} role="menu" aria-label={label} style={{ top: rect.bottom + 4, left: rect.left }}>
+      {SUBJECT_MENU_ITEMS.map((item) => (
+        <button key={item} type="button" role="menuitem" className={styles.menuItem}>
+          {item}
+        </button>
+      ))}
+    </div>,
     document.body,
   );
 }
