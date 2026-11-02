@@ -3,6 +3,7 @@ import { useAtlas, type Route } from '../app/AtlasContext';
 import { Kbd } from '../components/Kbd';
 import { deckColour } from '../deckColour';
 import { Icon, type IconName } from '../icons/icons';
+import profilePicture from '../../assets/profile-placeholder.jpg';
 import styles from './Sidebar.module.css';
 
 const NAV: { name: 'today' | 'decks'; label: string; icon: IconName }[] = [
@@ -18,7 +19,10 @@ export function Sidebar({ tree, hasDecks }: { tree: DeckTreeWithCounts[]; hasDec
   const go = (r: Route, enabled = true) => () => enabled && navigate(r);
   return (
     <div className={styles.sidebar}>
-      <div className={styles.user} data-testid="sidebar-user">{USER_NAME}</div>
+      <div className={styles.user} data-testid="sidebar-user">
+        <img className={styles.avatar} src={profilePicture} alt="" />
+        <span className={styles.userName}>{USER_NAME}</span>
+      </div>
       <button
         type="button"
         className={styles.add}
