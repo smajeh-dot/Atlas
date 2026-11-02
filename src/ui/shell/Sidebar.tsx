@@ -36,6 +36,7 @@ export function Sidebar() {
           <button type="button" className={styles.railItem}>
             <span className={styles.railLine} style={{ background: deckColour(1) }} aria-hidden="true" />
             <span className={styles.railName}>Deck name</span>
+            <span className={styles.railMore}><Icon name="moreVertical" /></span>
           </button>
         </li>
       </ul>

@@ -129,3 +129,16 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* Vertical triple-dot menu hint, shown at the right end of a rail item on hover or keyboard focus. */
+.railMore {
+  flex: none;
+  margin-left: auto;
+  display: inline-flex;
+  opacity: 0;
+}
+
+.railItem:hover .railMore,
+.railItem:focus-visible .railMore {
+  opacity: 1;
+}
