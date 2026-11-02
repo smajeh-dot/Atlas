@@ -17,7 +17,7 @@ const RAIL_PLACEHOLDERS = [
 const SUBJECT_MENU_ITEMS: { label: string; icon: IconName }[] = [
   { label: 'New Deck', icon: 'newDeck' },
   { label: 'Rename', icon: 'edit' },
-  { label: 'Colour', icon: 'brush' },
+  { label: 'Colour', icon: 'droplet' },
 ];
 
 /** Card that opens under a subject's triple-dot button. The dropdown options go inside it. */
