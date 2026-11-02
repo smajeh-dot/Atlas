@@ -16,7 +16,7 @@ const RAIL_PLACEHOLDERS = [
 
 interface SubjectMenuItem {
   label: string;
-  icon: IconName;
+  icon?: IconName;
   danger?: boolean;
 }
 
@@ -25,11 +25,11 @@ function subjectMenuItems(pinned: boolean): { main: SubjectMenuItem[]; more: Sub
   return {
     main: [
       { label: 'New Deck', icon: 'newDeck' },
-      { label: 'Rename', icon: 'edit' },
+      { label: 'Rename' },
       { label: 'Colour', icon: 'droplet' },
+      pinned ? { label: 'Unpin' } : { label: 'Pin' },
     ],
     more: [
-      pinned ? { label: 'Unpin', icon: 'unpin' } : { label: 'Pin', icon: 'pin' },
       { label: 'Settings', icon: 'settings' },
       { label: 'Delete', icon: 'trash', danger: true },
     ],
@@ -42,7 +42,7 @@ function SubjectMenuCard({ anchor, label, onClose, pinned = true }: { anchor: HT
   const items = subjectMenuItems(pinned);
   const renderItem = (item: SubjectMenuItem) => (
     <button key={item.label} type="button" role="menuitem" className={`${styles.menuItem} ${item.danger ? styles.menuDanger : ''}`}>
-      <Icon name={item.icon} />
+      {item.icon && <Icon name={item.icon} />}
       <span>{item.label}</span>
     </button>
   );

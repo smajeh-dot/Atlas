@@ -4,7 +4,7 @@ import styles from './icons.module.css';
  * Every icon Atlas draws (spec Appendix A). Untitled UI line icons, 24 × 24, stroke inherits the text colour.
  * Icons not yet supplied render a dashed placeholder; supplying one is a one-line change here.
 */
-export const ICON_NAMES = ['today', 'decks', 'browse', 'search', 'bell', 'moreVertical', 'droplet', 'pin', 'unpin', 'stats', 'settings', 'plus', 'chevronDown', 'chevronRight', 'back', 'more', 'newDeck', 'edit', 'flag', 'undo', 'bury', 'suspend', 'trash', 'info', 'checkCircle', 'check', 'close', 'warning', 'error', 'sigma', 'superscript', 'subscript', 'bold', 'italic', 'underline', 'image', 'tag', 'filter', 'sort', 'folder', 'reset', 'reschedule', 'clock', 'target', 'forecast', 'streak', 'import', 'export', 'backup', 'restore', 'audio', 'help'] as const;
+export const ICON_NAMES = ['today', 'decks', 'browse', 'search', 'bell', 'moreVertical', 'droplet', 'stats', 'settings', 'plus', 'chevronDown', 'chevronRight', 'back', 'more', 'newDeck', 'edit', 'flag', 'undo', 'bury', 'suspend', 'trash', 'info', 'checkCircle', 'check', 'close', 'warning', 'error', 'sigma', 'superscript', 'subscript', 'bold', 'italic', 'underline', 'image', 'tag', 'filter', 'sort', 'folder', 'reset', 'reschedule', 'clock', 'target', 'forecast', 'streak', 'import', 'export', 'backup', 'restore', 'audio', 'help'] as const;
 export type IconName = (typeof ICON_NAMES)[number];
 
 const PATHS: Partial<Record<IconName, string[]>> = {
@@ -30,6 +30,9 @@ const PATHS: Partial<Record<IconName, string[]>> = {
   ],
   droplet: [
     'M20 14C20 18.4183 16.4183 22 12 22C7.58172 22 4 18.4183 4 14C4 12.9391 4.20651 11.9264 4.58152 11C5.76829 8.06817 12 2 12 2C12 2 18.2317 8.06817 19.4185 11C19.7935 11.9264 20 12.9391 20 14Z',
+  ],
+  trash: [
+    'M9 3H15M3 6H21M19 6L18.2987 16.5193C18.1935 18.0975 18.1409 18.8867 17.8 19.485C17.4999 20.0118 17.0472 20.4353 16.5017 20.6997C15.882 21 15.0911 21 13.5093 21H10.4907C8.90891 21 8.11803 21 7.49834 20.6997C6.95276 20.4353 6.50009 20.0118 6.19998 19.485C5.85911 18.8867 5.8065 18.0975 5.70129 16.5193L5 6M10 10.5V15.5M14 10.5V15.5',
   ],
   stats: [
     'M20 20V13M12 20V10M4 20L4 16M13.4067 5.0275L18.5751 6.96567M10.7988 5.40092L5.20023 9.59983M21.0607 6.43934C21.6464 7.02513 21.6464 7.97487 21.0607 8.56066C20.4749 9.14645 19.5251 9.14645 18.9393 8.56066C18.3536 7.97487 18.3536 7.02513 18.9393 6.43934C19.5251 5.85355 20.4749 5.85355 21.0607 6.43934ZM5.06066 9.43934C5.64645 10.0251 5.64645 10.9749 5.06066 11.5607C4.47487 12.1464 3.52513 12.1464 2.93934 11.5607C2.35355 10.9749 2.35355 10.0251 2.93934 9.43934C3.52513 8.85355 4.47487 8.85355 5.06066 9.43934ZM13.0607 3.43934C13.6464 4.02513 13.6464 4.97487 13.0607 5.56066C12.4749 6.14645 11.5251 6.14645 10.9393 5.56066C10.3536 4.97487 10.3536 4.02513 10.9393 3.43934C11.5251 2.85355 12.4749 2.85355 13.0607 3.43934Z',
