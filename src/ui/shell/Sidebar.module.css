@@ -255,3 +255,11 @@
   width: 14px;
   height: 14px;
 }
+
+/* Same 1px grey rule as the sidebar dividers, separating the main actions from whatever sits below. */
+.menuRule {
+  flex: none;
+  height: 1px;
+  margin: 4px 4px;
+  background: var(--sidebar-header-rule);
+}

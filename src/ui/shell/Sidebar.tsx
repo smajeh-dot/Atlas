@@ -53,6 +53,7 @@ function SubjectMenuCard({ anchor, label, onClose }: { anchor: HTMLElement; labe
           <span>{item.label}</span>
         </button>
       ))}
+      <div className={styles.menuRule} role="separator" />
     </div>,
     document.body,
   );
