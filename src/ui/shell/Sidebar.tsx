@@ -21,7 +21,7 @@ export function Sidebar() {
         <span>Search</span>
       </button>
       <button type="button" className={styles.action}>
-        <Icon name="today" />
+        <Icon name="bell" />
         <span>Today</span>
       </button>
     </div>
