@@ -169,8 +169,8 @@
 .subRail::before {
   content: '';
   position: absolute;
-  top: 0;
-  bottom: 0;
+  top: 5px;
+  bottom: 5px;
   left: 14px;
   width: 1px;
   background: var(--sidebar-header-rule);
