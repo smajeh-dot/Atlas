@@ -24,6 +24,10 @@ export function Sidebar() {
         <Icon name="bell" />
         <span>Today</span>
       </button>
+      <button type="button" className={`${styles.action} ${styles.search}`}>
+        <Icon name="decks" />
+        <span>Decks</span>
+      </button>
     </div>
   );
 }
