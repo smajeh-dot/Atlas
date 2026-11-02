@@ -15,7 +15,7 @@
   align-items: center;
   gap: var(--sp-10);
   padding: 14px 4px;
-  border-bottom: 1px solid var(--sidebar-divider);
+  border-bottom: 1px solid var(--sidebar-header-rule);
 }
 
 .avatar {
