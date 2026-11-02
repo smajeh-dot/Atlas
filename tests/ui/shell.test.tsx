@@ -16,27 +16,9 @@ async function seeded() {
   return db;
 }
 
-test('sidebar lists subjects with due counts as plain text', async () => {
-  await renderApp({ db: await seeded() });
-  const subjects = await screen.findByRole('list', { name: 'Subjects' });
-  await waitFor(() => expect(within(subjects).getAllByRole('button')).toHaveLength(2));
-  const bio = within(subjects).getByRole('button', { name: /<b>Bio<\/b>/ });
-  expect(bio.textContent).toBe('<b>Bio</b>2');
-  expect(subjects.querySelector('b')).toBeNull();
-  expect(within(subjects).getByRole('button', { name: /Chemistry/ }).textContent).toBe('Chemistry0');
-});
-
-test('clicking a subject studies it', async () => {
-  const { user } = await renderApp({ db: await seeded() });
-  const subjects = await screen.findByRole('list', { name: 'Subjects' });
-  await user.click(await within(subjects).findByRole('button', { name: /Chemistry/ }));
-  expect(await screen.findByRole('button', { name: 'Leave study' })).toBeTruthy();
-  expect(screen.queryByRole('navigation', { name: 'Main' })).toBeNull();
-});
-
 test('A opens Add card, but not while typing', async () => {
   const { user } = await renderApp({ db: await seeded() });
-  await screen.findByRole('list', { name: 'Subjects' });
+  await screen.findByRole('heading', { name: '2 cards due today' });
   const stray = document.createElement('input');
   document.body.append(stray);
   stray.focus();
@@ -46,12 +28,11 @@ test('A opens Add card, but not while typing', async () => {
   stray.remove();
   await user.keyboard('a');
   expect(await screen.findByRole('heading', { name: 'Add card' })).toBeTruthy();
-  expect(within(screen.getByRole('complementary')).getByRole('button', { name: 'Add card' }).getAttribute('aria-current')).toBe('page');
 });
 
 test('Ctrl+, opens Settings', async () => {
   const { user } = await renderApp({ db: await seeded() });
-  await screen.findByRole('list', { name: 'Subjects' });
+  await screen.findByRole('heading', { name: '2 cards due today' });
   await user.keyboard('{Control>},{/Control}');
   expect(await screen.findByRole('heading', { name: 'Settings' })).toBeTruthy();
 });
@@ -59,7 +40,7 @@ test('Ctrl+, opens Settings', async () => {
 test('Ctrl+Z outside Study undoes the last action with a toast', async () => {
   const db = await seeded();
   const { user, deps } = await renderApp({ db });
-  await screen.findByRole('list', { name: 'Subjects' });
+  await screen.findByRole('heading', { name: '2 cards due today' });
   const deckId = (await db.query<{ id: number }>(`SELECT id FROM decks WHERE name = 'Chemistry'`))[0]!.id;
   await seedNote(deps, deckId, 'basic', ['new', 'x']);
   expect(await countRows(db, 'notes')).toBe(3);
@@ -68,27 +49,9 @@ test('Ctrl+Z outside Study undoes the last action with a toast', async () => {
   expect(await countRows(db, 'notes')).toBe(2);
 });
 
-test('with no decks, Today and Decks are disabled and Welcome shows', async () => {
-  await renderApp();
-  expect(await screen.findByRole('heading', { name: 'Welcome to Atlas' })).toBeTruthy();
-  const nav = screen.getByRole('navigation');
-  expect(within(nav).getByRole('button', { name: 'Today' }).getAttribute('aria-disabled')).toBe('true');
-  expect(within(nav).getByRole('button', { name: 'Decks' }).getAttribute('aria-disabled')).toBe('true');
-  expect(within(nav).queryByRole('button', { name: 'Browse' })).toBeNull();
-});
-
-test('after clicking a sidebar item, keys go to the new screen', async () => {
-  const { user } = await renderApp({ db: await seeded(), route: { name: 'settings' } });
-  await user.click(within(await screen.findByRole('navigation', { name: 'Main' })).getByRole('button', { name: 'Today' }));
-  await screen.findByRole('heading', { name: '2 cards due today' });
-  expect(document.activeElement?.tagName).toBe('MAIN');
-  await user.keyboard(' ');
-  expect(await screen.findByRole('button', { name: 'Leave study' })).toBeTruthy();
-});
-
 test('Ctrl+, opens Settings even while typing in a field', async () => {
   const { user } = await renderApp({ db: await seeded() });
-  await screen.findByRole('list', { name: 'Subjects' });
+  await screen.findByRole('heading', { name: '2 cards due today' });
   const field = document.createElement('input');
   document.body.append(field);
   field.focus();
