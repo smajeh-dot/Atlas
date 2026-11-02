@@ -77,10 +77,10 @@
   margin: 0 1.75px;
 }
 
-/* Same 1px grey rule as under the profile header; 10px margin plus the 4px flex gap leaves 14px either side. */
+/* Same 1px grey rule as under the profile header. 6px above (matches the divider-to-New gap), 14px below. */
 .rule {
   flex: none;
   height: 1px;
-  margin: 10px 0;
+  margin: 2px 0 10px;
   background: var(--sidebar-header-rule);
 }
