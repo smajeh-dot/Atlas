@@ -69,3 +69,10 @@
   height: 14px;
   margin: 0 1px;
 }
+
+/* The decks glyph fills more of its box than search and bell, so it is drawn a touch smaller to look the same size. */
+.decks svg {
+  width: 12.5px;
+  height: 12.5px;
+  margin: 0 1.75px;
+}
