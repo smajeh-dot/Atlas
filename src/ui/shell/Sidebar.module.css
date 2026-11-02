@@ -119,7 +119,7 @@
   flex: none;
   width: 3px;
   height: 18px;
-  margin: 0 5px;
+  margin: 0 9px 0 1px;
   border-radius: 2px;
 }
 
@@ -141,4 +141,9 @@
 .railItem:hover .railMore,
 .railItem:focus-visible .railMore {
   opacity: 1;
+}
+
+.railMore svg {
+  width: 14px;
+  height: 14px;
 }
