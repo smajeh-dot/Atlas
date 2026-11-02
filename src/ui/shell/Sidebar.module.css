@@ -221,7 +221,6 @@
   position: fixed;
   z-index: 60;
   width: 135px;
-  min-height: 170px;
   padding: 4px;
   background: var(--menu-card-bg);
   border: 1px solid var(--sidebar-header-rule);
@@ -262,4 +261,8 @@
   height: 1px;
   margin: 4px 4px;
   background: var(--sidebar-header-rule);
+}
+
+.menuDanger {
+  color: var(--danger);
 }

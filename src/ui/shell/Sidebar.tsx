@@ -14,14 +14,38 @@ const RAIL_PLACEHOLDERS = [
   { name: 'Maths', colour: 3, subdecks: ['Sub-deck one', 'Sub-deck two', 'Sub-deck three'] },
 ];
 
-const SUBJECT_MENU_ITEMS: { label: string; icon: IconName }[] = [
-  { label: 'New Deck', icon: 'newDeck' },
-  { label: 'Rename', icon: 'edit' },
-  { label: 'Colour', icon: 'droplet' },
-];
+interface SubjectMenuItem {
+  label: string;
+  icon: IconName;
+  danger?: boolean;
+}
+
+/** Main actions, then a divider, then the secondary actions. The pin item flips between Unpin and Pin. */
+function subjectMenuItems(pinned: boolean): { main: SubjectMenuItem[]; more: SubjectMenuItem[] } {
+  return {
+    main: [
+      { label: 'New Deck', icon: 'newDeck' },
+      { label: 'Rename', icon: 'edit' },
+      { label: 'Colour', icon: 'droplet' },
+    ],
+    more: [
+      pinned ? { label: 'Unpin', icon: 'unpin' } : { label: 'Pin', icon: 'pin' },
+      { label: 'Settings', icon: 'settings' },
+      { label: 'Delete', icon: 'trash', danger: true },
+    ],
+  };
+}
 
 /** Card that opens under a subject's triple-dot button. The dropdown options go inside it. */
-function SubjectMenuCard({ anchor, label, onClose }: { anchor: HTMLElement; label: string; onClose(): void }) {
+/** `pinned` is true on the sidebar rail, where every subject is pinned; pass false elsewhere to show Pin instead of Unpin. */
+function SubjectMenuCard({ anchor, label, onClose, pinned = true }: { anchor: HTMLElement; label: string; onClose(): void; pinned?: boolean }) {
+  const items = subjectMenuItems(pinned);
+  const renderItem = (item: SubjectMenuItem) => (
+    <button key={item.label} type="button" role="menuitem" className={`${styles.menuItem} ${item.danger ? styles.menuDanger : ''}`}>
+      <Icon name={item.icon} />
+      <span>{item.label}</span>
+    </button>
+  );
   const isTop = useOverlayLayer();
   const rect = anchor.getBoundingClientRect();
   const ref = useRef<HTMLDivElement>(null);
@@ -47,13 +71,9 @@ function SubjectMenuCard({ anchor, label, onClose }: { anchor: HTMLElement; labe
   });
   return createPortal(
     <div ref={ref} className={styles.menuCard} role="menu" aria-label={label} style={{ top: rect.bottom + 4, left: rect.left }}>
-      {SUBJECT_MENU_ITEMS.map((item) => (
-        <button key={item.label} type="button" role="menuitem" className={styles.menuItem}>
-          <Icon name={item.icon} />
-          <span>{item.label}</span>
-        </button>
-      ))}
+      {items.main.map(renderItem)}
       <div className={styles.menuRule} role="separator" />
+      {items.more.map(renderItem)}
     </div>,
     document.body,
   );
