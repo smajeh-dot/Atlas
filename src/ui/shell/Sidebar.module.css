@@ -77,11 +77,11 @@
   margin: 0 1.75px;
 }
 
-/* Same 1px grey rule as under the profile header. 6px above (matches the divider-to-New gap), 14px below. */
+/* Same 1px grey rule as under the profile header. 6px above and below (matches the divider-to-New gap). */
 .rule {
   flex: none;
   height: 1px;
-  margin: 2px 0 10px;
+  margin: 2px 0;
   background: var(--sidebar-header-rule);
 }
 
@@ -115,12 +115,12 @@
   background: var(--new-btn-hover);
 }
 
-.railDot {
+.railLine {
   flex: none;
-  width: 8px;
-  height: 8px;
-  margin: 0 4px;
-  border-radius: 50%;
+  width: 3px;
+  height: 18px;
+  margin: 0 5px;
+  border-radius: 2px;
 }
 
 .railName {
