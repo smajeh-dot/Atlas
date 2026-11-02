@@ -84,3 +84,48 @@
   margin: 2px 0 10px;
   background: var(--sidebar-header-rule);
 }
+
+.rail {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.railItem {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-8);
+  width: 100%;
+  height: 30px;
+  padding: 0 4px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: var(--new-btn-bg);
+  color: var(--sidebar-text);
+  font-family: inherit;
+  font-size: var(--fs-ui);
+  text-align: left;
+  cursor: pointer;
+}
+
+.railItem:hover {
+  background: var(--new-btn-hover);
+}
+
+.railDot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  margin: 0 4px;
+  border-radius: 50%;
+}
+
+.railName {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

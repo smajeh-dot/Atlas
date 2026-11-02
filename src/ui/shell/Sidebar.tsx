@@ -1,4 +1,5 @@
 import { Icon } from '../icons/icons';
+import { deckColour } from '../deckColour';
 import profilePicture from '../../assets/profile-placeholder.jpg';
 import styles from './Sidebar.module.css';
 
@@ -29,6 +30,15 @@ export function Sidebar() {
         <span>Decks</span>
       </button>
       <div className={styles.rule} role="separator" />
+      {/* Quick-access rail for decks. A single placeholder entry for now. */}
+      <ul className={styles.rail} aria-label="Quick access decks">
+        <li>
+          <button type="button" className={styles.railItem}>
+            <span className={styles.railDot} style={{ background: deckColour(1) }} aria-hidden="true" />
+            <span className={styles.railName}>Deck name</span>
+          </button>
+        </li>
+      </ul>
     </div>
   );
 }
