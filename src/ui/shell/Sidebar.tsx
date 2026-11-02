@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react';
 import { Icon } from '../icons/icons';
 import { deckColour } from '../deckColour';
 import profilePicture from '../../assets/profile-placeholder.jpg';
@@ -38,7 +39,11 @@ export function Sidebar() {
       {/* Quick-access rail for decks, placeholder entries for now. */}
       <ul className={styles.rail} aria-label="Quick access decks">
         {RAIL_PLACEHOLDERS.map((d) => (
-          <li key={d.name}>
+          <li
+            key={d.name}
+            className={d.subdecks.length > 0 ? styles.railGroup : undefined}
+            style={{ '--rail-colour': deckColour(d.colour) } as CSSProperties}
+          >
             <button type="button" className={styles.railItem}>
               <span className={styles.railLine} style={{ background: deckColour(d.colour) }} aria-hidden="true" />
               <span className={styles.railName}>{d.name}</span>

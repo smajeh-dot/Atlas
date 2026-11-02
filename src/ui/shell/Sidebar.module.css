@@ -162,5 +162,21 @@
 .subItem {
   height: 26px;
   padding-left: 21px;
-  font-size: var(--fs-sm);
+}
+
+/* A second, thinner line in the parent's colour runs from the top of its bar down past every sub-deck. */
+.railGroup {
+  position: relative;
+}
+
+.railGroup::before {
+  content: '';
+  position: absolute;
+  top: 6px;
+  bottom: 6px;
+  left: 10px;
+  width: 2px;
+  border-radius: 1px;
+  background: var(--rail-colour);
+  pointer-events: none;
 }
