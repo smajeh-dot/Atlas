@@ -16,7 +16,7 @@ export function Sidebar() {
         <Icon name="plus" />
         <span>New</span>
       </button>
-      <button type="button" className={styles.action}>
+      <button type="button" className={`${styles.action} ${styles.search}`}>
         <Icon name="search" />
         <span>Search</span>
       </button>

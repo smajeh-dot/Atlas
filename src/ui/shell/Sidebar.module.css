@@ -63,3 +63,9 @@
 .action + .action {
   margin-top: -2px;
 }
+
+.search svg {
+  width: 14px;
+  height: 14px;
+  margin: 0 1px;
+}
