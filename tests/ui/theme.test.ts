@@ -41,10 +41,10 @@ const SPEC: [string, string, string][] = [
   ['--shadow-box', 'none', '4px 4px 0 #141414'], ['--shadow-primary', 'none', '3px 3px 0 #FF5B14'],
   ['--shadow-hero', 'none', '5px 5px 0 #141414'], ['--shadow-grade', 'none', '3px 3px 0 #141414'],
   ['--shadow-popover', '0 8px 24px rgba(0,0,0,0.08)', '4px 4px 0 #141414'], ['--shell-pad', '12px', '0'], ['--sidebar-bleed', '12px', '0'], ['--sidebar-edge', 'none', 'none'], ['--sidebar-divider', '1px solid #E2E2E6', '2px solid #141414'], ['--shell-gap', '12px', '0'],
-  ['--font-display', "'Source Serif 4', Georgia, serif", "'Bricolage Grotesque', 'Segoe UI', sans-serif"],
-  ['--font-body', "'Instrument Sans', 'Segoe UI', sans-serif", "'DM Sans', 'Segoe UI', sans-serif"],
-  ['--font-mono', "'JetBrains Mono', Consolas, monospace", "'DM Mono', Consolas, monospace"],
-  ['--weight-display', '400', '800'], ['--tracking-display', '-0.01em', '-0.03em'],
+  ['--font-display', "'Anthropic Serif', Georgia, 'Times New Roman', serif", "'Anthropic Serif', Georgia, 'Times New Roman', serif"],
+  ['--font-body', "'Anthropic Sans', -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif", "'Anthropic Sans', -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"],
+  ['--font-mono', "'Anthropic Mono', 'Cascadia Code', Consolas, monospace", "'Anthropic Mono', 'Cascadia Code', Consolas, monospace"],
+  ['--weight-display', '500', '500'], ['--tracking-display', '-0.01em', '-0.03em'],
 ];
 
 test.each(SPEC)('%s has the spec value in both themes', (token, wb, tg) => {

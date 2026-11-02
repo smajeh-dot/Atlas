@@ -70,6 +70,6 @@ test('About shows the version, opens the releases page and lists licences', asyn
   expect(opened).toEqual(['https://github.com/smajeh-dot/atlas/releases/latest']);
   const list = screen.getByRole('list', { name: 'Open-source licences' });
   expect(within(list).getByText(/^dompurify /)).toBeTruthy();
-  expect(within(list).getByText(/^@fontsource\/dm-sans .*OFL-1\.1/)).toBeTruthy();
+  expect(within(list).getByText(/^katex .*MIT/)).toBeTruthy();
   expect(within(list).getByText(/^SQLite/)).toBeTruthy();
 });
