@@ -7,8 +7,8 @@ import styles from './Sidebar.module.css';
 const USER_NAME = 'Harry';
 
 const RAIL_PLACEHOLDERS = [
-  { name: 'Deck name', colour: 1, subdecks: ['Sub-deck one', 'Sub-deck two'] },
-  { name: 'Second deck', colour: 3, subdecks: ['Sub-deck one', 'Sub-deck two', 'Sub-deck three'] },
+  { name: 'Biology', colour: 1, subdecks: ['Sub-deck one', 'Sub-deck two'] },
+  { name: 'Maths', colour: 3, subdecks: ['Sub-deck one', 'Sub-deck two', 'Sub-deck three'] },
 ];
 
 export function Sidebar() {
@@ -36,7 +36,7 @@ export function Sidebar() {
       </button>
       <div className={styles.rule} role="separator" />
       {/* Quick-access rail for decks, placeholder entries for now. */}
-      <ul className={styles.rail} aria-label="Quick access decks">
+      <ul className={styles.rail} aria-label="Subjects">
         {RAIL_PLACEHOLDERS.map((d) => (
           <li key={d.name}>
             <button type="button" className={styles.railItem}>
@@ -45,7 +45,7 @@ export function Sidebar() {
               <span className={styles.railMore}><Icon name="moreVertical" /></span>
             </button>
             {d.subdecks.length > 0 && (
-              <ul className={styles.subRail} aria-label={`${d.name} sub-decks`}>
+              <ul className={styles.subRail} aria-label={`${d.name} decks`}>
                 {d.subdecks.map((sub) => (
                   <li key={sub}>
                     <button type="button" className={`${styles.railItem} ${styles.subItem}`}>
