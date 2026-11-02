@@ -12,9 +12,13 @@ export function Sidebar() {
         <img className={styles.avatar} src={profilePicture} alt="" />
         <span className={styles.userName}>{USER_NAME}</span>
       </div>
-      <button type="button" className={styles.new}>
+      <button type="button" className={styles.action}>
         <Icon name="plus" />
         <span>New</span>
+      </button>
+      <button type="button" className={styles.action}>
+        <Icon name="browse" />
+        <span>Search</span>
       </button>
     </div>
   );
