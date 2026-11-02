@@ -25,8 +25,8 @@ function subjectMenuItems(pinned: boolean): { main: SubjectMenuItem[]; more: Sub
   return {
     main: [
       { label: 'New Deck', icon: 'newDeck' },
-      { label: 'Rename' },
       { label: 'Colour', icon: 'droplet' },
+      { label: 'Rename' },
       pinned ? { label: 'Unpin' } : { label: 'Pin' },
     ],
     more: [
