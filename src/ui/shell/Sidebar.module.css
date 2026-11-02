@@ -220,7 +220,7 @@
 .menuCard {
   position: fixed;
   z-index: 60;
-  min-width: 200px;
+  width: 120px;
   min-height: 120px;
   background: var(--menu-card-bg);
   border: 1px solid var(--sidebar-header-rule);
