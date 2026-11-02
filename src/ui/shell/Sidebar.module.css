@@ -59,6 +59,7 @@
   background: var(--new-btn-hover);
 }
 
+/* Sits 2px below the previous button (the sidebar flex gap is 4px). */
 .action + .action {
-  margin-top: 0;
+  margin-top: -2px;
 }
