@@ -49,6 +49,7 @@ export function Sidebar() {
                 {d.subdecks.map((sub) => (
                   <li key={sub}>
                     <button type="button" className={`${styles.railItem} ${styles.subItem}`}>
+                      <span className={styles.subElbow} style={{ borderColor: deckColour(d.colour) }} aria-hidden="true" />
                       <span className={styles.railName}>{sub}</span>
                       <span className={styles.railMore}><Icon name="moreVertical" /></span>
                     </button>
