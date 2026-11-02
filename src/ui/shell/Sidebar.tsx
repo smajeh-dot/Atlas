@@ -20,6 +20,10 @@ export function Sidebar() {
         <Icon name="search" />
         <span>Search</span>
       </button>
+      <button type="button" className={styles.action}>
+        <Icon name="today" />
+        <span>Today</span>
+      </button>
     </div>
   );
 }

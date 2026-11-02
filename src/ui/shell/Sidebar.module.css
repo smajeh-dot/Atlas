@@ -59,9 +59,9 @@
   background: var(--new-btn-hover);
 }
 
-/* Sits 2px below the previous button (the sidebar flex gap is 4px). */
+/* Sits 1px below the previous button (the sidebar flex gap is 4px). */
 .action + .action {
-  margin-top: -2px;
+  margin-top: -3px;
 }
 
 .search svg {
