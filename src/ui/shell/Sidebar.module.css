@@ -148,3 +148,19 @@
   width: 14px;
   height: 14px;
 }
+
+.subRail {
+  list-style: none;
+  margin: 1px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+/* Sub-decks have no colour bar and sit indented under their parent's label. */
+.subItem {
+  height: 26px;
+  padding-left: 21px;
+  font-size: var(--fs-sm);
+}

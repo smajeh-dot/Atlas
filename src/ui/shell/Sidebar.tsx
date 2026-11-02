@@ -6,6 +6,11 @@ import styles from './Sidebar.module.css';
 // Placeholder until real user profiles exist.
 const USER_NAME = 'Harry';
 
+const RAIL_PLACEHOLDERS = [
+  { name: 'Deck name', colour: 1, subdecks: ['Sub-deck one', 'Sub-deck two'] },
+  { name: 'Second deck', colour: 3, subdecks: ['Sub-deck one', 'Sub-deck two', 'Sub-deck three'] },
+];
+
 export function Sidebar() {
   return (
     <div className={styles.sidebar}>
@@ -30,15 +35,29 @@ export function Sidebar() {
         <span>Decks</span>
       </button>
       <div className={styles.rule} role="separator" />
-      {/* Quick-access rail for decks. A single placeholder entry for now. */}
+      {/* Quick-access rail for decks, placeholder entries for now. */}
       <ul className={styles.rail} aria-label="Quick access decks">
-        <li>
-          <button type="button" className={styles.railItem}>
-            <span className={styles.railLine} style={{ background: deckColour(1) }} aria-hidden="true" />
-            <span className={styles.railName}>Deck name</span>
-            <span className={styles.railMore}><Icon name="moreVertical" /></span>
-          </button>
-        </li>
+        {RAIL_PLACEHOLDERS.map((d) => (
+          <li key={d.name}>
+            <button type="button" className={styles.railItem}>
+              <span className={styles.railLine} style={{ background: deckColour(d.colour) }} aria-hidden="true" />
+              <span className={styles.railName}>{d.name}</span>
+              <span className={styles.railMore}><Icon name="moreVertical" /></span>
+            </button>
+            {d.subdecks.length > 0 && (
+              <ul className={styles.subRail} aria-label={`${d.name} sub-decks`}>
+                {d.subdecks.map((sub) => (
+                  <li key={sub}>
+                    <button type="button" className={`${styles.railItem} ${styles.subItem}`}>
+                      <span className={styles.railName}>{sub}</span>
+                      <span className={styles.railMore}><Icon name="moreVertical" /></span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </li>
+        ))}
       </ul>
     </div>
   );
