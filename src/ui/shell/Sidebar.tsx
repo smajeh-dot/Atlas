@@ -1,6 +1,6 @@
 import { Icon, type IconName } from '../icons/icons';
 import { deckColour } from '../deckColour';
-import { useEffect, useRef, useState } from 'react';
+import { Fragment, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useOverlayLayer } from '../components/overlayStack';
 import profilePicture from '../../assets/profile-placeholder.jpg';
@@ -20,26 +20,25 @@ interface SubjectMenuItem {
   danger?: boolean;
 }
 
-/** Main actions, then a divider, then the secondary actions. The pin item flips between Unpin and Pin. */
-function subjectMenuItems(pinned: boolean): { main: SubjectMenuItem[]; more: SubjectMenuItem[] } {
-  return {
-    main: [
+/** Groups of actions; a divider is drawn between groups. The pin item flips between Unpin and Pin. */
+function subjectMenuGroups(pinned: boolean): SubjectMenuItem[][] {
+  return [
+    [
       { label: 'New Deck', icon: 'newDeck' },
       { label: 'Colour', icon: 'droplet' },
-      { label: 'Rename' },
-      pinned ? { label: 'Unpin' } : { label: 'Pin' },
     ],
-    more: [
+    [{ label: 'Rename' }, pinned ? { label: 'Unpin' } : { label: 'Pin' }],
+    [
       { label: 'Settings', icon: 'settings' },
       { label: 'Delete', icon: 'trash', danger: true },
     ],
-  };
+  ];
 }
 
 /** Card that opens under a subject's triple-dot button. The dropdown options go inside it. */
 /** `pinned` is true on the sidebar rail, where every subject is pinned; pass false elsewhere to show Pin instead of Unpin. */
 function SubjectMenuCard({ anchor, label, onClose, pinned = true }: { anchor: HTMLElement; label: string; onClose(): void; pinned?: boolean }) {
-  const items = subjectMenuItems(pinned);
+  const groups = subjectMenuGroups(pinned);
   const renderItem = (item: SubjectMenuItem) => (
     <button key={item.label} type="button" role="menuitem" className={`${styles.menuItem} ${item.danger ? styles.menuDanger : ''}`}>
       {item.icon && <Icon name={item.icon} />}
@@ -71,9 +70,12 @@ function SubjectMenuCard({ anchor, label, onClose, pinned = true }: { anchor: HT
   });
   return createPortal(
     <div ref={ref} className={styles.menuCard} role="menu" aria-label={label} style={{ top: rect.bottom + 4, left: rect.left }}>
-      {items.main.map(renderItem)}
-      <div className={styles.menuRule} role="separator" />
-      {items.more.map(renderItem)}
+      {groups.map((group, i) => (
+        <Fragment key={i}>
+          {i > 0 && <div className={styles.menuRule} role="separator" />}
+          {group.map(renderItem)}
+        </Fragment>
+      ))}
     </div>,
     document.body,
   );
