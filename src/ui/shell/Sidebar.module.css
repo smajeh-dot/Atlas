@@ -41,21 +41,20 @@
 .new {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: var(--sp-4);
-  height: 10px;
+  justify-content: flex-start;
+  gap: var(--sp-8);
+  height: 25px;
   margin-top: 12px;
-  padding: 0;
+  padding: 0 4px;
   border: 0;
   border-radius: var(--radius-sm);
-  background: var(--accent);
-  color: var(--accent-ink);
-  font-size: 10px;
-  line-height: 1;
+  background: var(--new-btn-bg);
+  color: var(--sidebar-text);
+  font-family: inherit;
+  font-size: var(--fs-ui);
   cursor: pointer;
 }
 
-.new svg {
-  width: 8px;
-  height: 8px;
+.new:hover {
+  background: var(--new-btn-hover);
 }
