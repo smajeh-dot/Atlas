@@ -37,7 +37,7 @@ const SPEC: [string, string, string][] = [
   ['--text-answer', '#1C1C1F', '#141414'],
   ['--border-w', '1px', '2px'], ['--radius-sm', '8px', '8px'], ['--radius-btn', '999px', '10px'], ['--radius-btn-lg', '12px', '12px'],
   ['--radius-lg', '12px', '14px'], ['--radius-card', '14px 14px 14px 0', '14px'], ['--radius-field', '8px', '10px'],
-  ['--radius-panel-side', '0 12px 0 0', '0'], ['--radius-panel-main', '12px 12px 0 12px', '0'], ['--radius-hero', '0', '14px'],
+  ['--radius-panel-side', '12px 0 12px 0', '0'], ['--radius-panel-main', '12px 12px 0 12px', '0'], ['--radius-hero', '0', '14px'],
   ['--shadow-box', 'none', '4px 4px 0 #141414'], ['--shadow-primary', 'none', '3px 3px 0 #FF5B14'],
   ['--shadow-hero', 'none', '5px 5px 0 #141414'], ['--shadow-grade', 'none', '3px 3px 0 #141414'],
   ['--shadow-popover', '0 8px 24px rgba(0,0,0,0.08)', '4px 4px 0 #141414'], ['--shell-pad', '12px', '0'], ['--sidebar-bleed', '12px', '0'], ['--sidebar-edge', 'none', 'none'], ['--sidebar-divider', '1px solid #E2E2E6', '2px solid #141414'], ['--shell-gap', '12px', '0'],

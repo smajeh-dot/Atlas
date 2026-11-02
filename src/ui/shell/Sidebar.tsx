@@ -144,6 +144,10 @@ export function Sidebar() {
           </li>
         ))}
       </ul>
+      <button type="button" className={`${styles.action} ${styles.search} ${styles.settings}`}>
+        <Icon name="settings" />
+        <span>Settings</span>
+      </button>
       {menu && <SubjectMenuCard anchor={menu.anchor} label={`${menu.subject} options`} onClose={() => setMenu(null)} />}
     </div>
   );

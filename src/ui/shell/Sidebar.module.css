@@ -266,3 +266,8 @@
 .menuDanger {
   color: var(--danger);
 }
+
+/* Pinned to the bottom of the sidebar; the extra class beats .action + .action so auto margin wins. */
+.action.settings {
+  margin-top: auto;
+}
