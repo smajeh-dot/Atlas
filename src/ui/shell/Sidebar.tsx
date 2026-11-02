@@ -1,4 +1,4 @@
-import { Icon } from '../icons/icons';
+import { Icon, type IconName } from '../icons/icons';
 import { deckColour } from '../deckColour';
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
@@ -14,7 +14,11 @@ const RAIL_PLACEHOLDERS = [
   { name: 'Maths', colour: 3, subdecks: ['Sub-deck one', 'Sub-deck two', 'Sub-deck three'] },
 ];
 
-const SUBJECT_MENU_ITEMS = ['New Deck', 'Rename', 'Colour'];
+const SUBJECT_MENU_ITEMS: { label: string; icon: IconName }[] = [
+  { label: 'New Deck', icon: 'newDeck' },
+  { label: 'Rename', icon: 'edit' },
+  { label: 'Colour', icon: 'brush' },
+];
 
 /** Card that opens under a subject's triple-dot button. The dropdown options go inside it. */
 function SubjectMenuCard({ anchor, label, onClose }: { anchor: HTMLElement; label: string; onClose(): void }) {
@@ -44,8 +48,9 @@ function SubjectMenuCard({ anchor, label, onClose }: { anchor: HTMLElement; labe
   return createPortal(
     <div ref={ref} className={styles.menuCard} role="menu" aria-label={label} style={{ top: rect.bottom + 4, left: rect.left }}>
       {SUBJECT_MENU_ITEMS.map((item) => (
-        <button key={item} type="button" role="menuitem" className={styles.menuItem}>
-          {item}
+        <button key={item.label} type="button" role="menuitem" className={styles.menuItem}>
+          <Icon name={item.icon} />
+          <span>{item.label}</span>
         </button>
       ))}
     </div>,
