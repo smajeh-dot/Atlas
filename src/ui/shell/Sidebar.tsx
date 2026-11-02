@@ -28,6 +28,7 @@ export function Sidebar() {
         <Icon name="decks" />
         <span>Decks</span>
       </button>
+      <div className={styles.rule} role="separator" />
     </div>
   );
 }
