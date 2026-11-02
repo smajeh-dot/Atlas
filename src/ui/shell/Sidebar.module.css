@@ -161,17 +161,5 @@
 /* Sub-decks have no colour bar and sit indented under their parent's label. */
 .subItem {
   height: 26px;
-  padding-left: 4px;
-}
-
-/* Small elbow in the parent's colour marks each sub-deck; 7px wide so the label stays at the same indent. */
-.subElbow {
-  flex: none;
-  align-self: flex-start;
-  width: 7px;
-  height: 10px;
-  margin: 3px 3px 0 7px;
-  border-style: solid;
-  border-width: 0 0 2px 2px;
-  border-radius: 0 0 0 4px;
+  padding-left: 32px;
 }
