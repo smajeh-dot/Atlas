@@ -176,3 +176,54 @@
   background: var(--sidebar-header-rule);
   pointer-events: none;
 }
+
+/* Subject rows: the name button plus a separate triple-dot button that opens the options card. */
+.railRow {
+  position: relative;
+}
+
+.railRow:hover .railItem,
+.railRow[data-open] .railItem {
+  background: var(--new-btn-hover);
+}
+
+.moreButton {
+  position: absolute;
+  top: 3px;
+  right: 6px;
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--sidebar-text);
+  cursor: pointer;
+  opacity: 0;
+}
+
+.moreButton svg {
+  width: 14px;
+  height: 14px;
+}
+
+.railRow:hover .moreButton,
+.railRow[data-open] .moreButton,
+.moreButton:focus-visible {
+  opacity: 1;
+}
+
+/* Blank card for the subject options dropdown (colour comes from --menu-card-bg). */
+.menuCard {
+  position: fixed;
+  z-index: 60;
+  min-width: 200px;
+  min-height: 120px;
+  background: var(--menu-card-bg);
+  border: 1px solid var(--sidebar-header-rule);
+  border-radius: 8px;
+  box-shadow: var(--shadow-popover);
+}
