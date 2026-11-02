@@ -14,7 +14,7 @@ const RAIL_PLACEHOLDERS = [
   { name: 'Maths', colour: 3, subdecks: ['Sub-deck one', 'Sub-deck two', 'Sub-deck three'] },
 ];
 
-/** Blank white card that opens under a subject's triple-dot button. The dropdown options go inside it. */
+/** Blank card that opens under a subject's triple-dot button. The dropdown options go inside it. */
 function SubjectMenuCard({ anchor, label, onClose }: { anchor: HTMLElement; label: string; onClose(): void }) {
   const isTop = useOverlayLayer();
   const rect = anchor.getBoundingClientRect();
