@@ -1,3 +1,4 @@
+import { Icon } from '../icons/icons';
 import profilePicture from '../../assets/profile-placeholder.jpg';
 import styles from './Sidebar.module.css';
 
@@ -11,6 +12,10 @@ export function Sidebar() {
         <img className={styles.avatar} src={profilePicture} alt="" />
         <span className={styles.userName}>{USER_NAME}</span>
       </div>
+      <button type="button" className={styles.new}>
+        <Icon name="plus" />
+        <span>New</span>
+      </button>
     </div>
   );
 }

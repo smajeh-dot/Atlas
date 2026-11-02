@@ -37,3 +37,25 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+.new {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-4);
+  height: 10px;
+  margin-top: 12px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-size: 10px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.new svg {
+  width: 8px;
+  height: 8px;
+}
