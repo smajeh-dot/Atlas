@@ -4,7 +4,7 @@
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  padding: var(--sp-32);
+  padding: 64px var(--sp-32) var(--sp-32);
 }
 
 /* Blank central card for the decks: wide and tall enough for a long list, shrinking with the window. */
