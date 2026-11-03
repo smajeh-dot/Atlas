@@ -1,6 +1,6 @@
 import { Icon, type IconName } from '../icons/icons';
 import { deckColour } from '../deckColour';
-import { Fragment, useEffect, useRef, useState } from 'react';
+import { Fragment, useEffect, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { useOverlayLayer } from '../components/overlayStack';
 import profilePicture from '../../assets/profile-placeholder.jpg';
@@ -35,16 +35,8 @@ function subjectMenuGroups(pinned: boolean): SubjectMenuItem[][] {
   ];
 }
 
-/** Card that opens under a subject's triple-dot button. The dropdown options go inside it. */
-/** `pinned` is true on the sidebar rail, where every subject is pinned; pass false elsewhere to show Pin instead of Unpin. */
-function SubjectMenuCard({ anchor, label, onClose, pinned = true }: { anchor: HTMLElement; label: string; onClose(): void; pinned?: boolean }) {
-  const groups = subjectMenuGroups(pinned);
-  const renderItem = (item: SubjectMenuItem) => (
-    <button key={item.label} type="button" role="menuitem" className={`${styles.menuItem} ${item.danger ? styles.menuDanger : ''}`}>
-      {item.icon && <Icon name={item.icon} />}
-      <span>{item.label}</span>
-    </button>
-  );
+/** Floating card anchored under a button: closes on outside click or Esc, and returns focus to the button. */
+function MenuCard({ anchor, label, onClose, className, children }: { anchor: HTMLElement; label: string; onClose(): void; className?: string; children?: ReactNode }) {
   const isTop = useOverlayLayer();
   const rect = anchor.getBoundingClientRect();
   const ref = useRef<HTMLDivElement>(null);
@@ -69,20 +61,44 @@ function SubjectMenuCard({ anchor, label, onClose, pinned = true }: { anchor: HT
     };
   });
   return createPortal(
-    <div ref={ref} className={styles.menuCard} role="menu" aria-label={label} style={{ top: rect.bottom + 4, left: rect.left }}>
+    <div ref={ref} className={`${styles.menuCard} ${className ?? ''}`} role="menu" aria-label={label} style={{ top: rect.bottom + 4, left: rect.left }}>
+      {children}
+    </div>,
+    document.body,
+  );
+}
+
+/** Card that opens under a subject's triple-dot button. */
+/** `pinned` is true on the sidebar rail, where every subject is pinned; pass false elsewhere to show Pin instead of Unpin. */
+function SubjectMenuCard({ anchor, label, onClose, pinned = true }: { anchor: HTMLElement; label: string; onClose(): void; pinned?: boolean }) {
+  const groups = subjectMenuGroups(pinned);
+  const renderItem = (item: SubjectMenuItem) => (
+    <button key={item.label} type="button" role="menuitem" className={`${styles.menuItem} ${item.danger ? styles.menuDanger : ''}`}>
+      {item.icon && <Icon name={item.icon} />}
+      <span>{item.label}</span>
+    </button>
+  );
+  return (
+    <MenuCard anchor={anchor} label={label} onClose={onClose}>
       {groups.map((group, i) => (
         <Fragment key={i}>
           {i > 0 && <div className={styles.menuRule} role="separator" />}
           {group.map(renderItem)}
         </Fragment>
       ))}
-    </div>,
-    document.body,
+    </MenuCard>
   );
 }
 
+/** Card that opens under the profile button. Blank for now; the profile options go inside it. */
+function ProfileMenuCard({ anchor, onClose }: { anchor: HTMLElement; onClose(): void }) {
+  return <MenuCard anchor={anchor} label="Profile" onClose={onClose} className={styles.profileCard} />;
+}
+
 export function Sidebar() {
-  const [menu, setMenu] = useState<{ subject: string; anchor: HTMLElement } | null>(null);
+  // Only one floating card is open at a time; `id` is 'profile' or `subject:<name>`.
+  const [menu, setMenu] = useState<{ id: string; anchor: HTMLElement } | null>(null);
+  const toggleMenu = (id: string, anchor: HTMLElement) => setMenu((m) => (m?.id === id ? null : { id, anchor }));
   const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(new Set());
   const toggleSubject = (name: string) =>
     setCollapsed((prev) => {
@@ -93,7 +109,14 @@ export function Sidebar() {
   return (
     <div className={styles.sidebar}>
       <div className={styles.user} data-testid="sidebar-user">
-        <button type="button" className={styles.profileButton} aria-label={`${USER_NAME}, profile`}>
+        <button
+          type="button"
+          className={styles.profileButton}
+          aria-label={`${USER_NAME}, profile`}
+          aria-haspopup="menu"
+          aria-expanded={menu?.id === 'profile'}
+          onClick={(e) => toggleMenu('profile', e.currentTarget)}
+        >
           <img className={styles.avatar} src={profilePicture} alt="" />
           <span className={styles.userName}>{USER_NAME}</span>
         </button>
@@ -119,7 +142,7 @@ export function Sidebar() {
       <ul className={styles.rail} aria-label="Subjects">
         {RAIL_PLACEHOLDERS.map((d) => (
           <li key={d.name}>
-            <div className={styles.railRow} data-open={menu?.subject === d.name || undefined}>
+            <div className={styles.railRow} data-open={menu?.id === `subject:${d.name}` || undefined}>
               <button
                 type="button"
                 className={styles.railItem}
@@ -134,11 +157,8 @@ export function Sidebar() {
                 className={styles.moreButton}
                 aria-label={`${d.name} options`}
                 aria-haspopup="menu"
-                aria-expanded={menu?.subject === d.name}
-                onClick={(e) => {
-                  const anchor = e.currentTarget;
-                  setMenu((m) => (m?.subject === d.name ? null : { subject: d.name, anchor }));
-                }}
+                aria-expanded={menu?.id === `subject:${d.name}`}
+                onClick={(e) => toggleMenu(`subject:${d.name}`, e.currentTarget)}
               >
                 <Icon name="moreVertical" />
               </button>
@@ -166,7 +186,10 @@ export function Sidebar() {
         <Icon name="settings" />
         <span>Settings</span>
       </button>
-      {menu && <SubjectMenuCard anchor={menu.anchor} label={`${menu.subject} options`} onClose={() => setMenu(null)} />}
+      {menu?.id === 'profile' && <ProfileMenuCard anchor={menu.anchor} onClose={() => setMenu(null)} />}
+      {menu?.id.startsWith('subject:') && (
+        <SubjectMenuCard anchor={menu.anchor} label={`${menu.id.slice('subject:'.length)} options`} onClose={() => setMenu(null)} />
+      )}
     </div>
   );
 }
