@@ -36,9 +36,8 @@
 }
 
 /*
- * Grade cards: quiet plain cards so the colour is the only loud thing. Each carries a 4px colour bar along
- * its bottom edge, a small key hint top-left, and the word centred. Hover tints the card faintly in its own
- * colour and lifts the bar to 6px.
+ * Grade cards: each is filled with its own grade colour at semi opacity (a 22% wash over the panel colour),
+ * with a matching soft border. A key hint sits top-left and the word is centred. Hover deepens the wash to 32%.
  */
 .smallCard {
   position: relative;
@@ -47,13 +46,12 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  overflow: hidden;
   padding: 0;
   font: inherit;
   color: var(--text);
   cursor: pointer;
-  background: var(--bg-panel);
-  border: var(--border-w) solid var(--border);
+  background: color-mix(in srgb, var(--grade) 22%, var(--bg-panel));
+  border: var(--border-w) solid color-mix(in srgb, var(--grade) 40%, var(--bg-panel));
   border-radius: var(--radius-sm);
   transition:
     background var(--dur-hover) ease,
@@ -61,24 +59,9 @@
     transform var(--dur-press) ease;
 }
 
-.smallCard::after {
-  content: '';
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 4px;
-  background: var(--grade);
-  transition: height var(--dur-hover) ease;
-}
-
 .smallCard:hover {
-  background: color-mix(in srgb, var(--grade) 6%, var(--bg-panel));
-  border-color: color-mix(in srgb, var(--grade) 45%, var(--border));
-}
-
-.smallCard:hover::after {
-  height: 6px;
+  background: color-mix(in srgb, var(--grade) 32%, var(--bg-panel));
+  border-color: color-mix(in srgb, var(--grade) 60%, var(--bg-panel));
 }
 
 .smallCard:active {
@@ -110,8 +93,8 @@
   font-size: 11px;
   line-height: 1;
   color: var(--text-muted);
-  background: var(--bg-raised);
-  border: var(--border-w) solid var(--border);
+  background: color-mix(in srgb, var(--bg-panel) 70%, transparent);
+  border: var(--border-w) solid color-mix(in srgb, var(--grade) 40%, var(--bg-panel));
   border-radius: 4px;
 }
 
