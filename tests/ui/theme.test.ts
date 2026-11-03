@@ -16,7 +16,7 @@ const SPEC: [string, string, string][] = [
   ['--bg-raised', '#F4F4F2', '#F5F5F2'], ['--bg-preview', '#F7F7F5', '#FFE2D2'], ['--border', '#E2E2E6', '#141414'],
   ['--border-soft', '#E2E2E6', '#DADAD5'], ['--text', '#1C1C1F', '#141414'], ['--text-muted', '#6B6B74', '#4E4E4E'],
   ['--text-faint', '#9A9AA2', '#8A8A8A'], ['--accent', '#2F5FCE', '#FF5B14'], ['--accent-ink', '#FFFFFF', '#141414'],
-  ['--accent-soft', '#EAF0FB', '#FFE2D2'], ['--sidebar-bg', '#FFFFFF', '#FFFFFF'], ['--sidebar-header-rule', '#D4D4D4', '#D4D4D4'], ['--new-btn-bg', '#FFFFFF', '#FFFFFF'], ['--new-btn-hover', '#F7F7F7', '#F7F7F7'], ['--menu-card-bg', '#FFFFFF', '#FFFFFF'], ['--sidebar-text', '#1C1C1F', '#141414'],
+  ['--accent-soft', '#EAF0FB', '#FFE2D2'], ['--sidebar-bg', '#FFFFFF', '#FFFFFF'], ['--sidebar-header-rule', '#D4D4D4', '#D4D4D4'], ['--new-btn-bg', '#FFFFFF', '#FFFFFF'], ['--new-btn-hover', '#F7F7F7', '#F7F7F7'], ['--menu-card-bg', '#FFFFFF', '#FFFFFF'], ['--table-head-ink', '#000000', '#000000'], ['--sidebar-text', '#1C1C1F', '#141414'],
   ['--sidebar-text-muted', '#6B6B74', '#3A3A3A'], ['--sidebar-active-bg', '#EDECE8', '#FF5B14'],
   ['--sidebar-active-text', '#1C1C1F', '#141414'], ['--sidebar-label', '#9A9AA2', '#8A8A8A'],
   ['--mark-bg', '#2F5FCE', '#FF5B14'], ['--mark-ink', '#FFFFFF', '#141414'], ['--add-bg', '#FFFFFF', '#141414'],
