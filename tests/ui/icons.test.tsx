@@ -9,7 +9,7 @@ test('supplied icons draw their paths; unsupplied ones render the dashed placeho
   const { container: a } = render(<Icon name="today" />);
   expect(a.querySelector('svg path')).not.toBeNull();
   expect(a.querySelector('svg')!.getAttribute('width')).toBe('16');
-  const { container: b } = render(<Icon name="undo" />);
+  const { container: b } = render(<Icon name="suspend" />);
   expect(b.querySelector('[data-placeholder="true"]')).not.toBeNull();
   const { container: c } = render(<Icon name="today" size={18} />);
   expect(c.querySelector('svg')!.getAttribute('width')).toBe('18');
