@@ -31,15 +31,19 @@
   display: flex;
   gap: var(--sp-16);
   height: 96px;
-  margin-top: var(--sp-24);
+  margin-top: var(--sp-44);
   flex: none;
 }
 
 .smallCard {
   flex: 1 1 0;
   min-width: 0;
-  background: var(--bg-panel);
-  border: var(--border-w) solid var(--border);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-box);
 }
+
+/* Red, amber, green, blue: the app's grade colours. */
+.smallCard:nth-child(1) { background: var(--grade-again-bg); }
+.smallCard:nth-child(2) { background: var(--grade-hard-bg); }
+.smallCard:nth-child(3) { background: var(--grade-good-bg); }
+.smallCard:nth-child(4) { background: var(--grade-easy-bg); }
