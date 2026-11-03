@@ -10,7 +10,7 @@
 /* Blank central card for the decks: wide and tall enough for a long list, shrinking with the window. */
 .decksCard {
   width: 100%;
-  max-width: 720px;
+  max-width: 560px;
   height: 100%;
   max-height: 520px;
   min-height: 280px;
