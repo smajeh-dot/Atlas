@@ -217,44 +217,10 @@
 }
 
 /* Blank card for the subject options dropdown (colour comes from --menu-card-bg). */
-.menuItem {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-8);
-  width: 100%;
-  height: 26px;
-  padding: 0 8px;
-  border: 0;
-  border-radius: var(--radius-sm);
-  background: var(--new-btn-bg);
-  color: var(--sidebar-text);
-  font-family: inherit;
-  font-size: 13px;
-  text-align: left;
-  cursor: pointer;
-}
 
-.menuItem:hover,
-.menuItem:focus-visible {
-  background: var(--new-btn-hover);
-}
 
-.menuItem svg {
-  width: 14px;
-  height: 14px;
-}
 
-/* Same 1px grey rule as the sidebar dividers, separating the main actions from whatever sits below. */
-.menuRule {
-  flex: none;
-  height: 1px;
-  margin: 4px 4px;
-  background: var(--sidebar-header-rule);
-}
 
-.menuDanger {
-  color: var(--danger);
-}
 
 /* Pinned to the bottom of the sidebar; the extra class beats .action + .action so auto margin wins. */
 .action.settings {

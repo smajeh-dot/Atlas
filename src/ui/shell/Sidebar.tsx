@@ -3,6 +3,7 @@ import { deckColour } from '../deckColour';
 import { PLACEHOLDER_SUBJECTS } from '../placeholderSubjects';
 import { Fragment, useState } from 'react';
 import { MenuCard } from '../components/MenuCard';
+import menuStyles from '../components/MenuCard.module.css';
 import profilePicture from '../../assets/profile-placeholder.jpg';
 import styles from './Sidebar.module.css';
 
@@ -35,7 +36,7 @@ function subjectMenuGroups(pinned: boolean): SubjectMenuItem[][] {
 function SubjectMenuCard({ anchor, label, onClose, pinned = true }: { anchor: HTMLElement; label: string; onClose(): void; pinned?: boolean }) {
   const groups = subjectMenuGroups(pinned);
   const renderItem = (item: SubjectMenuItem) => (
-    <button key={item.label} type="button" role="menuitem" className={`${styles.menuItem} ${item.danger ? styles.menuDanger : ''}`}>
+    <button key={item.label} type="button" role="menuitem" className={`${menuStyles.menuItem} ${item.danger ? menuStyles.menuDanger : ''}`}>
       {item.icon && <Icon name={item.icon} />}
       <span>{item.label}</span>
     </button>
@@ -44,7 +45,7 @@ function SubjectMenuCard({ anchor, label, onClose, pinned = true }: { anchor: HT
     <MenuCard anchor={anchor} label={label} onClose={onClose}>
       {groups.map((group, i) => (
         <Fragment key={i}>
-          {i > 0 && <div className={styles.menuRule} role="separator" />}
+          {i > 0 && <div className={menuStyles.menuRule} role="separator" />}
           {group.map(renderItem)}
         </Fragment>
       ))}
@@ -64,7 +65,7 @@ function ProfileMenuCard({ anchor, onClose }: { anchor: HTMLElement; onClose(): 
   return (
     <MenuCard anchor={anchor} label="Profile" onClose={onClose} placement="right">
       {PROFILE_MENU_ITEMS.map((item) => (
-        <button key={item.label} type="button" role="menuitem" className={styles.menuItem}>
+        <button key={item.label} type="button" role="menuitem" className={menuStyles.menuItem}>
           <Icon name={item.icon} />
           <span>{item.label}</span>
         </button>

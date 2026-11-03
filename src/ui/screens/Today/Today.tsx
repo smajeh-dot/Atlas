@@ -1,10 +1,24 @@
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
 import { Count } from '../../components/Count';
 import { MenuCard } from '../../components/MenuCard';
+import menuStyles from '../../components/MenuCard.module.css';
 import { deckColour } from '../../deckColour';
-import { Icon } from '../../icons/icons';
+import { Icon, type IconName } from '../../icons/icons';
 import { PLACEHOLDER_SUBJECTS } from '../../placeholderSubjects';
 import styles from './Today.module.css';
+
+interface MenuItem {
+  label: string;
+  icon?: IconName;
+  danger?: boolean;
+}
+
+/** Menu for a subject row, in groups with a divider between them. All placeholders: none of the items does anything yet. */
+const SUBJECT_MENU_GROUPS: MenuItem[][] = [
+  [{ label: 'Study All' }],
+  [{ label: 'New Deck', icon: 'newDeck' }, { label: 'Rename' }, { label: 'Colour', icon: 'droplet' }, { label: 'Unpin' }],
+  [{ label: 'Delete', icon: 'trash', danger: true }],
+];
 
 /** Today screen, being designed from the ground up. The central card is where the decks go (placeholder rows for now). */
 export function Today() {
@@ -17,8 +31,9 @@ export function Today() {
     });
 
   // One blank dropdown at a time; `id` is the subject or sub-deck it belongs to.
-  const [menu, setMenu] = useState<{ id: string; label: string; anchor: HTMLElement } | null>(null);
-  const toggleMenu = (id: string, label: string, anchor: HTMLElement) => setMenu((m) => (m?.id === id ? null : { id, label, anchor }));
+  const [menu, setMenu] = useState<{ id: string; label: string; anchor: HTMLElement; kind: 'subject' | 'subdeck' } | null>(null);
+  const toggleMenu = (id: string, label: string, anchor: HTMLElement, kind: 'subject' | 'subdeck') =>
+    setMenu((m) => (m?.id === id ? null : { id, label, anchor, kind }));
 
   return (
     <div className={styles.page} data-testid="today-screen">
@@ -54,7 +69,7 @@ export function Today() {
                     aria-label={`${subject.name} options`}
                     aria-haspopup="menu"
                     aria-expanded={menu?.id === subject.name}
-                    onClick={(e) => toggleMenu(subject.name, `${subject.name} options`, e.currentTarget)}
+                    onClick={(e) => toggleMenu(subject.name, `${subject.name} options`, e.currentTarget, 'subject')}
                   >
                     <Icon name="moreVertical" />
                   </button>
@@ -76,7 +91,7 @@ export function Today() {
                           aria-label={`${sub.name} options`}
                           aria-haspopup="menu"
                           aria-expanded={menu?.id === `${subject.name}/${sub.name}`}
-                          onClick={(e) => toggleMenu(`${subject.name}/${sub.name}`, `${sub.name} options`, e.currentTarget)}
+                          onClick={(e) => toggleMenu(`${subject.name}/${sub.name}`, `${sub.name} options`, e.currentTarget, 'subdeck')}
                         >
                           <Icon name="moreVertical" />
                         </button>
@@ -89,7 +104,22 @@ export function Today() {
           })}
         </div>
       </section>
-      {menu && <MenuCard anchor={menu.anchor} label={menu.label} onClose={() => setMenu(null)} className={styles.dropdown} />}
+      {menu && (
+        <MenuCard anchor={menu.anchor} label={menu.label} onClose={() => setMenu(null)} className={menu.kind === 'subdeck' ? styles.dropdown : undefined}>
+          {menu.kind === 'subject' &&
+            SUBJECT_MENU_GROUPS.map((group, i) => (
+              <Fragment key={i}>
+                {i > 0 && <div className={menuStyles.menuRule} role="separator" />}
+                {group.map((item) => (
+                  <button key={item.label} type="button" role="menuitem" className={`${menuStyles.menuItem} ${item.danger ? menuStyles.menuDanger : ''}`}>
+                    {item.icon && <Icon name={item.icon} />}
+                    <span>{item.label}</span>
+                  </button>
+                ))}
+              </Fragment>
+            ))}
+        </MenuCard>
+      )}
     </div>
   );
 }
