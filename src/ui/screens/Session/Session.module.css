@@ -35,16 +35,16 @@
   transition: width var(--dur-reveal) ease;
 }
 
-/* The colour sits 1.5px short of the segment's right edge, which leaves the gap; its corners are rounded by 1px. */
+/* The colour sits 2px short of the segment's right edge, which leaves the gap; its corners are rounded by 2px. */
 .segment::after {
   content: '';
   position: absolute;
   top: 0;
   bottom: 0;
   left: 0;
-  right: 1.5px;
+  right: 2px;
   background: var(--grade);
-  border-radius: 1px;
+  border-radius: 2px;
 }
 
 .card {
