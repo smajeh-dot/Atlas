@@ -35,8 +35,8 @@ function subjectMenuGroups(pinned: boolean): SubjectMenuItem[][] {
   ];
 }
 
-/** Floating card anchored under a button: closes on outside click or Esc, and returns focus to the button. */
-function MenuCard({ anchor, label, onClose, className, children }: { anchor: HTMLElement; label: string; onClose(): void; className?: string; children?: ReactNode }) {
+/** Floating card anchored to a button, under it or (placement 'right') beside it with the top edges aligned: closes on outside click or Esc, and returns focus to the button. */
+function MenuCard({ anchor, label, onClose, className, placement = 'below', children }: { anchor: HTMLElement; label: string; onClose(): void; className?: string; placement?: 'below' | 'right'; children?: ReactNode }) {
   const isTop = useOverlayLayer();
   const rect = anchor.getBoundingClientRect();
   const ref = useRef<HTMLDivElement>(null);
@@ -61,7 +61,7 @@ function MenuCard({ anchor, label, onClose, className, children }: { anchor: HTM
     };
   });
   return createPortal(
-    <div ref={ref} className={`${styles.menuCard} ${className ?? ''}`} role="menu" aria-label={label} style={{ top: rect.bottom + 4, left: rect.left }}>
+    <div ref={ref} className={`${styles.menuCard} ${className ?? ''}`} role="menu" aria-label={label} style={placement === 'right' ? { top: rect.top, left: rect.right + 4 } : { top: rect.bottom + 4, left: rect.left }}>
       {children}
     </div>,
     document.body,
@@ -92,7 +92,7 @@ function SubjectMenuCard({ anchor, label, onClose, pinned = true }: { anchor: HT
 
 /** Card that opens under the profile button. Blank for now; the profile options go inside it. */
 function ProfileMenuCard({ anchor, onClose }: { anchor: HTMLElement; onClose(): void }) {
-  return <MenuCard anchor={anchor} label="Profile" onClose={onClose} className={styles.profileCard} />;
+  return <MenuCard anchor={anchor} label="Profile" onClose={onClose} className={styles.profileCard} placement="right" />;
 }
 
 export function Sidebar() {
