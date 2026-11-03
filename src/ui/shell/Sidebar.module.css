@@ -14,7 +14,7 @@
   display: flex;
   align-items: center;
   gap: var(--sp-10);
-  padding: 14px 4px;
+  padding: 10px 0;
   border-bottom: 1px solid var(--sidebar-header-rule);
 }
 
@@ -298,4 +298,25 @@
   .subWrap[data-collapsed] {
     transition: none;
   }
+}
+
+/* The picture and name are one button. 4px of its own padding keeps them exactly where they were. */
+.profileButton {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-10);
+  width: 100%;
+  min-width: 0;
+  padding: 4px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: var(--new-btn-bg);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.profileButton:hover {
+  background: var(--new-btn-hover);
 }

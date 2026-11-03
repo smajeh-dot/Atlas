@@ -93,8 +93,10 @@ export function Sidebar() {
   return (
     <div className={styles.sidebar}>
       <div className={styles.user} data-testid="sidebar-user">
-        <img className={styles.avatar} src={profilePicture} alt="" />
-        <span className={styles.userName}>{USER_NAME}</span>
+        <button type="button" className={styles.profileButton} aria-label={`${USER_NAME}, profile`}>
+          <img className={styles.avatar} src={profilePicture} alt="" />
+          <span className={styles.userName}>{USER_NAME}</span>
+        </button>
       </div>
       <button type="button" className={styles.action}>
         <Icon name="plus" />
