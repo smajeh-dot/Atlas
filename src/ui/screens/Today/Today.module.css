@@ -27,6 +27,18 @@
 .decksHeader {
   flex: none;
   height: calc(50px - var(--border-w));
+  display: grid;
+  /* Deck takes the remaining width on the left; the three number columns sit against the right edge. */
+  grid-template-columns: minmax(0, 1fr) repeat(3, 56px);
+  align-items: center;
+  padding: 0 16px;
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.num {
+  text-align: right;
 }
 
 /* 1px grey divider, inset 16px from the card's left and right edges. */
