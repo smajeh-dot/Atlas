@@ -23,10 +23,10 @@
   overflow-y: auto;
 }
 
-/* Header strip above the divider; with the card's border it makes the divider sit 40px from the card's top edge. */
+/* Header strip above the divider; with the card's border it makes the divider sit 45px from the card's top edge. */
 .decksHeader {
   flex: none;
-  height: calc(40px - var(--border-w));
+  height: calc(45px - var(--border-w));
   display: grid;
   /* Deck takes the remaining width on the left; the three number columns sit against the right edge. */
   grid-template-columns: minmax(0, 1fr) repeat(3, 56px);
