@@ -12,7 +12,14 @@ export function Session({ target }: { target?: string }) {
   useHotkeys({ Esc: () => navigate({ name: 'today' }) });
   return (
     <div className={styles.page} data-testid="session-screen" data-target={target}>
-      <section className={styles.card} aria-label="Flashcard" data-testid="session-card" />
+      <div className={styles.stack}>
+        <section className={styles.card} aria-label="Flashcard" data-testid="session-card" />
+        <div className={styles.row}>
+          {[0, 1, 2, 3].map((i) => (
+            <div key={i} className={styles.smallCard} data-testid="session-small-card" />
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
