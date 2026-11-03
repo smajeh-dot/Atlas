@@ -18,6 +18,22 @@
   gap: var(--sp-16);
 }
 
+/* Progress bar: coloured segments for cards marked so far, grey for what is still to do. */
+.progress {
+  display: flex;
+  flex: none;
+  height: 8px;
+  overflow: hidden;
+  background: var(--bar);
+  border-radius: 4px;
+}
+
+.segment {
+  height: 100%;
+  background: var(--grade);
+  transition: width var(--dur-reveal) ease;
+}
+
 .card {
   position: relative;
   display: flex;

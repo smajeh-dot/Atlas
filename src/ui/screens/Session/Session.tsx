@@ -20,36 +20,54 @@ export function Session({ target }: { target?: string }) {
   const { navigate } = useAtlas();
   const [index, setIndex] = useState(0);
   const [flipped, setFlipped] = useState(false);
+  // How many cards have been marked Again, Hard, Good and Easy so far (mock; nothing is saved).
+  const [counts, setCounts] = useState([0, 0, 0, 0]);
   const done = index >= MOCK_CARDS.length;
   const card = MOCK_CARDS[index];
+  const marked = counts.reduce((a, b) => a + b, 0);
 
   const flip = () => {
     if (done) return false;
     setFlipped((f) => !f);
   };
-  // Mock grading: any of the four moves on to the next card. Nothing is recorded yet.
-  const grade = () => {
+  // Mock grading: the card is counted under its grade and the next one comes up. Nothing is saved.
+  const grade = (which: number) => {
     if (done || !flipped) return false;
+    setCounts((c) => c.map((n, i) => (i === which ? n + 1 : n)));
     setFlipped(false);
     setIndex((i) => i + 1);
   };
   const restart = () => {
     setIndex(0);
     setFlipped(false);
+    setCounts([0, 0, 0, 0]);
   };
   useHotkeys({
     Esc: () => navigate({ name: 'today' }),
     Space: flip,
     Enter: flip,
-    '1': grade,
-    '2': grade,
-    '3': grade,
-    '4': grade,
+    '1': () => grade(0),
+    '2': () => grade(1),
+    '3': () => grade(2),
+    '4': () => grade(3),
   });
 
   return (
     <div className={styles.page} data-testid="session-screen" data-target={target}>
       <div className={styles.stack}>
+        <div
+          className={styles.progress}
+          role="progressbar"
+          aria-label="Session progress"
+          aria-valuemin={0}
+          aria-valuemax={MOCK_CARDS.length}
+          aria-valuenow={marked}
+          data-testid="session-progress"
+        >
+          {GRADES.map(({ word, cls }, i) => (
+            <span key={word} className={`${styles.segment} ${styles[cls]}`} style={{ width: `${((counts[i] ?? 0) / MOCK_CARDS.length) * 100}%` }} />
+          ))}
+        </div>
         <section
           className={styles.card}
           aria-label="Flashcard"
@@ -89,7 +107,7 @@ export function Session({ target }: { target?: string }) {
               className={`${styles.smallCard} ${styles[cls]}`}
               data-testid="session-small-card"
               aria-disabled={!flipped || done}
-              onClick={grade}
+              onClick={() => grade(i)}
             >
               <span className={styles.key} aria-hidden="true">{i + 1}</span>
               <span className={styles.label}>{word}</span>
