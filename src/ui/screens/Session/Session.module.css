@@ -22,18 +22,29 @@
 .progress {
   display: flex;
   flex: none;
-  height: 4px;
+  height: 6px;
   overflow: hidden;
   background: var(--bar);
   border-radius: 2px;
 }
 
 .segment {
+  position: relative;
   height: 100%;
-  background: var(--grade);
-  /* A 2px strip of page colour on each segment's right edge makes the gap between colours. */
-  box-shadow: inset -2px 0 0 var(--bg-main);
+  overflow: hidden;
   transition: width var(--dur-reveal) ease;
+}
+
+/* The colour sits 1px short of the segment's right edge, which leaves the gap; its corners are rounded by 1px. */
+.segment::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 1px;
+  background: var(--grade);
+  border-radius: 1px;
 }
 
 .card {
