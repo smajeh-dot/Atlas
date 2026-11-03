@@ -23,16 +23,16 @@
   overflow-y: auto;
 }
 
-/* Header strip above the divider; with the card's border it makes the divider sit 50px from the card's top edge. */
+/* Header strip above the divider; with the card's border it makes the divider sit 40px from the card's top edge. */
 .decksHeader {
   flex: none;
-  height: calc(50px - var(--border-w));
+  height: calc(40px - var(--border-w));
   display: grid;
   /* Deck takes the remaining width on the left; the three number columns sit against the right edge. */
   grid-template-columns: minmax(0, 1fr) repeat(3, 56px);
   /* Sit on the divider with a small gap. */
   align-items: end;
-  padding: 0 16px 8px;
+  padding: 0 32px 8px 16px;
   font-size: 14px;
   font-weight: 500;
   color: var(--table-head-ink);
