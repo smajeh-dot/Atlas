@@ -15,8 +15,8 @@ interface MenuItem {
 
 /** Menu for a subject row, in groups with a divider between them. All placeholders: none of the items does anything yet. */
 const SUBJECT_MENU_GROUPS: MenuItem[][] = [
-  [{ label: 'Study All' }],
-  [{ label: 'New Deck', icon: 'newDeck' }, { label: 'Rename' }, { label: 'Colour', icon: 'droplet' }, { label: 'Unpin' }],
+  [{ label: 'Study All' }, { label: 'Unpin' }],
+  [{ label: 'New Deck', icon: 'newDeck' }, { label: 'Rename', icon: 'edit' }, { label: 'Colour', icon: 'droplet' }],
   [{ label: 'Delete', icon: 'trash', danger: true }],
 ];
 
