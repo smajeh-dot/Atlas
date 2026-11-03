@@ -38,12 +38,19 @@
 .smallCard {
   flex: 1 1 0;
   min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-box);
 }
 
 /* Red, amber, green, blue: the app's grade colours. */
-.smallCard:nth-child(1) { background: var(--grade-again-bg); }
-.smallCard:nth-child(2) { background: var(--grade-hard-bg); }
-.smallCard:nth-child(3) { background: var(--grade-good-bg); }
-.smallCard:nth-child(4) { background: var(--grade-easy-bg); }
+.smallCard:nth-child(1) { background: var(--grade-again-bg); color: var(--grade-again-ink); }
+.smallCard:nth-child(2) { background: var(--grade-hard-bg); color: var(--grade-hard-ink); }
+.smallCard:nth-child(3) { background: var(--grade-good-bg); color: var(--grade-good-ink); }
+.smallCard:nth-child(4) { background: var(--grade-easy-bg); color: var(--grade-easy-ink); }
