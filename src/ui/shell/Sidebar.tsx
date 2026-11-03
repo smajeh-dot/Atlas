@@ -90,15 +90,21 @@ function SubjectMenuCard({ anchor, label, onClose, pinned = true }: { anchor: HT
   );
 }
 
-const PROFILE_MENU_ITEMS = ['Import deck', 'Appearance', 'Daily Limit', 'Help'];
+const PROFILE_MENU_ITEMS: { label: string; icon: IconName }[] = [
+  { label: 'Import deck', icon: 'import' },
+  { label: 'Appearance', icon: 'palette' },
+  { label: 'Daily Limit', icon: 'dailyLimit' },
+  { label: 'Help', icon: 'help' },
+];
 
 /** Card that opens beside the profile button. */
 function ProfileMenuCard({ anchor, onClose }: { anchor: HTMLElement; onClose(): void }) {
   return (
     <MenuCard anchor={anchor} label="Profile" onClose={onClose} placement="right">
-      {PROFILE_MENU_ITEMS.map((label) => (
-        <button key={label} type="button" role="menuitem" className={styles.menuItem}>
-          <span>{label}</span>
+      {PROFILE_MENU_ITEMS.map((item) => (
+        <button key={item.label} type="button" role="menuitem" className={styles.menuItem}>
+          <Icon name={item.icon} />
+          <span>{item.label}</span>
         </button>
       ))}
     </MenuCard>
