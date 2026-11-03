@@ -10,5 +10,9 @@ import styles from './Session.module.css';
 export function Session({ target }: { target?: string }) {
   const { navigate } = useAtlas();
   useHotkeys({ Esc: () => navigate({ name: 'today' }) });
-  return <div className={styles.page} data-testid="session-screen" data-target={target} />;
+  return (
+    <div className={styles.page} data-testid="session-screen" data-target={target}>
+      <section className={styles.card} aria-label="Flashcard" data-testid="session-card" />
+    </div>
+  );
 }
