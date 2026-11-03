@@ -1,5 +1,6 @@
 import { Icon, type IconName } from '../icons/icons';
 import { deckColour } from '../deckColour';
+import { PLACEHOLDER_SUBJECTS } from '../placeholderSubjects';
 import { Fragment, useEffect, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { useOverlayLayer } from '../components/overlayStack';
@@ -8,11 +9,6 @@ import styles from './Sidebar.module.css';
 
 // Placeholder until real user profiles exist.
 const USER_NAME = 'Harry';
-
-const RAIL_PLACEHOLDERS = [
-  { name: 'Biology', colour: 1, subdecks: ['Sub-deck one', 'Sub-deck two'] },
-  { name: 'Maths', colour: 3, subdecks: ['Sub-deck one', 'Sub-deck two', 'Sub-deck three'] },
-];
 
 interface SubjectMenuItem {
   label: string;
@@ -156,7 +152,7 @@ export function Sidebar() {
       <div className={styles.rule} role="separator" />
       {/* Quick-access rail for decks, placeholder entries for now. */}
       <ul className={styles.rail} aria-label="Subjects">
-        {RAIL_PLACEHOLDERS.map((d) => (
+        {PLACEHOLDER_SUBJECTS.map((d) => (
           <li key={d.name}>
             <div className={styles.railRow} data-open={menu?.id === `subject:${d.name}` || undefined}>
               <button
@@ -184,9 +180,9 @@ export function Sidebar() {
                 <div className={styles.subInner}>
                   <ul className={styles.subRail} aria-label={`${d.name} decks`}>
                     {d.subdecks.map((sub) => (
-                      <li key={sub}>
+                      <li key={sub.name}>
                         <button type="button" className={`${styles.railItem} ${styles.subItem}`}>
-                          <span className={styles.railName}>{sub}</span>
+                          <span className={styles.railName}>{sub.name}</span>
                           <span className={styles.railMore}><Icon name="moreVertical" /></span>
                         </button>
                       </li>

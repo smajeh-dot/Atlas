@@ -50,3 +50,43 @@
   margin: 0 16px;
   background: var(--sidebar-header-rule);
 }
+
+.rows {
+  padding: 8px 0;
+}
+
+.group + .group {
+  margin-top: 8px;
+}
+
+/* Same column template as the header so the counts line up under New, Learn and Due. */
+.row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) repeat(3, 56px);
+  align-items: center;
+  height: 34px;
+  padding: 0 32px;
+  font-size: var(--fs-ui);
+}
+
+.subjectName {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-8);
+  min-width: 0;
+  font-weight: 500;
+}
+
+.bar {
+  flex: none;
+  width: 3px;
+  height: 18px;
+  border-radius: 2px;
+}
+
+.subName {
+  padding-left: 27px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
