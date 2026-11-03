@@ -83,6 +83,13 @@ function SubjectMenuCard({ anchor, label, onClose, pinned = true }: { anchor: HT
 
 export function Sidebar() {
   const [menu, setMenu] = useState<{ subject: string; anchor: HTMLElement } | null>(null);
+  const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(new Set());
+  const toggleSubject = (name: string) =>
+    setCollapsed((prev) => {
+      const next = new Set(prev);
+      if (!next.delete(name)) next.add(name);
+      return next;
+    });
   return (
     <div className={styles.sidebar}>
       <div className={styles.user} data-testid="sidebar-user">
@@ -111,7 +118,12 @@ export function Sidebar() {
         {RAIL_PLACEHOLDERS.map((d) => (
           <li key={d.name}>
             <div className={styles.railRow} data-open={menu?.subject === d.name || undefined}>
-              <button type="button" className={styles.railItem}>
+              <button
+                type="button"
+                className={styles.railItem}
+                aria-expanded={d.subdecks.length > 0 ? !collapsed.has(d.name) : undefined}
+                onClick={() => toggleSubject(d.name)}
+              >
                 <span className={styles.railLine} style={{ background: deckColour(d.colour) }} aria-hidden="true" />
                 <span className={styles.railName}>{d.name}</span>
               </button>
@@ -130,16 +142,20 @@ export function Sidebar() {
               </button>
             </div>
             {d.subdecks.length > 0 && (
-              <ul className={styles.subRail} aria-label={`${d.name} decks`}>
-                {d.subdecks.map((sub) => (
-                  <li key={sub}>
-                    <button type="button" className={`${styles.railItem} ${styles.subItem}`}>
-                      <span className={styles.railName}>{sub}</span>
-                      <span className={styles.railMore}><Icon name="moreVertical" /></span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
+              <div className={styles.subWrap} data-collapsed={collapsed.has(d.name) || undefined}>
+                <div className={styles.subInner}>
+                  <ul className={styles.subRail} aria-label={`${d.name} decks`}>
+                    {d.subdecks.map((sub) => (
+                      <li key={sub}>
+                        <button type="button" className={`${styles.railItem} ${styles.subItem}`}>
+                          <span className={styles.railName}>{sub}</span>
+                          <span className={styles.railMore}><Icon name="moreVertical" /></span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
             )}
           </li>
         ))}

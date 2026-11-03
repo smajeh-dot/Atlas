@@ -271,3 +271,31 @@
 .action.settings {
   margin-top: auto;
 }
+
+/* Collapsing sub-decks: the row height eases between 1fr and 0fr while the list fades. */
+.subWrap {
+  display: grid;
+  grid-template-rows: 1fr;
+  opacity: 1;
+  transition: grid-template-rows 200ms ease, opacity 160ms ease;
+}
+
+.subWrap[data-collapsed] {
+  grid-template-rows: 0fr;
+  opacity: 0;
+  visibility: hidden;
+  /* Hide from keyboard and screen readers only once the animation has finished. */
+  transition: grid-template-rows 200ms ease, opacity 160ms ease, visibility 0s linear 200ms;
+}
+
+.subInner {
+  min-height: 0;
+  overflow: hidden;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .subWrap,
+  .subWrap[data-collapsed] {
+    transition: none;
+  }
+}
