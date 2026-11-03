@@ -22,6 +22,8 @@ export type Route =
   | { name: 'today' }
   | { name: 'decks'; deckId?: number }
   | { name: 'study'; deckId: number | null }
+  /** The blank study session screen. `target` names what was opened (a sub-deck or a whole subject) until real decks exist. */
+  | { name: 'session'; target?: string }
   | { name: 'add'; deckId?: number }
   | { name: 'settings'; section?: 'appearance' | 'study' | 'about' };
 

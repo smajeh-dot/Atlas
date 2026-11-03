@@ -59,3 +59,21 @@ test('Ctrl+, opens Settings even while typing in a field', async () => {
   expect(await screen.findByRole('heading', { name: 'Settings' })).toBeTruthy();
   field.remove();
 });
+
+test('a sub-deck row opens the blank session screen, and Esc returns to Today', async () => {
+  const { user } = await renderApp({ db: await seeded() });
+  const card = await screen.findByTestId('today-decks-card');
+  await user.click(within(card).getAllByRole('button', { name: /Sub-deck one/ })[0]!);
+  expect(await screen.findByTestId('session-screen')).toBeTruthy();
+  expect(screen.queryByTestId('today-decks-card')).toBeNull();
+  await user.keyboard('{Escape}');
+  expect(await screen.findByTestId('today-decks-card')).toBeTruthy();
+});
+
+test('Study All in a subject menu opens the blank session screen', async () => {
+  const { user } = await renderApp({ db: await seeded() });
+  const card = await screen.findByTestId('today-decks-card');
+  await user.click(within(card).getByRole('button', { name: 'Biology options' }));
+  await user.click(await screen.findByRole('menuitem', { name: 'Study All' }));
+  expect(await screen.findByTestId('session-screen')).toBeTruthy();
+});

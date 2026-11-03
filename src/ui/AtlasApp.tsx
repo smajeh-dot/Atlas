@@ -7,6 +7,7 @@ import { ToastProvider, useToast } from './components/Toast';
 import { useHotkeys } from './keys';
 import { AddCard } from './screens/Editor/AddCard';
 import { Decks } from './screens/Decks/Decks';
+import { Session } from './screens/Session/Session';
 import { Settings } from './screens/Settings/Settings';
 import { Study } from './screens/Study/Study';
 import { Today } from './screens/Today/Today';
@@ -40,7 +41,7 @@ function Frame() {
   const toast = useToast();
   const { data: tree } = useData(() => getDeckTreeWithCounts(deps.db, deps.clock.now()), []);
   const hasDecks = (tree?.length ?? 0) > 0;
-  const studying = route.name === 'study';
+  const studying = route.name === 'study' || route.name === 'session';
   const main = useRef<HTMLElement>(null);
 
   // After moving to another screen, keys go to that screen (Space on Today, for example), not to the
@@ -83,6 +84,8 @@ function Screen({ route }: { route: Route }) {
       return <Decks deckId={route.deckId} />;
     case 'study':
       return <Study key={String(route.deckId)} deckId={route.deckId} />;
+    case 'session':
+      return <Session target={route.target} />;
     case 'add':
       return <AddCard deckId={route.deckId} />;
     case 'settings':

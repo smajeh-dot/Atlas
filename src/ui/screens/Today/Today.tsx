@@ -1,4 +1,5 @@
 import { Fragment, useState } from 'react';
+import { useAtlas } from '../../app/AtlasContext';
 import { Count } from '../../components/Count';
 import { MenuCard } from '../../components/MenuCard';
 import menuStyles from '../../components/MenuCard.module.css';
@@ -11,17 +12,19 @@ interface MenuItem {
   label: string;
   icon?: IconName;
   danger?: boolean;
+  onSelect?(): void;
 }
 
-/** Menu for a subject row, in groups with a divider between them. All placeholders: none of the items does anything yet. */
-const SUBJECT_MENU_GROUPS: MenuItem[][] = [
-  [{ label: 'Study All' }, { label: 'Unpin' }],
+/** Menu for a subject row, in groups with a divider between them. Only Study All does anything so far; the rest are placeholders. */
+const subjectMenuGroups = (studyAll: () => void): MenuItem[][] => [
+  [{ label: 'Study All', onSelect: studyAll }, { label: 'Unpin' }],
   [{ label: 'New Deck', icon: 'newDeck' }, { label: 'Rename', icon: 'edit' }, { label: 'Colour', icon: 'droplet' }],
   [{ label: 'Delete', icon: 'trash', danger: true }],
 ];
 
 /** Today screen, being designed from the ground up. The central card is where the decks go (placeholder rows for now). */
 export function Today() {
+  const { navigate } = useAtlas();
   const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(new Set());
   const toggle = (name: string) =>
     setCollapsed((prev) => {
@@ -78,13 +81,13 @@ export function Today() {
                   <div className={styles.subInner}>
                     {subject.subdecks.map((sub) => (
                       <div key={sub.name} className={styles.rowWrap} data-open={menu?.id === `${subject.name}/${sub.name}` || undefined}>
-                        <div className={styles.row}>
+                        <button type="button" className={`${styles.row} ${styles.rowMain}`} onClick={() => navigate({ name: 'session', target: `${subject.name} / ${sub.name}` })}>
                           <span className={styles.subName}>{sub.name}</span>
                           <span className={styles.num}><Count kind="new" value={sub.new} /></span>
                           <span className={styles.num}><Count kind="learn" value={sub.learn} /></span>
                           <span className={styles.num}><Count kind="due" value={sub.due} /></span>
                           <span />
-                        </div>
+                        </button>
                         <button
                           type="button"
                           className={styles.rowMore}
@@ -107,11 +110,20 @@ export function Today() {
       {menu && (
         <MenuCard anchor={menu.anchor} label={menu.label} onClose={() => setMenu(null)} className={menu.kind === 'subdeck' ? styles.dropdown : undefined}>
           {menu.kind === 'subject' &&
-            SUBJECT_MENU_GROUPS.map((group, i) => (
+            subjectMenuGroups(() => navigate({ name: 'session', target: `${menu.id} (all)` })).map((group, i) => (
               <Fragment key={i}>
                 {i > 0 && <div className={menuStyles.menuRule} role="separator" />}
                 {group.map((item) => (
-                  <button key={item.label} type="button" role="menuitem" className={`${menuStyles.menuItem} ${item.danger ? menuStyles.menuDanger : ''}`}>
+                  <button
+                    key={item.label}
+                    type="button"
+                    role="menuitem"
+                    className={`${menuStyles.menuItem} ${item.danger ? menuStyles.menuDanger : ''}`}
+                    onClick={() => {
+                      setMenu(null);
+                      item.onSelect?.();
+                    }}
+                  >
                     {item.icon && <Icon name={item.icon} />}
                     <span>{item.label}</span>
                   </button>
