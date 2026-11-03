@@ -7,13 +7,11 @@
   padding: 64px var(--sp-32) var(--sp-32);
 }
 
-/* Blank central card for the decks: wide and tall enough for a long list, shrinking with the window. */
+/* Central decks card. Its height follows its content, so the bottom edge hugs the last deck; a very long list scrolls inside it. */
 .decksCard {
   width: 100%;
   max-width: 560px;
-  height: 100%;
-  max-height: 440px;
-  min-height: 240px;
+  max-height: 100%;
   display: flex;
   flex-direction: column;
   background: var(--bg-panel);
@@ -23,24 +21,30 @@
   overflow-y: auto;
 }
 
+/* One column template shared by the header and every row, so the numbers sit under their headings.
+   The last, narrow column holds the triple-dot menu button. */
+.decksHeader,
+.row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) repeat(3, 56px) 28px;
+}
+
 /* Header strip above the divider; with the card's border it makes the divider sit 45px from the card's top edge. */
 .decksHeader {
   flex: none;
   height: calc(45px - var(--border-w));
-  display: grid;
-  /* Deck takes the remaining width on the left; the three number columns sit against the right edge. */
-  grid-template-columns: minmax(0, 1fr) repeat(3, 56px);
   /* Sit on the divider with a small gap. */
   align-items: end;
-  padding: 0 32px 6px 32px;
+  padding: 0 16px 6px 32px;
   font-size: 14px;
   line-height: 1;
   font-weight: 500;
   color: var(--table-head-ink);
 }
 
+/* Headings and numbers are both centred in their column, so each number sits under its word. */
 .num {
-  text-align: right;
+  text-align: center;
 }
 
 /* 1px grey divider, inset 16px from the card's left and right edges. */
@@ -56,17 +60,29 @@
 }
 
 .group + .group {
-  margin-top: 8px;
+  margin-top: 6px;
 }
 
-/* Same column template as the header so the counts line up under New, Learn and Due. */
+.rowWrap {
+  position: relative;
+}
+
 .row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) repeat(3, 56px);
   align-items: center;
-  height: 34px;
-  padding: 0 32px;
+  width: 100%;
+  height: 30px;
+  padding: 0 16px;
   font-size: var(--fs-ui);
+}
+
+/* The subject row is a button: reset the button look. */
+.rowMain {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
 }
 
 .subjectName {
@@ -89,4 +105,61 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* Triple-dot menu button in the last column of every row; shown on hover or keyboard focus. */
+.rowMore {
+  position: absolute;
+  top: 3px;
+  right: 14px;
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+  opacity: 0;
+}
+
+.rowMore svg {
+  width: 14px;
+  height: 14px;
+}
+
+.rowWrap:hover .rowMore,
+.rowMore:focus-visible {
+  opacity: 1;
+}
+
+/* Collapsing sub-decks: same height-and-fade animation as the sidebar. */
+.subWrap {
+  display: grid;
+  grid-template-rows: 1fr;
+  opacity: 1;
+  transition: grid-template-rows 200ms ease, opacity 160ms ease;
+}
+
+.subWrap[data-collapsed] {
+  grid-template-rows: 0fr;
+  opacity: 0;
+  visibility: hidden;
+  /* Hide from keyboard and screen readers only once the animation has finished. */
+  transition: grid-template-rows 200ms ease, opacity 160ms ease, visibility 0s linear 200ms;
+}
+
+.subInner {
+  min-height: 0;
+  overflow: hidden;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .subWrap,
+  .subWrap[data-collapsed] {
+    transition: none;
+  }
 }
