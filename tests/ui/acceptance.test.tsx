@@ -41,11 +41,9 @@ test('a new user creates a deck, adds four kinds of card and studies them by key
   expect(await countRows(db, 'cards')).toBe(6);
   expect(screen.getByText('6 cards added this session')).toBeTruthy();
 
-  // The sidebar is being redesigned and has no navigation yet, so reopen the app on Today.
+  // The sidebar and Today screen are being redesigned and have no way to start a session yet, so reopen the app in Study.
   first.unmount();
-  ({ user, deps } = await renderApp({ db, route: { name: 'today' } }));
-  await screen.findByRole('heading', { name: 'Reviews done · 4 new cards ready' });
-  await user.keyboard(' ');
+  ({ user, deps } = await renderApp({ db, route: { name: 'study', deckId: null } }));
   await screen.findByRole('button', { name: 'Leave study' });
 
   let answers = 0;

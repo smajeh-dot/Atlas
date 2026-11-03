@@ -18,7 +18,7 @@ async function seeded() {
 
 test('A opens Add card, but not while typing', async () => {
   const { user } = await renderApp({ db: await seeded() });
-  await screen.findByRole('heading', { name: '2 cards due today' });
+  await screen.findByTestId('today-screen');
   const stray = document.createElement('input');
   document.body.append(stray);
   stray.focus();
@@ -32,7 +32,7 @@ test('A opens Add card, but not while typing', async () => {
 
 test('Ctrl+, opens Settings', async () => {
   const { user } = await renderApp({ db: await seeded() });
-  await screen.findByRole('heading', { name: '2 cards due today' });
+  await screen.findByTestId('today-screen');
   await user.keyboard('{Control>},{/Control}');
   expect(await screen.findByRole('heading', { name: 'Settings' })).toBeTruthy();
 });
@@ -40,7 +40,7 @@ test('Ctrl+, opens Settings', async () => {
 test('Ctrl+Z outside Study undoes the last action with a toast', async () => {
   const db = await seeded();
   const { user, deps } = await renderApp({ db });
-  await screen.findByRole('heading', { name: '2 cards due today' });
+  await screen.findByTestId('today-screen');
   const deckId = (await db.query<{ id: number }>(`SELECT id FROM decks WHERE name = 'Chemistry'`))[0]!.id;
   await seedNote(deps, deckId, 'basic', ['new', 'x']);
   expect(await countRows(db, 'notes')).toBe(3);
@@ -51,7 +51,7 @@ test('Ctrl+Z outside Study undoes the last action with a toast', async () => {
 
 test('Ctrl+, opens Settings even while typing in a field', async () => {
   const { user } = await renderApp({ db: await seeded() });
-  await screen.findByRole('heading', { name: '2 cards due today' });
+  await screen.findByTestId('today-screen');
   const field = document.createElement('input');
   document.body.append(field);
   field.focus();

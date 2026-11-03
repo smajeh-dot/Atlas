@@ -139,7 +139,7 @@ test('session complete shows stats and Enter goes back to Today', async () => {
   expect(await screen.findByRole('heading', { name: 'Session complete' })).toBeTruthy();
   expect(screen.getByText('1 card · 1 minute · 100% remembered')).toBeTruthy();
   await user.keyboard('{Enter}');
-  expect(await screen.findByText('SATURDAY 31 OCTOBER')).toBeTruthy();
+  expect(await screen.findByTestId('today-screen')).toBeTruthy();
 });
 
 test('learning cards come back while you wait', async () => {
@@ -191,7 +191,7 @@ test('Esc leaves Study', async () => {
   const { user } = await study();
   await screen.findByRole('button', { name: 'Show answer' });
   await user.keyboard('{Escape}');
-  expect(await screen.findByText('SATURDAY 31 OCTOBER')).toBeTruthy();
+  expect(await screen.findByTestId('today-screen')).toBeTruthy();
 });
 
 describe('a learning card falling due does not change the card being studied', () => {
@@ -241,7 +241,7 @@ test('Esc leaves Study even from the type-in box', async () => {
   await seedNote(seedDeps, deck, 'basic_typein', ['Capital of France?', 'Paris']);
   const { user } = await study();
   await user.type(await screen.findByPlaceholderText('Type your answer, then press Enter'), 'Par{Escape}');
-  expect(await screen.findByText('SATURDAY 31 OCTOBER')).toBeTruthy();
+  expect(await screen.findByTestId('today-screen')).toBeTruthy();
 });
 
 test('re-entering a deck whose only card returns later shows the empty state with when it returns', async () => {
