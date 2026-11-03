@@ -35,22 +35,87 @@
   flex: none;
 }
 
+/*
+ * Grade cards: quiet plain cards so the colour is the only loud thing. Each carries a 4px colour bar along
+ * its bottom edge, a small key hint top-left, and the word centred. Hover tints the card faintly in its own
+ * colour and lifts the bar to 6px.
+ */
 .smallCard {
+  position: relative;
   flex: 1 1 0;
   min-width: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 0;
+  overflow: hidden;
   padding: 0;
   font: inherit;
+  color: var(--text);
   cursor: pointer;
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-box);
+  background: var(--bg-panel);
+  border: var(--border-w) solid var(--border);
+  border-radius: var(--radius-sm);
+  transition:
+    background var(--dur-hover) ease,
+    border-color var(--dur-hover) ease,
+    transform var(--dur-press) ease;
 }
 
-/* Red, amber, green, blue: the app's grade colours. */
-.smallCard:nth-child(1) { background: var(--grade-again-bg); color: var(--grade-again-ink); }
-.smallCard:nth-child(2) { background: var(--grade-hard-bg); color: var(--grade-hard-ink); }
-.smallCard:nth-child(3) { background: var(--grade-good-bg); color: var(--grade-good-ink); }
-.smallCard:nth-child(4) { background: var(--grade-easy-bg); color: var(--grade-easy-ink); }
+.smallCard::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 4px;
+  background: var(--grade);
+  transition: height var(--dur-hover) ease;
+}
+
+.smallCard:hover {
+  background: color-mix(in srgb, var(--grade) 6%, var(--bg-panel));
+  border-color: color-mix(in srgb, var(--grade) 45%, var(--border));
+}
+
+.smallCard:hover::after {
+  height: 6px;
+}
+
+.smallCard:active {
+  transform: translateY(1px);
+}
+
+.smallCard:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.label {
+  font-family: var(--font-display);
+  font-size: 17px;
+  letter-spacing: 0.01em;
+}
+
+.key {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1;
+  color: var(--text-muted);
+  background: var(--bg-raised);
+  border: var(--border-w) solid var(--border);
+  border-radius: 4px;
+}
+
+.again { --grade: var(--grade-again-bg); }
+.hard { --grade: var(--grade-hard-bg); }
+.good { --grade: var(--grade-good-bg); }
+.easy { --grade: var(--grade-easy-bg); }

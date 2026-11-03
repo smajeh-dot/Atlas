@@ -2,7 +2,12 @@ import { useAtlas } from '../../app/AtlasContext';
 import { useHotkeys } from '../../keys';
 import styles from './Session.module.css';
 
-const GRADES = ['Again', 'Hard', 'Good', 'Easy'];
+const GRADES = [
+  { word: 'Again', cls: 'again' },
+  { word: 'Hard', cls: 'hard' },
+  { word: 'Good', cls: 'good' },
+  { word: 'Easy', cls: 'easy' },
+];
 
 /**
  * The study session screen: a completely blank page, to be designed from the ground up.
@@ -19,9 +24,10 @@ export function Session({ target }: { target?: string }) {
       <div className={styles.stack}>
         <section className={styles.card} aria-label="Flashcard" data-testid="session-card" />
         <div className={styles.row}>
-          {GRADES.map((word) => (
-            <button key={word} type="button" className={styles.smallCard} data-testid="session-small-card" onClick={grade}>
-              {word}
+          {GRADES.map(({ word, cls }, i) => (
+            <button key={word} type="button" className={`${styles.smallCard} ${styles[cls]}`} data-testid="session-small-card" onClick={grade}>
+              <span className={styles.key} aria-hidden="true">{i + 1}</span>
+              <span className={styles.label}>{word}</span>
             </button>
           ))}
         </div>
