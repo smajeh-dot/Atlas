@@ -154,8 +154,22 @@
 }
 
 .subInner {
+  position: relative;
   min-height: 0;
   overflow: hidden;
+}
+
+/* One continuous 1px grey line down the left of a subject's sub-decks, lined up with the start of the subject's name
+   (same line as in the sidebar, inset 5px from the top and bottom). */
+.subInner::before {
+  content: '';
+  position: absolute;
+  top: 5px;
+  bottom: 5px;
+  left: 27px;
+  width: 1px;
+  background: var(--sidebar-header-rule);
+  pointer-events: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
