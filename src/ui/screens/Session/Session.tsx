@@ -95,7 +95,6 @@ export function Session({ target }: { target?: string }) {
                   </>
                 )}
               </div>
-              <span className={styles.hint}>{flipped ? 'Choose how well you knew it' : 'Click or press Space to show the answer'}</span>
             </>
           )}
         </section>
@@ -106,7 +105,6 @@ export function Session({ target }: { target?: string }) {
               type="button"
               className={`${styles.smallCard} ${styles[cls]}`}
               data-testid="session-small-card"
-              aria-disabled={!flipped || done}
               onClick={() => grade(i)}
             >
               <span className={styles.key} aria-hidden="true">{i + 1}</span>

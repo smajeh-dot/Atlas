@@ -171,8 +171,7 @@
   border-top: var(--border-w) solid var(--border);
 }
 
-.count,
-.hint {
+.count {
   position: absolute;
   font-family: var(--font-mono);
   font-size: 12px;
@@ -182,10 +181,6 @@
 .count {
   top: var(--sp-16);
   right: var(--sp-20);
-}
-
-.hint {
-  bottom: var(--sp-16);
 }
 
 .restart {
@@ -201,10 +196,4 @@
 
 .restart:hover {
   background: var(--bg-raised);
-}
-
-/* The grade cards wake up once the answer is showing. */
-.smallCard[aria-disabled='true'] {
-  opacity: 0.5;
-  cursor: default;
 }
