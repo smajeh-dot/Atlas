@@ -1,6 +1,10 @@
 import styles from './Today.module.css';
 
-/** Today screen: intentionally empty, to be designed from the ground up. The data lives in services/todayService. */
+/** Today screen, being designed from the ground up. The central card is where the decks will go. */
 export function Today() {
-  return <div className={styles.page} data-testid="today-screen" />;
+  return (
+    <div className={styles.page} data-testid="today-screen">
+      <section className={styles.decksCard} aria-label="Decks" data-testid="today-decks-card" />
+    </div>
+  );
 }
