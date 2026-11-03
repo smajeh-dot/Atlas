@@ -90,9 +90,19 @@ function SubjectMenuCard({ anchor, label, onClose, pinned = true }: { anchor: HT
   );
 }
 
-/** Card that opens under the profile button. Blank for now; the profile options go inside it. */
+const PROFILE_MENU_ITEMS = ['Import deck', 'Appearance', 'Daily Limit', 'Help'];
+
+/** Card that opens beside the profile button. */
 function ProfileMenuCard({ anchor, onClose }: { anchor: HTMLElement; onClose(): void }) {
-  return <MenuCard anchor={anchor} label="Profile" onClose={onClose} className={styles.profileCard} placement="right" />;
+  return (
+    <MenuCard anchor={anchor} label="Profile" onClose={onClose} placement="right">
+      {PROFILE_MENU_ITEMS.map((label) => (
+        <button key={label} type="button" role="menuitem" className={styles.menuItem}>
+          <span>{label}</span>
+        </button>
+      ))}
+    </MenuCard>
+  );
 }
 
 export function Sidebar() {

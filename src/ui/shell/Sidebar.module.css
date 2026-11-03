@@ -321,11 +321,6 @@
   background: var(--new-btn-hover);
 }
 
-/* Blank profile card: same card as the subject menu, tall enough to see while empty. */
-.profileCard {
-  min-height: 120px;
-}
-
 .profileButton[aria-expanded='true'] {
   background: var(--new-btn-hover);
 }
