@@ -12,11 +12,27 @@
   width: 100%;
   max-width: 560px;
   height: 100%;
-  max-height: 520px;
-  min-height: 280px;
+  max-height: 440px;
+  min-height: 240px;
+  display: flex;
+  flex-direction: column;
   background: var(--bg-panel);
   border: var(--border-w) solid var(--border);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-box);
   overflow-y: auto;
+}
+
+/* Header strip above the divider; with the card's border it makes the divider sit 50px from the card's top edge. */
+.decksHeader {
+  flex: none;
+  height: calc(50px - var(--border-w));
+}
+
+/* 1px grey divider, inset 16px from the card's left and right edges. */
+.decksRule {
+  flex: none;
+  height: 1px;
+  margin: 0 16px;
+  background: var(--sidebar-header-rule);
 }
