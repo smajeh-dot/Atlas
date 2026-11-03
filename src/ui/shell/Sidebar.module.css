@@ -217,17 +217,6 @@
 }
 
 /* Blank card for the subject options dropdown (colour comes from --menu-card-bg). */
-.menuCard {
-  position: fixed;
-  z-index: 60;
-  width: 135px;
-  padding: 4px;
-  background: var(--menu-card-bg);
-  border: 1px solid var(--sidebar-header-rule);
-  border-radius: 8px;
-  box-shadow: var(--shadow-popover);
-}
-
 .menuItem {
   display: flex;
   align-items: center;

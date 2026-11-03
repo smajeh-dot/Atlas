@@ -132,6 +132,7 @@
 }
 
 .rowWrap:hover .rowMore,
+.rowWrap[data-open] .rowMore,
 .rowMore:focus-visible {
   opacity: 1;
 }
@@ -162,4 +163,10 @@
   .subWrap[data-collapsed] {
     transition: none;
   }
+}
+
+/* Blank dropdown. Width, padding, border and corners come from the shared MenuCard (the same as the sidebar's subject menu);
+   the height equals that menu's: 6 rows of 26px, 2 dividers of 9px and 8px of padding, plus the 2px border. */
+.dropdown {
+  height: 184px;
 }

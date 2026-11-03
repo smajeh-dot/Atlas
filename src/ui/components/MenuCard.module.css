@@ -1,0 +1,11 @@
+/* Floating card used by the sidebar and the Today screen: 135px wide, 4px padding, 8px corners. */
+.menuCard {
+  position: fixed;
+  z-index: 60;
+  width: 135px;
+  padding: 4px;
+  background: var(--menu-card-bg);
+  border: 1px solid var(--sidebar-header-rule);
+  border-radius: 8px;
+  box-shadow: var(--shadow-popover);
+}
