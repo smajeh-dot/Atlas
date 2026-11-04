@@ -1,0 +1,33 @@
+/* No card: it sits straight on the page, as wide as the decks card above it. The squares grow or shrink to fit that width. */
+.root {
+  --heat-gap: 2px;
+  --heat-radius: 2px;
+  --heat-width: 560px;
+  flex: none;
+  width: 100%;
+  max-width: var(--heat-width);
+}
+
+.head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.title {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--table-head-ink);
+}
+
+.sub {
+  font-size: var(--fs-sm);
+  color: var(--text-muted);
+}
+
+.foot {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 10px;
+}

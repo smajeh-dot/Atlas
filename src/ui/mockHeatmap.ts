@@ -1,9 +1,9 @@
+import { studyDayDate } from '../core/studyDay';
 import { heatLevels, heatmapGrid } from '../core/todayStats';
 import type { HeatCell } from '../services/todayService';
 
 /** Made-up review counts for the Today heatmap, until it reads your real history. Same shape as the real thing. */
-const DAY_MS = 86_400_000;
-const label = new Intl.DateTimeFormat('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+const label = new Intl.DateTimeFormat('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' });
 
 /** Small seeded random numbers, so the mock looks the same on every launch. */
 function seeded(seed: number) {
@@ -15,10 +15,10 @@ function seeded(seed: number) {
   };
 }
 
-export function mockHeatmap(now: number): HeatCell[][] {
-  const today = Math.floor(now / DAY_MS);
-  const weekday = (new Date(now).getUTCDay() + 6) % 7; // 0 = Monday
-  const days = heatmapGrid(today, weekday);
+/** `today` is a study day number (see studyDay). `weeks` columns, the last being this week. */
+export function mockHeatmap(today: number, weeks = 53): HeatCell[][] {
+  const weekday = (studyDayDate(today).getUTCDay() + 6) % 7; // 0 = Monday
+  const days = heatmapGrid(today, weekday, weeks);
   const rand = seeded(7);
   // Busier on weekdays, some days off, and the last few days all studied so there's a streak.
   const countFor = (day: number, r: number) => {
@@ -34,7 +34,7 @@ export function mockHeatmap(now: number): HeatCell[][] {
     col.map((count, r): HeatCell => {
       if (count === null) return null;
       const day = days[c]![r]!;
-      return { day, count, level: levels[i++]!, label: `${label.format(day * DAY_MS).replace(',', '')} · ${count} ${count === 1 ? 'review' : 'reviews'}` };
+      return { day, count, level: levels[i++]!, label: `${label.format(studyDayDate(day)).replace(',', '')} · ${count} ${count === 1 ? 'review' : 'reviews'}` };
     }),
   );
 }

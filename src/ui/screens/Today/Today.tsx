@@ -6,7 +6,7 @@ import menuStyles from '../../components/MenuCard.module.css';
 import { deckColour } from '../../deckColour';
 import { Icon, type IconName } from '../../icons/icons';
 import { PLACEHOLDER_SUBJECTS } from '../../placeholderSubjects';
-import { ActivityCard } from './ActivityCard';
+import { Activity } from './Activity';
 import { Notch } from './Notch';
 import styles from './Today.module.css';
 
@@ -110,7 +110,7 @@ export function Today() {
           })}
         </div>
       </section>
-      <ActivityCard />
+      <Activity />
       {menu && (
         <MenuCard anchor={menu.anchor} label={menu.label} onClose={() => setMenu(null)} className={menu.kind === 'subdeck' ? styles.dropdown : undefined}>
           {menu.kind === 'subject' &&

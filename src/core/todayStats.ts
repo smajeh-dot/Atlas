@@ -32,11 +32,11 @@ export function heatLevels(counts: number[]): HeatLevel[] {
  * Study-day numbers for the 12-week heatmap: columns oldest first, rows Monday (0) to Sunday (6).
  * `todayWeekday` is 0 for Monday. Days after today are null.
  */
-export function heatmapGrid(today: number, todayWeekday: number): (number | null)[][] {
+export function heatmapGrid(today: number, todayWeekday: number, weeks = WEEKS): (number | null)[][] {
   const monday = today - todayWeekday;
-  return Array.from({ length: WEEKS }, (_, c) =>
+  return Array.from({ length: weeks }, (_, c) =>
     Array.from({ length: 7 }, (_, r) => {
-      const day = monday - (WEEKS - 1 - c) * 7 + r;
+      const day = monday - (weeks - 1 - c) * 7 + r;
       return day > today ? null : day;
     }),
   );

@@ -20,6 +20,11 @@ export function studyDay(t: number, dayStartHour: number): number {
   return Math.round((Date.UTC(y, m, day) - EPOCH) / DAY_MS);
 }
 
+/** A Date whose UTC fields (getUTCMonth, getUTCDay...) are the calendar date of study day `day`. */
+export function studyDayDate(day: number): Date {
+  return new Date(EPOCH + day * DAY_MS);
+}
+
 /** Epoch ms at which study day `day` begins, in local time. */
 export function startOfStudyDay(day: number, dayStartHour: number): number {
   const c = new Date(EPOCH + day * DAY_MS);
