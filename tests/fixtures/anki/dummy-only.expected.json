@@ -1,0 +1,211 @@
+{
+ "cards": [
+  {
+   "data": "{}",
+   "deck_id": 1,
+   "due": 1,
+   "factor": 0,
+   "flags": 0,
+   "id": 1793821484051,
+   "ivl": 0,
+   "lapses": 0,
+   "left": 0,
+   "note_id": 1793821484051,
+   "odue": 0,
+   "ord": 0,
+   "orig_deck_id": 0,
+   "queue": 0,
+   "reps": 0,
+   "type": 0
+  }
+ ],
+ "collection": {
+  "crt": 1793764800,
+  "fsrs": false,
+  "rollover": 4,
+  "sched_ver": 2
+ },
+ "deck_configs": [
+  {
+   "desired_retention": 0.9,
+   "id": 1,
+   "learn_steps_min": [
+    1.0,
+    10.0
+   ],
+   "name": "Default",
+   "new_per_day": 20,
+   "relearn_steps_min": [
+    10.0
+   ],
+   "reviews_per_day": 200
+  }
+ ],
+ "decks": [
+  {
+   "config_id": 1,
+   "filtered": false,
+   "id": 1,
+   "name": "Default"
+  }
+ ],
+ "generated": {
+  "anki_version": "26.09.4",
+  "now_ms": 1793821483999,
+  "tz": "Europe/London"
+ },
+ "media": [],
+ "notes": [
+  {
+   "fields": [
+    "Please update to the latest Anki version, then import the .colpkg/.apkg file again.",
+    ""
+   ],
+   "guid": "h_5]DgF.*N",
+   "id": 1793821484051,
+   "mod": 1793821484,
+   "notetype_id": 1793821484050,
+   "tags": []
+  }
+ ],
+ "notetypes": [
+  {
+   "css": ".card {\n    font-family: arial;\n    font-size: 20px;\n    line-height: 1.5;\n    text-align: center;\n    color: black;\n    background-color: white;\n}\n",
+   "fields": [
+    "Front",
+    "Back"
+   ],
+   "id": 1793821484050,
+   "name": "Basic",
+   "original_stock_kind": 1,
+   "sort_field_idx": 0,
+   "templates": [
+    {
+     "afmt": "{{FrontSide}}\n\n<hr id=answer>\n\n{{Back}}",
+     "name": "Card 1",
+     "qfmt": "{{Front}}"
+    }
+   ],
+   "type": 0
+  },
+  {
+   "css": ".card {\n    font-family: arial;\n    font-size: 20px;\n    line-height: 1.5;\n    text-align: center;\n    color: black;\n    background-color: white;\n}\n",
+   "fields": [
+    "Front",
+    "Back"
+   ],
+   "id": 1793821484051,
+   "name": "Basic (and reversed card)",
+   "original_stock_kind": 2,
+   "sort_field_idx": 0,
+   "templates": [
+    {
+     "afmt": "{{FrontSide}}\n\n<hr id=answer>\n\n{{Back}}",
+     "name": "Card 1",
+     "qfmt": "{{Front}}"
+    },
+    {
+     "afmt": "{{FrontSide}}\n\n<hr id=answer>\n\n{{Front}}",
+     "name": "Card 2",
+     "qfmt": "{{Back}}"
+    }
+   ],
+   "type": 0
+  },
+  {
+   "css": ".card {\n    font-family: arial;\n    font-size: 20px;\n    line-height: 1.5;\n    text-align: center;\n    color: black;\n    background-color: white;\n}\n",
+   "fields": [
+    "Front",
+    "Back",
+    "Add Reverse"
+   ],
+   "id": 1793821484052,
+   "name": "Basic (optional reversed card)",
+   "original_stock_kind": 3,
+   "sort_field_idx": 0,
+   "templates": [
+    {
+     "afmt": "{{FrontSide}}\n\n<hr id=answer>\n\n{{Back}}",
+     "name": "Card 1",
+     "qfmt": "{{Front}}"
+    },
+    {
+     "afmt": "{{FrontSide}}\n\n<hr id=answer>\n\n{{Front}}",
+     "name": "Card 2",
+     "qfmt": "{{#Add Reverse}}{{Back}}{{/Add Reverse}}"
+    }
+   ],
+   "type": 0
+  },
+  {
+   "css": ".card {\n    font-family: arial;\n    font-size: 20px;\n    line-height: 1.5;\n    text-align: center;\n    color: black;\n    background-color: white;\n}\n",
+   "fields": [
+    "Front",
+    "Back"
+   ],
+   "id": 1793821484053,
+   "name": "Basic (type in the answer)",
+   "original_stock_kind": 4,
+   "sort_field_idx": 0,
+   "templates": [
+    {
+     "afmt": "{{Front}}\n\n<hr id=answer>\n\n{{type:Back}}",
+     "name": "Card 1",
+     "qfmt": "{{Front}}\n\n{{type:Back}}"
+    }
+   ],
+   "type": 0
+  },
+  {
+   "css": ".card {\n    font-family: arial;\n    font-size: 20px;\n    line-height: 1.5;\n    text-align: center;\n    color: black;\n    background-color: white;\n}\n.cloze {\n    font-weight: bold;\n    color: blue;\n}\n.nightMode .cloze {\n    color: lightblue;\n}\n",
+   "fields": [
+    "Text",
+    "Back Extra"
+   ],
+   "id": 1793821484054,
+   "name": "Cloze",
+   "original_stock_kind": 5,
+   "sort_field_idx": 0,
+   "templates": [
+    {
+     "afmt": "{{cloze:Text}}<br>\n{{Back Extra}}",
+     "name": "Cloze",
+     "qfmt": "{{cloze:Text}}"
+    }
+   ],
+   "type": 1
+  },
+  {
+   "css": "#image-occlusion-canvas {\n    --inactive-shape-color: #ffeba2;\n    --active-shape-color: #ff8e8e;\n    --inactive-shape-border: 1px #212121;\n    --active-shape-border: 1px #212121;\n    --highlight-shape-color: #ff8e8e00;\n    --highlight-shape-border: 1px #ff8e8e;\n}\n\n.card {\n    font-family: arial;\n    font-size: 20px;\n    text-align: center;\n    color: black;\n    background-color: white;\n}\n",
+   "fields": [
+    "Occlusion",
+    "Image",
+    "Header",
+    "Back Extra",
+    "Comments"
+   ],
+   "id": 1793821484055,
+   "name": "Image Occlusion",
+   "original_stock_kind": 6,
+   "sort_field_idx": 0,
+   "templates": [
+    {
+     "afmt": "{{#Header}}<div>{{Header}}</div>{{/Header}}\n<div style=\"display: none\">{{cloze:Occlusion}}</div>\n<div id=\"err\"></div>\n<div id=\"image-occlusion-container\">\n    {{Image}}\n    <canvas id=\"image-occlusion-canvas\"></canvas>\n</div>\n<script>\ntry {\n    anki.imageOcclusion.setup();\n} catch (exc) {\n    document.getElementById(\"err\").innerHTML = `Error loading image occlusion. Is your Anki version up to date?<br><br>${exc}`;\n}\n</script>\n\n<div><button id=\"toggle\">Toggle Masks</button></div>\n{{#Back Extra}}<div>{{Back Extra}}</div>{{/Back Extra}}\n",
+     "name": "Image Occlusion",
+     "qfmt": "{{#Header}}<div>{{Header}}</div>{{/Header}}\n<div style=\"display: none\">{{cloze:Occlusion}}</div>\n<div id=\"err\"></div>\n<div id=\"image-occlusion-container\">\n    {{Image}}\n    <canvas id=\"image-occlusion-canvas\"></canvas>\n</div>\n<script>\ntry {\n    anki.imageOcclusion.setup();\n} catch (exc) {\n    document.getElementById(\"err\").innerHTML = `Error loading image occlusion. Is your Anki version up to date?<br><br>${exc}`;\n}\n</script>\n"
+    }
+   ],
+   "type": 1
+  }
+ ],
+ "package": {
+  "collection_entry": "collection.anki2",
+  "entries": [
+   "collection.anki2",
+   "media"
+  ],
+  "has_dummy_collection": false,
+  "meta_version": null
+ },
+ "revlog": []
+}

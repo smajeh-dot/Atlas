@@ -1,0 +1,475 @@
+{
+ "cards": [
+  {
+   "data": "{\"pos\":1,\"s\":67.1525,\"d\":2.09,\"dr\":0.9,\"decay\":0.154,\"lrt\":1793821483}",
+   "deck_id": 1793821483953,
+   "due": 80,
+   "factor": 2500,
+   "flags": 0,
+   "id": 1792266283953,
+   "ivl": 62,
+   "lapses": 0,
+   "left": 0,
+   "note_id": 1792266283953,
+   "odue": 0,
+   "ord": 0,
+   "orig_deck_id": 0,
+   "queue": 2,
+   "reps": 5,
+   "type": 2
+  },
+  {
+   "data": "{\"pos\":2,\"s\":2.316,\"d\":7.388,\"dr\":0.9,\"decay\":0.154,\"lrt\":1793821483}",
+   "deck_id": 1793821483953,
+   "due": 1793822092,
+   "factor": 2300,
+   "flags": 0,
+   "id": 1792266283954,
+   "ivl": 2,
+   "lapses": 1,
+   "left": 1,
+   "note_id": 1792266283954,
+   "odue": 0,
+   "ord": 0,
+   "orig_deck_id": 0,
+   "queue": 1,
+   "reps": 5,
+   "type": 3
+  },
+  {
+   "data": "{\"pos\":3,\"s\":52.6867,\"d\":1.0,\"dr\":0.9,\"decay\":0.154,\"lrt\":1792957483}",
+   "deck_id": 1793821483953,
+   "due": 65,
+   "factor": 2650,
+   "flags": 0,
+   "id": 1792266283955,
+   "ivl": 57,
+   "lapses": 0,
+   "left": 0,
+   "note_id": 1792266283955,
+   "odue": 0,
+   "ord": 0,
+   "orig_deck_id": 0,
+   "queue": 2,
+   "reps": 4,
+   "type": 2
+  },
+  {
+   "data": "{\"pos\":4,\"s\":3.3273,\"d\":7.378,\"dr\":0.9,\"decay\":0.154,\"lrt\":1792439083}",
+   "deck_id": 1793821483953,
+   "due": 4,
+   "factor": 2300,
+   "flags": 0,
+   "id": 1792266283956,
+   "ivl": 2,
+   "lapses": 1,
+   "left": 0,
+   "note_id": 1792266283956,
+   "odue": 0,
+   "ord": 0,
+   "orig_deck_id": 0,
+   "queue": 2,
+   "reps": 5,
+   "type": 2
+  },
+  {
+   "data": "{\"pos\":5,\"s\":2.3065,\"d\":2.118,\"dr\":0.9,\"decay\":0.154,\"lrt\":1793821483}",
+   "deck_id": 1793821483953,
+   "due": 1793822096,
+   "factor": 0,
+   "flags": 0,
+   "id": 1792266283957,
+   "ivl": 0,
+   "lapses": 0,
+   "left": 1,
+   "note_id": 1792266283957,
+   "odue": 0,
+   "ord": 0,
+   "orig_deck_id": 0,
+   "queue": 1,
+   "reps": 1,
+   "type": 1
+  },
+  {
+   "data": "{}",
+   "deck_id": 1793821483953,
+   "due": 6,
+   "factor": 0,
+   "flags": 0,
+   "id": 1792266283958,
+   "ivl": 0,
+   "lapses": 0,
+   "left": 0,
+   "note_id": 1792266283958,
+   "odue": 0,
+   "ord": 0,
+   "orig_deck_id": 0,
+   "queue": 0,
+   "reps": 0,
+   "type": 0
+  }
+ ],
+ "collection": {
+  "crt": 1792209600,
+  "fsrs": false,
+  "rollover": 4,
+  "sched_ver": 2
+ },
+ "deck_configs": [
+  {
+   "desired_retention": 0.9,
+   "id": 1,
+   "learn_steps_min": [
+    1.0,
+    10.0
+   ],
+   "name": "Default",
+   "new_per_day": 20,
+   "relearn_steps_min": [
+    10.0
+   ],
+   "reviews_per_day": 200
+  }
+ ],
+ "decks": [
+  {
+   "config_id": 1,
+   "filtered": false,
+   "id": 1,
+   "name": "Default"
+  },
+  {
+   "config_id": 1,
+   "filtered": false,
+   "id": 1793821483952,
+   "name": "Chem"
+  },
+  {
+   "config_id": 1,
+   "filtered": false,
+   "id": 1793821483953,
+   "name": "Chem::Ions"
+  }
+ ],
+ "generated": {
+  "anki_today": 18,
+  "anki_version": "26.09.4",
+  "now_ms": 1793821483999,
+  "tz": "Europe/London"
+ },
+ "media": [],
+ "notes": [
+  {
+   "fields": [
+    "Ion 1",
+    "Charge 1"
+   ],
+   "guid": "NcguO`f9aV",
+   "id": 1792266283953,
+   "mod": 1792266283,
+   "notetype_id": 1793821483949,
+   "tags": [
+    "ions"
+   ]
+  },
+  {
+   "fields": [
+    "Ion 2",
+    "Charge 2"
+   ],
+   "guid": "wiVBOn==*t",
+   "id": 1792266283954,
+   "mod": 1792266283,
+   "notetype_id": 1793821483949,
+   "tags": [
+    "ions"
+   ]
+  },
+  {
+   "fields": [
+    "Ion 3",
+    "Charge 3"
+   ],
+   "guid": "ix$~;q~C!(",
+   "id": 1792266283955,
+   "mod": 1792266283,
+   "notetype_id": 1793821483949,
+   "tags": [
+    "ions"
+   ]
+  },
+  {
+   "fields": [
+    "Ion 4",
+    "Charge 4"
+   ],
+   "guid": "b89J_?SGc,",
+   "id": 1792266283956,
+   "mod": 1792266283,
+   "notetype_id": 1793821483949,
+   "tags": [
+    "ions"
+   ]
+  },
+  {
+   "fields": [
+    "Ion 5",
+    "Charge 5"
+   ],
+   "guid": "KS@F5M[NOV",
+   "id": 1792266283957,
+   "mod": 1792266283,
+   "notetype_id": 1793821483949,
+   "tags": [
+    "ions"
+   ]
+  },
+  {
+   "fields": [
+    "Ion 6",
+    "Charge 6"
+   ],
+   "guid": "pabL^r^=j",
+   "id": 1792266283958,
+   "mod": 1792266283,
+   "notetype_id": 1793821483949,
+   "tags": [
+    "ions"
+   ]
+  }
+ ],
+ "notetypes": [
+  {
+   "css": ".card {\n    font-family: arial;\n    font-size: 20px;\n    line-height: 1.5;\n    text-align: center;\n    color: black;\n    background-color: white;\n}\n",
+   "fields": [
+    "Front",
+    "Back"
+   ],
+   "id": 1793821483949,
+   "name": "Basic",
+   "original_stock_kind": 1,
+   "sort_field_idx": 0,
+   "templates": [
+    {
+     "afmt": "{{FrontSide}}\n\n<hr id=answer>\n\n{{Back}}",
+     "name": "Card 1",
+     "qfmt": "{{Front}}"
+    }
+   ],
+   "type": 0
+  }
+ ],
+ "package": {
+  "collection_entry": "collection.anki21b",
+  "entries": [
+   "meta",
+   "collection.anki21b",
+   "collection.anki2",
+   "media"
+  ],
+  "has_dummy_collection": true,
+  "meta_version": 3
+ },
+ "revlog": [
+  {
+   "card_id": 1792266283953,
+   "ease": 3,
+   "factor": 224,
+   "id": 1792266283958,
+   "ivl": -600,
+   "last_ivl": 0,
+   "time": 3733,
+   "type": 0
+  },
+  {
+   "card_id": 1792266283953,
+   "ease": 3,
+   "factor": 223,
+   "id": 1792266283959,
+   "ivl": 2,
+   "last_ivl": -600,
+   "time": 4466,
+   "type": 0
+  },
+  {
+   "card_id": 1792266283954,
+   "ease": 3,
+   "factor": 224,
+   "id": 1792266283960,
+   "ivl": -600,
+   "last_ivl": 0,
+   "time": 5199,
+   "type": 0
+  },
+  {
+   "card_id": 1792266283954,
+   "ease": 3,
+   "factor": 223,
+   "id": 1792266283961,
+   "ivl": 2,
+   "last_ivl": -600,
+   "time": 5932,
+   "type": 0
+  },
+  {
+   "card_id": 1792266283955,
+   "ease": 3,
+   "factor": 224,
+   "id": 1792266283962,
+   "ivl": -600,
+   "last_ivl": 0,
+   "time": 6665,
+   "type": 0
+  },
+  {
+   "card_id": 1792266283955,
+   "ease": 3,
+   "factor": 223,
+   "id": 1792266283963,
+   "ivl": 2,
+   "last_ivl": -600,
+   "time": 7398,
+   "type": 0
+  },
+  {
+   "card_id": 1792266283956,
+   "ease": 3,
+   "factor": 224,
+   "id": 1792266283964,
+   "ivl": -600,
+   "last_ivl": 0,
+   "time": 8131,
+   "type": 0
+  },
+  {
+   "card_id": 1792266283956,
+   "ease": 3,
+   "factor": 223,
+   "id": 1792266283965,
+   "ivl": 2,
+   "last_ivl": -600,
+   "time": 8864,
+   "type": 0
+  },
+  {
+   "card_id": 1792266283953,
+   "ease": 3,
+   "factor": 223,
+   "id": 1792439083973,
+   "ivl": 10,
+   "last_ivl": 2,
+   "time": 9597,
+   "type": 1
+  },
+  {
+   "card_id": 1792266283954,
+   "ease": 3,
+   "factor": 223,
+   "id": 1792439083975,
+   "ivl": 12,
+   "last_ivl": 2,
+   "time": 10330,
+   "type": 1
+  },
+  {
+   "card_id": 1792266283955,
+   "ease": 3,
+   "factor": 223,
+   "id": 1792439083976,
+   "ivl": 9,
+   "last_ivl": 2,
+   "time": 11063,
+   "type": 1
+  },
+  {
+   "card_id": 1792266283956,
+   "ease": 3,
+   "factor": 223,
+   "id": 1792439083977,
+   "ivl": 9,
+   "last_ivl": 2,
+   "time": 11796,
+   "type": 1
+  },
+  {
+   "card_id": 1792266283956,
+   "ease": 1,
+   "factor": 810,
+   "id": 1792439083978,
+   "ivl": -600,
+   "last_ivl": 9,
+   "time": 3529,
+   "type": 1
+  },
+  {
+   "card_id": 1792266283956,
+   "ease": 3,
+   "factor": 809,
+   "id": 1792439083979,
+   "ivl": 2,
+   "last_ivl": -600,
+   "time": 4262,
+   "type": 2
+  },
+  {
+   "card_id": 1792266283953,
+   "ease": 3,
+   "factor": 222,
+   "id": 1792957483985,
+   "ivl": 33,
+   "last_ivl": 10,
+   "time": 4995,
+   "type": 1
+  },
+  {
+   "card_id": 1792266283954,
+   "ease": 3,
+   "factor": 222,
+   "id": 1792957483986,
+   "ivl": 33,
+   "last_ivl": 12,
+   "time": 5728,
+   "type": 1
+  },
+  {
+   "card_id": 1792266283955,
+   "ease": 4,
+   "factor": 100,
+   "id": 1792957483987,
+   "ivl": 57,
+   "last_ivl": 9,
+   "time": 6461,
+   "type": 1
+  },
+  {
+   "card_id": 1792266283953,
+   "ease": 3,
+   "factor": 221,
+   "id": 1793821483993,
+   "ivl": 62,
+   "last_ivl": 33,
+   "time": 7194,
+   "type": 1
+  },
+  {
+   "card_id": 1792266283954,
+   "ease": 1,
+   "factor": 810,
+   "id": 1793821483995,
+   "ivl": -600,
+   "last_ivl": 33,
+   "time": 7927,
+   "type": 1
+  },
+  {
+   "card_id": 1792266283957,
+   "ease": 3,
+   "factor": 224,
+   "id": 1793821483996,
+   "ivl": -600,
+   "last_ivl": 0,
+   "time": 8660,
+   "type": 0
+  }
+ ]
+}

@@ -1,0 +1,2 @@
+# Anki fixtures are binary zips; never let git rewrite line endings in them.
+*.apkg binary
