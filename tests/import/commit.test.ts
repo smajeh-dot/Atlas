@@ -284,3 +284,36 @@ describe('preview', () => {
     expect(again.newDecks).toEqual([]);
   });
 });
+
+describe('media, end to end', () => {
+  test('a clashing name is renamed everywhere it is used; an identical file is shared, never copied or deleted', async () => {
+    const db = await createMigratedDb();
+    const exp = JSON.parse(await (await import('node:fs/promises')).readFile(
+      new URL('../fixtures/anki/rich-modern.expected.json', import.meta.url), 'utf8')) as { media: { name: string; sha1: string }[] };
+    const benzene = exp.media.find((m) => m.name === 'benzene.png')!;
+    const tile = exp.media.find((m) => m.name === '_bg-tile.png')!;
+    // Atlas already has the same benzene.png, and a different file called _BG-tile.png.
+    await db.execute(`INSERT INTO media (name, sha1, size) VALUES ('benzene.png', ?, 69), ('_BG-tile.png', 'different', 9)`, [benzene.sha1]);
+    const before = await db.query(`SELECT * FROM media ORDER BY name`);
+    const platform = new FakePlatform();
+    const report = await runImport(db, staged('rich-modern'), platform, options());
+
+    const renamed = `_bg-tile-${tile.sha1.slice(0, 8)}.png`;
+    expect([...platform.files.keys()].sort()).toEqual([renamed, 'benzene.mp3', 'café.png', 'flask.png'].sort());
+    expect(report.warnings.find((w) => w.code === 'renamed-media')!.examples).toEqual(['_bg-tile.png']);
+    // The CSS of the imported note type now points at the renamed file.
+    const [type] = await db.query<{ css: string }>(`SELECT css FROM note_types WHERE name = 'Chem Reaction'`);
+    expect(type!.css).toContain(`url('${renamed}')`);
+    expect(type!.css).not.toContain(`url('_bg-tile.png')`);
+    // The note that shows benzene.png still names it, and no copy was made.
+    const [note] = await db.query<{ fields: string }>(`SELECT fields FROM notes WHERE sort_field LIKE '%Name this ring%'`);
+    expect(note!.fields).toContain('<img src=\\"benzene.png\\">');
+
+    // Undoing the import removes only what it added: the shared benzene.png stays.
+    const batch = Number((await db.query<{ id: number }>(`SELECT id FROM import_batches`))[0]!.id);
+    const { rollbackBatch } = await import('../../src/import/commit');
+    await rollbackBatch(db, platform, batch);
+    expect(await db.query(`SELECT * FROM media ORDER BY name`)).toEqual(before);
+    expect(platform.files.size).toBe(0);
+  });
+});
