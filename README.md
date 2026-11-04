@@ -17,14 +17,29 @@ Atlas needs Microsoft WebView2, which comes with Windows 11 and up-to-date Windo
 Everything Atlas stores lives in `%APPDATA%\Atlas` (paste that into File Explorer's address bar):
 
 - `atlas.db`: your decks, cards and review history
-- `media\`: images and audio used on your cards
-- `backups\`: reserved for automatic backups, which arrive in a later version
+- `media\`: pictures and sounds used on your cards
+- `backups\`: a copy of `atlas.db` that Atlas saves just before each import, named `pre-import-<number>.db`
+- `tmp\`: working space while an import runs; Atlas empties it itself
 
 Replacing or moving `Atlas.exe` never touches this folder. To back up your cards or move to a new laptop, close Atlas and copy the whole `Atlas` folder (into `%APPDATA%` on the new laptop).
 
+To put a pre-import backup back: close Atlas, then in File Explorer rename `atlas.db` to something else (for example `atlas-before-restore.db`), copy the backup from `backups\` into the `Atlas` folder, and rename the copy to `atlas.db`.
+
 ## Coming from Anki
 
-Importing Anki decks with their review history arrives in a later version. When it does: in Anki, choose **File → Export**, tick **Include scheduling information**, and import the file in Atlas.
+Atlas imports Anki deck packages (`.apkg`) with your review history, so cards come due when Anki would have shown them.
+
+1. In Anki, choose **File → Export**.
+2. Set the format to **Anki Deck Package (.apkg)**, tick **Include scheduling information** and **Include media**, and save the file.
+3. In Atlas, choose **Import from Anki…**, then **Choose a file…**. Atlas shows what's in the file before changing anything; click **Import**.
+
+If Atlas says the file was exported in a way it can't read, export again in Anki with **Support older Anki versions** ticked.
+
+What comes across: decks (including subdecks), notes, cards, tags, note types, pictures and sounds, flags, suspended cards, and every review, with each card's due date, interval, lapses and reps. Atlas uses the FSRS memory state Anki stored, or works it out from your review history.
+
+What doesn't, yet: sound playback, LaTeX maths, Image Occlusion masks (the notes and their history are imported), and a few template features. The import report lists anything like this it found. Filtered decks aren't recreated; their cards go back to their own decks.
+
+Importing is safe to repeat: notes you already have are left exactly as they are, progress and all, and only new notes and cards are added. If an import fails or you press **Cancel**, Atlas undoes everything it did, and if Atlas is closed in the middle of one, it undoes it the next time it opens.
 
 ## Build from source
 

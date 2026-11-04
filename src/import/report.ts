@@ -45,6 +45,8 @@ export interface ImportReport {
   diverged: number;
   warnings: ImportWarning[];
   durationMs: number;
+  /** Where the copy of atlas.db made before importing was saved. */
+  backupPath?: string;
 }
 
 const MAX_EXAMPLES = 5;

@@ -55,7 +55,7 @@ export async function chooseAnkiFile(): Promise<string | null> {
   const picked = await open({
     multiple: false,
     directory: false,
-    filters: [{ name: 'Anki deck package', extensions: ['apkg', 'colpkg'] }],
+    filters: [{ name: 'Anki deck package', extensions: ['apkg'] }],
   });
   return typeof picked === 'string' ? picked : null;
 }

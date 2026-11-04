@@ -306,8 +306,9 @@ export async function runImport(
   try {
     checkCancel();
     progress('backup', 0, 1);
+    let backupPath: string;
     try {
-      await platform.backup();
+      backupPath = await platform.backup();
     } catch (e) {
       throw new BackupFailedError(e);
     }
@@ -386,7 +387,7 @@ export async function runImport(
       throw new IntegrityError(`quick_check: ${qc?.quick_check}; foreign key problems: ${fk.length}`);
     }
 
-    const result = report.build(s.sourceFormat, options.clock.now() - started);
+    const result = { ...report.build(s.sourceFormat, options.clock.now() - started), backupPath };
     const changed = result.imported.notes + result.imported.cards + result.imported.decks + result.imported.media +
       result.updatedNotes + s.noteTypes.length + s.presets.length > 0;
     await db.batch(
