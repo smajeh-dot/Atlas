@@ -2,6 +2,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 mod db;
+mod import;
 mod paths;
 
 use serde::Serialize;
@@ -39,15 +40,23 @@ fn main() {
         .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
             let dir = paths::ensure_dirs()?;
+            import::clean_up_after_crash(&dir);
             let conn = db::open(&dir.join("atlas.db"))?;
             app.manage(db::DbState(Mutex::new(conn)));
+            app.manage(import::ImportState(Mutex::new(None)));
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
             app_info,
             db::db_query,
             db::db_execute,
-            db::db_batch
+            db::db_batch,
+            import::import_prepare,
+            import::staging_query,
+            import::media_install,
+            import::media_remove,
+            import::db_backup,
+            import::import_cleanup
         ])
         .run(tauri::generate_context!())
         .expect("error while running Atlas");

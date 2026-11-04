@@ -33,13 +33,20 @@ fn committed_staging_snapshots_match_the_reader() {
                 .unwrap();
             continue;
         }
-        assert!(snapshot.exists(), "{name}: no snapshot; see the comment at the top of this file");
+        assert!(
+            snapshot.exists(),
+            "{name}: no snapshot; see the comment at the top of this file"
+        );
         let fresh = open(&prepared);
         let committed = rusqlite::Connection::open(&snapshot).unwrap();
         assert_eq!(tables(&fresh), tables(&committed), "{name}");
         for table in tables(&fresh) {
             let sql = format!("SELECT * FROM {table} ORDER BY 1, 2");
-            assert_eq!(rows(&fresh, &sql), rows(&committed, &sql), "{name}: {table} differs; refresh the snapshots");
+            assert_eq!(
+                rows(&fresh, &sql),
+                rows(&committed, &sql),
+                "{name}: {table} differs; refresh the snapshots"
+            );
         }
     }
 }

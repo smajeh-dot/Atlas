@@ -16,6 +16,7 @@
 mod collection;
 mod error;
 mod format;
+mod install;
 mod legacy;
 mod limits;
 mod media;
@@ -35,6 +36,9 @@ use sha2::{Digest, Sha256};
 pub use collection::Counts;
 pub use error::{ImportError, Result};
 pub use format::SourceFormat;
+pub use install::{
+    backup_database, install_media, remove_media, remove_stale_media_temps, InstallFile,
+};
 pub use limits::{available_space, Limits, Options};
 pub use staging::{STAGING_SCHEMA, STAGING_VERSION};
 pub use workdir::{remove_stale, WorkDir};

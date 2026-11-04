@@ -220,6 +220,7 @@ dependencies = [
 name = "atlas"
 version = "0.1.0"
 dependencies = [
+ "anki-package",
  "dirs 6.0.0",
  "rusqlite",
  "serde",

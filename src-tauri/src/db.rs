@@ -46,11 +46,11 @@ fn to_sql(v: &Value) -> Result<SqlValue, String> {
     })
 }
 
-fn params(values: &[Value]) -> Result<Vec<SqlValue>, String> {
+pub(crate) fn params(values: &[Value]) -> Result<Vec<SqlValue>, String> {
     values.iter().map(to_sql).collect()
 }
 
-fn to_json(v: ValueRef) -> Result<Value, String> {
+pub(crate) fn to_json(v: ValueRef) -> Result<Value, String> {
     Ok(match v {
         ValueRef::Null => Value::Null,
         ValueRef::Integer(i) => Value::Number(i.into()),
@@ -64,16 +64,17 @@ fn err(e: rusqlite::Error) -> String {
     e.to_string()
 }
 
-#[tauri::command]
-pub fn db_query(
-    state: tauri::State<DbState>,
-    sql: String,
-    params: Vec<Value>,
+/// Runs a query and returns its rows as JSON objects. Shared with the import's staging reader.
+pub(crate) fn query_rows(
+    conn: &Connection,
+    sql: &str,
+    params: &[Value],
 ) -> Result<Vec<Map<String, Value>>, String> {
-    let conn = state.0.lock().map_err(|e| e.to_string())?;
-    let mut stmt = conn.prepare(&sql).map_err(err)?;
+    let mut stmt = conn.prepare(sql).map_err(err)?;
     let names: Vec<String> = stmt.column_names().iter().map(|s| s.to_string()).collect();
-    let mut rows = stmt.query(params_from_iter(self::params(&params)?)).map_err(err)?;
+    let mut rows = stmt
+        .query(params_from_iter(self::params(params)?))
+        .map_err(err)?;
     let mut out = Vec::new();
     while let Some(row) = rows.next().map_err(err)? {
         let mut obj = Map::new();
@@ -83,6 +84,16 @@ pub fn db_query(
         out.push(obj);
     }
     Ok(out)
+}
+
+#[tauri::command]
+pub fn db_query(
+    state: tauri::State<DbState>,
+    sql: String,
+    params: Vec<Value>,
+) -> Result<Vec<Map<String, Value>>, String> {
+    let conn = state.0.lock().map_err(|e| e.to_string())?;
+    query_rows(&conn, &sql, &params)
 }
 
 #[tauri::command]
