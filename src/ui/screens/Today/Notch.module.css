@@ -16,16 +16,34 @@
   top: 0;
   z-index: 1;
   box-sizing: border-box;
-  width: 280px;
   height: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: var(--sp-8);
-  padding: 0 var(--sp-12);
+  gap: var(--sp-4);
+  padding: 0 var(--sp-8);
   background: var(--bg-panel);
   border: var(--border-w) solid var(--border);
   /* No top border: the notch is attached to the top edge of the window. */
   border-top: 0;
   border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+}
+
+.button {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-8);
+  height: 30px;
+  padding: 0 var(--sp-12);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--sidebar-text);
+  font-family: inherit;
+  font-size: var(--fs-ui);
+  cursor: pointer;
+}
+
+.button:hover {
+  background: var(--new-btn-hover);
 }

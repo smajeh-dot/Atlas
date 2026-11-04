@@ -44,12 +44,11 @@ test('a new student imports their Anki deck from the Welcome screen and lands on
   expect(screen.queryByRole('button', { name: 'Start from scratch' })).toBeNull();
 });
 
-test('Import deck in the profile menu opens the importer', async () => {
+test('Import in the Today notch opens the importer', async () => {
   const db = await createMigratedDb();
   await createDeck(db, { name: 'Physics' }, NOW);
   const { user } = await renderApp({ db, clock: fixedClock(NOW), importer: importer() });
-  await user.click(await screen.findByRole('button', { name: /profile$/ }));
-  await user.click(screen.getByRole('menuitem', { name: 'Import deck' }));
+  await user.click(await screen.findByRole('button', { name: 'Import' }));
   await screen.findByRole('heading', { name: 'Import from Anki' });
   await user.click(screen.getByRole('button', { name: 'Back' }));
   await waitFor(() => expect(screen.queryByRole('heading', { name: 'Import from Anki' })).toBeNull());

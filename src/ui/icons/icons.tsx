@@ -4,7 +4,7 @@ import styles from './icons.module.css';
  * Every icon Atlas draws (spec Appendix A). Untitled UI line icons, 24 × 24, stroke inherits the text colour.
  * Icons not yet supplied render a dashed placeholder; supplying one is a one-line change here.
 */
-export const ICON_NAMES = ['today', 'decks', 'browse', 'search', 'bell', 'moreVertical', 'droplet', 'palette', 'dailyLimit', 'stats', 'settings', 'plus', 'chevronDown', 'chevronRight', 'back', 'more', 'newDeck', 'edit', 'flag', 'undo', 'bury', 'suspend', 'trash', 'info', 'checkCircle', 'check', 'close', 'warning', 'error', 'sigma', 'superscript', 'subscript', 'bold', 'italic', 'underline', 'image', 'tag', 'filter', 'sort', 'folder', 'reset', 'reschedule', 'clock', 'target', 'forecast', 'streak', 'import', 'export', 'backup', 'restore', 'audio', 'help'] as const;
+export const ICON_NAMES = ['today', 'decks', 'browse', 'search', 'bell', 'moreVertical', 'droplet', 'palette', 'dailyLimit', 'stats', 'settings', 'plus', 'chevronDown', 'chevronRight', 'back', 'more', 'newDeck', 'edit', 'flag', 'undo', 'bury', 'suspend', 'trash', 'info', 'checkCircle', 'check', 'close', 'warning', 'error', 'sigma', 'superscript', 'subscript', 'bold', 'italic', 'underline', 'image', 'tag', 'filter', 'sort', 'folder', 'reset', 'reschedule', 'clock', 'target', 'forecast', 'streak', 'import', 'shared', 'export', 'backup', 'restore', 'audio', 'help'] as const;
 export type IconName = (typeof ICON_NAMES)[number];
 
 const PATHS: Partial<Record<IconName, string[]>> = {
@@ -36,6 +36,9 @@ const PATHS: Partial<Record<IconName, string[]>> = {
   ],
   import: [
     'M21 15V16.2C21 17.8802 21 18.7202 20.673 19.362C20.3854 19.9265 19.9265 20.3854 19.362 20.673C18.7202 21 17.8802 21 16.2 21H7.8C6.11984 21 5.27976 21 4.63803 20.673C4.07354 20.3854 3.6146 19.9265 3.32698 19.362C3 18.7202 3 17.8802 3 16.2V15M17 8L12 3M12 3L7 8M12 3V15',
+  ],
+  shared: [
+    'M22 21V19C22 17.1362 20.7252 15.5701 19 15.126M15.5 3.29076C16.9659 3.88415 18 5.32131 18 7C18 8.67869 16.9659 10.1159 15.5 10.7092M17 21C17 19.1362 17 18.2044 16.6955 17.4693C16.2895 16.4892 15.5108 15.7105 14.5307 15.3045C13.7956 15 12.8638 15 11 15H8C6.13623 15 5.20435 15 4.46927 15.3045C3.48915 15.7105 2.71046 16.4892 2.30448 17.4693C2 18.2044 2 19.1362 2 21M13.5 7C13.5 9.20914 11.7091 11 9.5 11C7.29086 11 5.5 9.20914 5.5 7C5.5 4.79086 7.29086 3 9.5 3C11.7091 3 13.5 4.79086 13.5 7Z',
   ],
   palette: [
     'M2 12C2 17.5228 6.47715 22 12 22C13.6569 22 15 20.6569 15 19V18.5C15 18.0356 15 17.8034 15.0257 17.6084C15.2029 16.2622 16.2622 15.2029 17.6084 15.0257C17.8034 15 18.0356 15 18.5 15H19C20.6569 15 22 13.6569 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12Z',

@@ -52,6 +52,20 @@ test('the blank notch hangs from the top of Today and appears on no other screen
   expect(await screen.findByTestId('today-notch')).toBeTruthy();
 });
 
+test('the notch holds Import, Add, Browse and Shared, in that order; Add opens Add card and the others stay put', async () => {
+  const { user } = await renderApp({ db: await seeded() });
+  const notch = await screen.findByTestId('today-notch');
+  expect(within(notch).getAllByRole('button').map((b) => b.textContent)).toEqual(['Import', 'Add', 'Browse', 'Shared']);
+  for (const name of ['Browse', 'Shared']) {
+    const b = within(notch).getByRole('button', { name }) as HTMLButtonElement;
+    expect(b.disabled).toBe(false);
+    await user.click(b);
+  }
+  expect(screen.getByTestId('today-screen')).toBeTruthy();
+  await user.click(within(notch).getByRole('button', { name: 'Add' }));
+  expect(await screen.findByRole('heading', { name: 'Add card' })).toBeTruthy();
+});
+
 test('Ctrl+, opens Settings', async () => {
   const { user } = await renderApp({ db: await seeded() });
   await screen.findByTestId('today-screen');

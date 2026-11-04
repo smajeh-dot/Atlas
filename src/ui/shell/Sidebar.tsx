@@ -55,18 +55,14 @@ function SubjectMenuCard({ anchor, label, onClose, pinned = true }: { anchor: HT
 }
 
 const PROFILE_MENU_ITEMS: { label: string; icon: IconName }[] = [
-  { label: 'Import deck', icon: 'import' },
   { label: 'Daily Limit', icon: 'dailyLimit' },
   { label: 'Help', icon: 'help' },
 ];
 
 /** Card that opens beside the profile button. */
 function ProfileMenuCard({ anchor, onClose }: { anchor: HTMLElement; onClose(): void }) {
-  const { deps, navigate } = useAtlas();
-  // Only Import deck works so far; the other items are still placeholders.
-  const actions: Record<string, (() => void) | undefined> = {
-    'Import deck': deps.importer ? () => navigate({ name: 'import' }) : undefined,
-  };
+  // None of the profile items do anything yet.
+  const actions: Record<string, (() => void) | undefined> = {};
   return (
     <MenuCard anchor={anchor} label="Profile" onClose={onClose} placement="right">
       {PROFILE_MENU_ITEMS.map((item) => (
