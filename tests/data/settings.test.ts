@@ -19,7 +19,8 @@ test('unknown stored keys are dropped and missing keys default', async () => {
   const db = await createMigratedDb();
   await db.execute(`UPDATE meta SET value = ? WHERE key = 'settings'`, [JSON.stringify({ theme: 'tangerine', bogus: 1 })]);
   const s = await getSettings(db);
-  expect(s).toEqual({ ...DEFAULT_SETTINGS, theme: 'tangerine' });
+  // Tangerine was removed: a saved choice of it comes back as Light.
+  expect(s).toEqual({ ...DEFAULT_SETTINGS, theme: 'workbench' });
 });
 
 test('invalid settings are not saved', async () => {

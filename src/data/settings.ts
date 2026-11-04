@@ -11,6 +11,8 @@ export async function getSettings(db: Db): Promise<Settings> {
   for (const key of Object.keys(DEFAULT_SETTINGS) as (keyof Settings)[]) {
     if (key in stored) (out as Record<string, unknown>)[key] = stored[key];
   }
+  // Tangerine was removed; anyone who picked it (or any other unknown theme) gets Light.
+  if (out.theme !== 'workbench') out.theme = DEFAULT_SETTINGS.theme;
   return out;
 }
 

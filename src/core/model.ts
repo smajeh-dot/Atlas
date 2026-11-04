@@ -44,7 +44,8 @@ export const DEFAULT_PRESET: PresetConfig = {
 };
 
 export interface Settings {
-  theme: 'workbench' | 'tangerine';
+  /** Only the Light theme ('workbench') for now. */
+  theme: 'workbench';
   dayStartHour: number;
   learnAheadMinutes: number;
   showIntervalsOnButtons: boolean;

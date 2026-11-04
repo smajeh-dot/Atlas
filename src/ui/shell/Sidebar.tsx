@@ -56,7 +56,6 @@ function SubjectMenuCard({ anchor, label, onClose, pinned = true }: { anchor: HT
 
 const PROFILE_MENU_ITEMS: { label: string; icon: IconName }[] = [
   { label: 'Import deck', icon: 'import' },
-  { label: 'Appearance', icon: 'palette' },
   { label: 'Daily Limit', icon: 'dailyLimit' },
   { label: 'Help', icon: 'help' },
 ];

@@ -13,23 +13,16 @@ beforeEach(async () => {
   await seedDeck(db, 'Biology');
 });
 
-async function open(section?: 'appearance' | 'study' | 'about') {
+async function open(section?: 'study' | 'about') {
   const r = await renderApp({ db, route: { name: 'settings', section } });
   await screen.findByRole('heading', { name: 'Settings' });
   return r;
 }
 
-test('Appearance switches theme instantly', async () => {
-  const { user } = await open();
-  await user.click(screen.getByRole('radio', { name: 'Tangerine' }));
-  expect(document.documentElement.dataset.theme).toBe('tangerine');
-  await waitFor(async () => expect((await getSettings(db)).theme).toBe('tangerine'));
-});
-
-test('the sub-nav shows Appearance, Study and About only', async () => {
+test('the sub-nav shows Study and About only; there is no Appearance page', async () => {
   await open();
   const nav = screen.getByRole('navigation', { name: 'Settings sections' });
-  expect(within(nav).getAllByRole('button').map((b) => b.textContent)).toEqual(['Appearance', 'Study', 'About']);
+  expect(within(nav).getAllByRole('button').map((b) => b.textContent)).toEqual(['Study', 'About']);
 });
 
 test('Next day starts at saves the hour', async () => {

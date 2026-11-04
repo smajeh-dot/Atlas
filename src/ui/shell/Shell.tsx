@@ -1,7 +1,7 @@
 import { forwardRef, type ReactNode } from 'react';
 import styles from './Shell.module.css';
 
-/** Light (internally 'workbench'): two floating panels. Tangerine: edge to edge, joined by a 2px border. Study hides the sidebar. */
+/** Light (internally 'workbench'): two floating panels. Study hides the sidebar. */
 export const Shell = forwardRef<HTMLElement, { sidebar: ReactNode | null; children: ReactNode }>(function Shell({ sidebar, children }, mainRef) {
   return (
     <div className={styles.shell}>

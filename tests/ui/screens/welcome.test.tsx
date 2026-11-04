@@ -5,20 +5,13 @@ import { listDecks } from '../../../src/data/decks';
 import { getSettings } from '../../../src/data/settings';
 import { renderApp } from '../../helpers/renderApp';
 
-test('Welcome explains Atlas and offers the two looks', async () => {
+test('Welcome explains Atlas, in the Light theme with no theme picker', async () => {
   await renderApp();
   expect(await screen.findByRole('heading', { name: 'Welcome to Atlas' })).toBeTruthy();
   expect(screen.getByText("Atlas shows you each flashcard just before you'd forget it, so you remember more with less revision.")).toBeTruthy();
-  expect(screen.getByRole('radio', { name: 'Light' }).getAttribute('aria-checked')).toBe('true');
+  expect(screen.queryByRole('radiogroup', { name: 'Look' })).toBeNull();
+  expect(screen.queryByText('Pick a look')).toBeNull();
   expect(screen.queryByRole('button', { name: /Import from Anki/ })).toBeNull();
-});
-
-test('picking Tangerine restyles instantly and is remembered', async () => {
-  const { user, db } = await renderApp();
-  await user.click(await screen.findByRole('radio', { name: 'Tangerine' }));
-  expect(document.documentElement.dataset.theme).toBe('tangerine');
-  await waitFor(async () => expect((await getSettings(db)).theme).toBe('tangerine'));
-  expect(screen.getByRole('radio', { name: 'Tangerine' }).getAttribute('aria-checked')).toBe('true');
 });
 
 test('Start from scratch creates the deck and opens Add card on it', async () => {

@@ -8,13 +8,10 @@ import { Input } from '../../components/Input';
 import { Select } from '../../components/Select';
 import { Toggle } from '../../components/Toggle';
 import { useToast } from '../../components/Toast';
-import { useTheme } from '../../theme/ThemeProvider';
-import { ThemeCards } from '../Welcome/ThemeCards';
 import styles from './Settings.module.css';
 
-type Section = 'appearance' | 'study' | 'about';
+type Section = 'study' | 'about';
 const SECTIONS: { id: Section; label: string }[] = [
-  { id: 'appearance', label: 'Appearance' },
   { id: 'study', label: 'Study' },
   { id: 'about', label: 'About' },
 ];
@@ -33,7 +30,7 @@ export function hourLabel(h: number): string {
   return h < 12 ? `${h}am` : `${h - 12}pm`;
 }
 
-export function Settings({ section = 'appearance' }: { section?: Section }) {
+export function Settings({ section = 'study' }: { section?: Section }) {
   const [current, setCurrent] = useState<Section>(section);
   return (
     <div className={styles.page}>
@@ -47,22 +44,11 @@ export function Settings({ section = 'appearance' }: { section?: Section }) {
           ))}
         </nav>
         <div className={styles.content}>
-          {current === 'appearance' && <Appearance />}
           {current === 'study' && <StudySettings />}
           {current === 'about' && <About />}
         </div>
       </div>
     </div>
-  );
-}
-
-function Appearance() {
-  const { theme, setTheme } = useTheme();
-  return (
-    <section className={styles.section} aria-label="Appearance">
-      <h2 className={styles.heading}>Appearance</h2>
-      <ThemeCards value={theme} onChange={(t) => void setTheme(t)} />
-    </section>
   );
 }
 

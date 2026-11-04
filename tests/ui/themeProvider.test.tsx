@@ -5,7 +5,7 @@ import { applyTheme, ThemeProvider, useTheme } from '../../src/ui/theme/ThemePro
 
 function Switcher() {
   const { theme, setTheme } = useTheme();
-  return <button onClick={() => void setTheme('tangerine')}>{theme}</button>;
+  return <button onClick={() => void setTheme('workbench')}>{theme}</button>;
 }
 
 test('applyTheme sets data-theme on <html>', () => {
@@ -13,11 +13,12 @@ test('applyTheme sets data-theme on <html>', () => {
   expect(document.documentElement.dataset.theme).toBe('workbench');
 });
 
-test('setTheme switches data-theme instantly and saves', async () => {
+test('setTheme sets data-theme instantly and saves', async () => {
   const onSave = vi.fn(async () => {});
+  document.documentElement.dataset.theme = '';
   render(<ThemeProvider theme="workbench" onSave={onSave}><Switcher /></ThemeProvider>);
   await act(async () => screen.getByRole('button').click());
-  expect(document.documentElement.dataset.theme).toBe('tangerine');
-  expect(screen.getByRole('button')).toHaveProperty('textContent', 'tangerine');
-  expect(onSave).toHaveBeenCalledWith({ theme: 'tangerine' });
+  expect(document.documentElement.dataset.theme).toBe('workbench');
+  expect(screen.getByRole('button')).toHaveProperty('textContent', 'workbench');
+  expect(onSave).toHaveBeenCalledWith({ theme: 'workbench' });
 });

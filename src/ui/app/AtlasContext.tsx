@@ -28,7 +28,7 @@ export type Route =
   /** The blank study session screen. `target` names what was opened (a sub-deck or a whole subject) until real decks exist. */
   | { name: 'session'; target?: string }
   | { name: 'add'; deckId?: number }
-  | { name: 'settings'; section?: 'appearance' | 'study' | 'about' }
+  | { name: 'settings'; section?: 'study' | 'about' }
   | { name: 'import' };
 
 interface AtlasValue {

@@ -10,46 +10,45 @@ function declared(file: string, token: string): string | undefined {
   return m?.[1]?.trim();
 }
 
-// Spec 8.3, 8.4 and 8.5, copied verbatim. --text-answer fills a gap (used in 10.4, missing from 8.3).
-const SPEC: [string, string, string][] = [
-  ['--bg-app', '#F9F9F7', '#EFEFEC'], ['--bg-main', '#F9F9F7', '#EFEFEC'], ['--bg-panel', '#FFFFFF', '#FFFFFF'],
-  ['--bg-raised', '#F4F4F2', '#F5F5F2'], ['--bg-preview', '#F7F7F5', '#FFE2D2'], ['--border', '#E2E2E6', '#141414'],
-  ['--border-soft', '#E2E2E6', '#DADAD5'], ['--text', '#1C1C1F', '#141414'], ['--text-muted', '#6B6B74', '#4E4E4E'],
-  ['--text-faint', '#9A9AA2', '#8A8A8A'], ['--accent', '#2F5FCE', '#FF5B14'], ['--accent-ink', '#FFFFFF', '#141414'],
-  ['--accent-soft', '#EAF0FB', '#FFE2D2'], ['--sidebar-bg', '#FFFFFF', '#FFFFFF'], ['--sidebar-header-rule', '#D4D4D4', '#D4D4D4'], ['--new-btn-bg', '#FFFFFF', '#FFFFFF'], ['--new-btn-hover', '#F7F7F7', '#F7F7F7'], ['--menu-card-bg', '#FFFFFF', '#FFFFFF'], ['--table-head-ink', '#000000', '#000000'], ['--sidebar-text', '#1C1C1F', '#141414'],
-  ['--sidebar-text-muted', '#6B6B74', '#3A3A3A'], ['--sidebar-active-bg', '#EDECE8', '#FF5B14'],
-  ['--sidebar-active-text', '#1C1C1F', '#141414'], ['--sidebar-label', '#9A9AA2', '#8A8A8A'],
-  ['--mark-bg', '#2F5FCE', '#FF5B14'], ['--mark-ink', '#FFFFFF', '#141414'], ['--add-bg', '#FFFFFF', '#141414'],
-  ['--add-ink', '#1C1C1F', '#FFFFFF'], ['--hero-bg', 'transparent', '#FF5B14'], ['--hero-text', '#1C1C1F', '#141414'],
-  ['--hero-muted', '#6B6B74', 'rgba(20,20,20,0.75)'], ['--hero-btn-bg', '#17171A', '#141414'], ['--hero-btn-ink', '#FFFFFF', '#FFFFFF'],
-  ['--primary-bg', '#17171A', '#141414'], ['--primary-ink', '#FFFFFF', '#FFFFFF'], ['--primary-hover-bg', '#000000', '#000000'],
-  ['--hover-bg', 'rgba(0,0,0,0.03)', '#F5F5F2'], ['--press-bg', 'rgba(0,0,0,0.08)', '#EDEDE8'],
-  ['--count-new', '#2F5FCE', '#2D5BFF'], ['--count-learn', '#B3261E', '#E5341B'], ['--count-due', '#1E7D32', '#0E8F45'],
-  ['--heat', '#2F5FCE', '#FF5B14'], ['--bar', '#D9DEEA', '#141414'], ['--tag-bg', '#EEEEEF', '#FFE2D2'], ['--tag-ink', '#4A4A52', '#141414'],
-  ['--grade-again-bg', '#d13c30', '#d13c30'], ['--grade-again-ink', '#FFFFFF', '#FFFFFF'],
-  ['--grade-hard-bg', '#d98200', '#d98200'], ['--grade-hard-ink', '#FFFFFF', '#FFFFFF'],
-  ['--grade-good-bg', '#13a10e', '#13a10e'], ['--grade-good-ink', '#FFFFFF', '#FFFFFF'],
-  ['--grade-easy-bg', '#237bdb', '#237bdb'], ['--grade-easy-ink', '#FFFFFF', '#FFFFFF'],
-  ['--focus', '#2F5FCE', '#141414'], ['--focus-soft', 'rgba(47,95,206,0.14)', 'rgba(255,91,20,0.35)'],
-  ['--focus-edit', 'rgba(47,95,206,0.14)', '#FF7A1F'],
-  ['--danger', '#D32F2F', '#E5341B'], ['--danger-ink', '#FFFFFF', '#141414'], ['--success', '#1E7D32', '#0E8F45'],
-  ['--warning-bg', '#FDF3DC', '#FFC53D'], ['--warning-ink', '#7A5300', '#141414'], ['--overlay', 'rgba(0,0,0,0.40)', 'rgba(20,20,20,0.45)'],
-  ['--text-answer', '#1C1C1F', '#141414'],
-  ['--border-w', '1px', '2px'], ['--radius-sm', '8px', '8px'], ['--radius-btn', '999px', '10px'], ['--radius-btn-lg', '12px', '12px'],
-  ['--radius-lg', '12px', '14px'], ['--radius-card', '14px 14px 14px 0', '14px'], ['--radius-field', '8px', '10px'],
-  ['--radius-panel-side', '12px 12px 12px 0', '0'], ['--radius-panel-main', '12px 12px 0 12px', '0'], ['--radius-hero', '0', '14px'],
-  ['--shadow-box', 'none', '4px 4px 0 #141414'], ['--shadow-primary', 'none', '3px 3px 0 #FF5B14'],
-  ['--shadow-hero', 'none', '5px 5px 0 #141414'], ['--shadow-grade', 'none', '3px 3px 0 #141414'],
-  ['--shadow-popover', '0 8px 24px rgba(0,0,0,0.08)', '4px 4px 0 #141414'], ['--shell-pad', '12px', '0'], ['--sidebar-bleed', '12px', '0'], ['--sidebar-edge', 'none', 'none'], ['--sidebar-divider', '1px solid #E2E2E6', '2px solid #141414'], ['--shell-gap', '12px', '0'],
-  ['--font-display', "'Anthropic Serif', Georgia, 'Times New Roman', serif", "'Anthropic Serif', Georgia, 'Times New Roman', serif"],
-  ['--font-body', "'Anthropic Sans', -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif", "'Anthropic Sans', -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"],
-  ['--font-mono', "'Anthropic Mono', 'Cascadia Code', Consolas, monospace", "'Anthropic Mono', 'Cascadia Code', Consolas, monospace"],
-  ['--weight-display', '500', '500'], ['--tracking-display', '-0.01em', '-0.03em'],
+// Spec 8.3, 8.4 and 8.5 (Light theme values), copied verbatim. --text-answer fills a gap (used in 10.4, missing from 8.3).
+const SPEC: [string, string][] = [
+  ['--bg-app', '#F9F9F7'], ['--bg-main', '#F9F9F7'], ['--bg-panel', '#FFFFFF'],
+  ['--bg-raised', '#F4F4F2'], ['--bg-preview', '#F7F7F5'], ['--border', '#E2E2E6'],
+  ['--border-soft', '#E2E2E6'], ['--text', '#1C1C1F'], ['--text-muted', '#6B6B74'],
+  ['--text-faint', '#9A9AA2'], ['--accent', '#2F5FCE'], ['--accent-ink', '#FFFFFF'],
+  ['--accent-soft', '#EAF0FB'], ['--sidebar-bg', '#FFFFFF'], ['--sidebar-header-rule', '#D4D4D4'], ['--new-btn-bg', '#FFFFFF'], ['--new-btn-hover', '#F7F7F7'], ['--menu-card-bg', '#FFFFFF'], ['--table-head-ink', '#000000'], ['--sidebar-text', '#1C1C1F'],
+  ['--sidebar-text-muted', '#6B6B74'], ['--sidebar-active-bg', '#EDECE8'],
+  ['--sidebar-active-text', '#1C1C1F'], ['--sidebar-label', '#9A9AA2'],
+  ['--mark-bg', '#2F5FCE'], ['--mark-ink', '#FFFFFF'], ['--add-bg', '#FFFFFF'],
+  ['--add-ink', '#1C1C1F'], ['--hero-bg', 'transparent'], ['--hero-text', '#1C1C1F'],
+  ['--hero-muted', '#6B6B74'], ['--hero-btn-bg', '#17171A'], ['--hero-btn-ink', '#FFFFFF'],
+  ['--primary-bg', '#17171A'], ['--primary-ink', '#FFFFFF'], ['--primary-hover-bg', '#000000'],
+  ['--hover-bg', 'rgba(0,0,0,0.03)'], ['--press-bg', 'rgba(0,0,0,0.08)'],
+  ['--count-new', '#2F5FCE'], ['--count-learn', '#B3261E'], ['--count-due', '#1E7D32'],
+  ['--heat', '#2F5FCE'], ['--bar', '#D9DEEA'], ['--tag-bg', '#EEEEEF'], ['--tag-ink', '#4A4A52'],
+  ['--grade-again-bg', '#d13c30'], ['--grade-again-ink', '#FFFFFF'],
+  ['--grade-hard-bg', '#d98200'], ['--grade-hard-ink', '#FFFFFF'],
+  ['--grade-good-bg', '#13a10e'], ['--grade-good-ink', '#FFFFFF'],
+  ['--grade-easy-bg', '#237bdb'], ['--grade-easy-ink', '#FFFFFF'],
+  ['--focus', '#2F5FCE'], ['--focus-soft', 'rgba(47,95,206,0.14)'],
+  ['--focus-edit', 'rgba(47,95,206,0.14)'],
+  ['--danger', '#D32F2F'], ['--danger-ink', '#FFFFFF'], ['--success', '#1E7D32'],
+  ['--warning-bg', '#FDF3DC'], ['--warning-ink', '#7A5300'], ['--overlay', 'rgba(0,0,0,0.40)'],
+  ['--text-answer', '#1C1C1F'],
+  ['--border-w', '1px'], ['--radius-sm', '8px'], ['--radius-btn', '999px'], ['--radius-btn-lg', '12px'],
+  ['--radius-lg', '12px'], ['--radius-card', '14px 14px 14px 0'], ['--radius-field', '8px'],
+  ['--radius-panel-side', '12px 12px 12px 0'], ['--radius-panel-main', '12px 12px 0 12px'], ['--radius-hero', '0'],
+  ['--shadow-box', 'none'], ['--shadow-primary', 'none'],
+  ['--shadow-hero', 'none'], ['--shadow-grade', 'none'],
+  ['--shadow-popover', '0 8px 24px rgba(0,0,0,0.08)'], ['--shell-pad', '12px'], ['--sidebar-bleed', '12px'], ['--sidebar-edge', 'none'], ['--sidebar-divider', '1px solid #E2E2E6'], ['--shell-gap', '12px'],
+  ['--font-display', "'Anthropic Serif', Georgia, 'Times New Roman', serif"],
+  ['--font-body', "'Anthropic Sans', -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"],
+  ['--font-mono', "'Anthropic Mono', 'Cascadia Code', Consolas, monospace"],
+  ['--weight-display', '500'], ['--tracking-display', '-0.01em'],
 ];
 
-test.each(SPEC)('%s has the spec value in both themes', (token, wb, tg) => {
-  expect(declared('workbench.css', token)).toBe(wb);
-  expect(declared('tangerine.css', token)).toBe(tg);
+test.each(SPEC)('%s has the spec value', (token, value) => {
+  expect(declared('workbench.css', token)).toBe(value);
 });
 
 test('shared tokens: flags, deck colours and the type scale', () => {
@@ -61,11 +60,9 @@ test('shared tokens: flags, deck colours and the type scale', () => {
   for (const [n, v] of scale) expect(declared('tokens.css', `--fs-${n}`)).toBe(v);
 });
 
-test('both theme files declare the same tokens and scope them by data-theme', () => {
-  const names = (f: string) => [...read(f).matchAll(/(--[\w-]+)\s*:/g)].map((m) => m[1]).sort();
-  expect(names('tangerine.css')).toEqual(names('workbench.css'));
+test('the Light theme is the only theme and is scoped by data-theme', () => {
+  expect(readdirSync(THEME).filter((f) => f.endsWith('.css') && !['tokens.css', 'fonts.css'].includes(f))).toEqual(['workbench.css']);
   expect(read('workbench.css')).toContain("[data-theme='workbench']");
-  expect(read('tangerine.css')).toContain("[data-theme='tangerine']");
 });
 
 function walk(dir: string): string[] {

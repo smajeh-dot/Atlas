@@ -2,7 +2,6 @@ import { createContext, useCallback, useContext, useMemo, useState, type ReactNo
 import type { Settings } from '../../core/model';
 import './tokens.css';
 import './workbench.css';
-import './tangerine.css';
 
 type Theme = Settings['theme'];
 

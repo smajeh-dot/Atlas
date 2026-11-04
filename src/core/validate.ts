@@ -6,7 +6,7 @@ const MAX_STEPS = 10;
 
 /** Returns the first problem with a settings change as a user-facing message, or null when it can be saved. */
 export function validateSettingsPatch(patch: Partial<Settings>): string | null {
-  if ('theme' in patch && patch.theme !== 'workbench' && patch.theme !== 'tangerine') return 'Choose Light or Tangerine.';
+  if ('theme' in patch && patch.theme !== 'workbench') return 'Atlas only has the Light theme.';
   if ('dayStartHour' in patch && !isInt(patch.dayStartHour, 0, 23)) return 'The next day must start at a whole hour from 0 to 23.';
   if ('learnAheadMinutes' in patch && !isInt(patch.learnAheadMinutes, 0, 1440)) {
     return 'Show cards early by a whole number of minutes from 0 to 1440.';

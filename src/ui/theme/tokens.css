@@ -1,6 +1,6 @@
 /*
  * Token names shared by every theme, plus the values that are the same in all of them.
- * Theme files (workbench.css, tangerine.css) give the colours, shapes and fonts.
+ * The theme file (workbench.css, the Light theme) gives the colours, shapes and fonts.
  * Components only read these custom properties; adding a theme means adding one more token file.
  */
 :root {

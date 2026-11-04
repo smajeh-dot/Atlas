@@ -6,7 +6,7 @@ test.each([[-1], [24], [4.5], [Number.NaN]])('dayStartHour %s is rejected', (h) 
 });
 
 test('a valid settings patch passes', () => {
-  expect(validateSettingsPatch({ dayStartHour: 0, theme: 'tangerine' })).toBeNull();
+  expect(validateSettingsPatch({ dayStartHour: 0, theme: 'workbench' })).toBeNull();
   expect(validateSettingsPatch({ lastDeckId: null, showTimer: true })).toBeNull();
 });
 
@@ -17,7 +17,8 @@ test('learnAheadMinutes must be 0-1440 whole minutes', () => {
 });
 
 test('unknown theme is rejected', () => {
-  expect(validateSettingsPatch({ theme: 'graphite' as never })).toBe('Choose Light or Tangerine.');
+  expect(validateSettingsPatch({ theme: 'graphite' as never })).toBe('Atlas only has the Light theme.');
+  expect(validateSettingsPatch({ theme: 'tangerine' as never })).toBe('Atlas only has the Light theme.');
 });
 
 test('non-boolean toggles and bad ids are rejected', () => {

@@ -88,12 +88,6 @@
 .tree [role='treeitem']:has(.rename) {
   min-height: 48px;
 }
-
-/* Tangerine: thin, bright ring. */
-:global([data-theme='tangerine']) .rename input:focus {
-  box-shadow: 0 0 0 2px var(--focus-edit);
-}
-
 .boxTitle {
   font-weight: 600;
   font-size: var(--fs-body);
