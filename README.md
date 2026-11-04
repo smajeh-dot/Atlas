@@ -26,6 +26,18 @@ Replacing or moving `Atlas.exe` never touches this folder. To back up your cards
 
 Importing Anki decks with their review history arrives in a later version. When it does: in Anki, choose **File → Export**, tick **Include scheduling information**, and import the file in Atlas.
 
+## Equations
+
+Write equations in LaTeX the way Obsidian does:
+
+| Write | Shows |
+|---|---|
+| `$x^2$` | an equation inside the sentence |
+| `$$x^2$$` | an equation on its own centred line |
+| `\$` | a plain dollar sign |
+
+Prices are left alone: in `It costs $5 and $10` neither dollar starts an equation, because an equation's opening `$` can't be followed by a space and its closing `$` can't be preceded by one or followed by a digit. Anki's `\( \)` and `\[ \]` keep working. Chemistry works with `\ce{…}`, for example `$\ce{2H2 + O2 -> 2H2O}$`. A cloze can sit inside an equation: `$E = {{c1::mc^2}}$`.
+
 ## Build from source
 
 In Windows PowerShell, install [Node.js LTS](https://nodejs.org) and [Rust](https://rustup.rs), then:
