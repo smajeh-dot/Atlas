@@ -9,6 +9,8 @@ export default defineConfig({
   server: { port: 1420, strictPort: true },
   test: {
     include: ['tests/**/*.test.ts', 'tests/**/*.test.tsx'],
+    // The big import test runs on its own: npm run test:scale.
+    exclude: ['tests/scale/**', '**/node_modules/**'],
     environment: 'node',
     setupFiles: ['tests/setup.ts'],
   },
