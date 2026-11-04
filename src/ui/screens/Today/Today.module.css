@@ -1,12 +1,15 @@
+/* --today-top is the space between the notch and the decks card; --today-gap is the space between the decks card and the heatmap. */
 .page {
+  --today-top: 88px;
+  --today-gap: 40px;
   position: relative;
   flex: 1;
   min-height: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--sp-16);
-  padding: 64px var(--sp-32) var(--sp-32);
+  gap: var(--today-gap);
+  padding: var(--today-top) var(--sp-32) var(--sp-32);
 }
 
 /* Central decks card. Its height follows its content, so the bottom edge hugs the last deck; a very long list scrolls inside it. */
