@@ -91,6 +91,7 @@ function ProfileMenuCard({ anchor, onClose }: { anchor: HTMLElement; onClose(): 
 }
 
 export function Sidebar() {
+  const { route, navigate } = useAtlas();
   // Only one floating card is open at a time; `id` is 'profile' or `subject:<name>`.
   const [menu, setMenu] = useState<{ id: string; anchor: HTMLElement } | null>(null);
   const toggleMenu = (id: string, anchor: HTMLElement) => setMenu((m) => (m?.id === id ? null : { id, anchor }));
@@ -124,7 +125,12 @@ export function Sidebar() {
         <Icon name="search" />
         <span>Search</span>
       </button>
-      <button type="button" className={`${styles.action} ${styles.search}`}>
+      <button
+        type="button"
+        className={`${styles.action} ${styles.search}`}
+        aria-current={route.name === 'today' ? 'page' : undefined}
+        onClick={() => navigate({ name: 'today' })}
+      >
         <Icon name="bell" />
         <span>Today</span>
       </button>

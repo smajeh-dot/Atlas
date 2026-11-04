@@ -30,6 +30,17 @@ test('A opens Add card, but not while typing', async () => {
   expect(await screen.findByRole('heading', { name: 'Add card' })).toBeTruthy();
 });
 
+test('the sidebar Today button returns to the Today screen with the decks card', async () => {
+  const { user } = await renderApp({ db: await seeded(), route: { name: 'settings' } });
+  await screen.findByRole('heading', { name: 'Settings' });
+  const today = screen.getByRole('button', { name: 'Today' });
+  expect(today.getAttribute('aria-current')).toBeNull();
+  await user.click(today);
+  expect(await screen.findByTestId('today-decks-card')).toBeTruthy();
+  expect(screen.queryByRole('heading', { name: 'Settings' })).toBeNull();
+  expect(screen.getByRole('button', { name: 'Today' }).getAttribute('aria-current')).toBe('page');
+});
+
 test('Ctrl+, opens Settings', async () => {
   const { user } = await renderApp({ db: await seeded() });
   await screen.findByTestId('today-screen');
