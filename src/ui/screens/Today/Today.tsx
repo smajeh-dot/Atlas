@@ -6,6 +6,7 @@ import menuStyles from '../../components/MenuCard.module.css';
 import { deckColour } from '../../deckColour';
 import { Icon, type IconName } from '../../icons/icons';
 import { PLACEHOLDER_SUBJECTS } from '../../placeholderSubjects';
+import { Notch } from './Notch';
 import styles from './Today.module.css';
 
 interface MenuItem {
@@ -40,6 +41,7 @@ export function Today() {
 
   return (
     <div className={styles.page} data-testid="today-screen">
+      <Notch />
       <section className={styles.decksCard} aria-label="Decks" data-testid="today-decks-card">
         <div className={styles.decksHeader}>
           <span>Deck</span>

@@ -41,6 +41,17 @@ test('the sidebar Today button returns to the Today screen with the decks card',
   expect(screen.getByRole('button', { name: 'Today' }).getAttribute('aria-current')).toBe('page');
 });
 
+test('the blank notch hangs from the top of Today and appears on no other screen', async () => {
+  const { user } = await renderApp({ db: await seeded() });
+  await screen.findByTestId('today-screen');
+  expect(screen.getByTestId('today-notch')).toBeTruthy();
+  await user.keyboard('{Control>},{/Control}');
+  await screen.findByRole('heading', { name: 'Settings' });
+  expect(screen.queryByTestId('today-notch')).toBeNull();
+  await user.click(screen.getByRole('button', { name: 'Today' }));
+  expect(await screen.findByTestId('today-notch')).toBeTruthy();
+});
+
 test('Ctrl+, opens Settings', async () => {
   const { user } = await renderApp({ db: await seeded() });
   await screen.findByTestId('today-screen');

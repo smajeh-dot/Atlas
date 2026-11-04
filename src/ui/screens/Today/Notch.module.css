@@ -1,0 +1,31 @@
+/* A zero-height strip across the top of the Today page, out of the page's own layout. Its only job is to
+   centre the notch over the decks card: a fixed child with no left/right of its own sits where this flex row would put it. */
+.anchor {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 0;
+  display: flex;
+  justify-content: center;
+}
+
+/* Fixed to the top of the window, so it hangs from the window edge and isn't clipped by the main panel. */
+.notch {
+  position: fixed;
+  top: 0;
+  z-index: 1;
+  box-sizing: border-box;
+  width: 280px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-8);
+  padding: 0 var(--sp-12);
+  background: var(--bg-panel);
+  border: var(--border-w) solid var(--border);
+  /* No top border: the notch is attached to the top edge of the window. */
+  border-top: 0;
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+}
