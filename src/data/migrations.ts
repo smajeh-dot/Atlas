@@ -2,7 +2,7 @@ import { BUILTIN_NOTE_TYPES } from '../core/builtins';
 import { DEFAULT_PRESET, DEFAULT_SETTINGS } from '../core/model';
 import type { Db, Statement } from './db';
 
-export const SCHEMA_VERSION = 1;
+export const SCHEMA_VERSION = 2;
 
 const V1_SCHEMA = [
   `CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL)`,
@@ -91,7 +91,36 @@ function v1(now: number): Statement[] {
   ];
 }
 
-const MIGRATIONS: ((now: number) => Statement[])[] = [v1];
+/**
+ * v2: Anki import. Everything an import adds is tagged with its batch, so a
+ * failed or cancelled import can be removed exactly, and media gets a table so
+ * files can be shared between notes and checked for collisions. Additive and
+ * nullable only: v1 rows are untouched.
+ */
+function v2(): Statement[] {
+  return [
+    `CREATE TABLE import_batches (
+      id INTEGER PRIMARY KEY,
+      source_name TEXT NOT NULL,
+      source_sha256 TEXT NOT NULL,
+      imported_at INTEGER NOT NULL,
+      state TEXT NOT NULL CHECK (state IN ('running', 'complete')),
+      summary TEXT)`,
+    `CREATE TABLE media (
+      name TEXT PRIMARY KEY COLLATE NOCASE,
+      sha1 TEXT NOT NULL,
+      size INTEGER NOT NULL,
+      import_batch_id INTEGER REFERENCES import_batches(id))`,
+    ...['notes', 'cards', 'decks', 'note_types', 'presets'].map(
+      (t) => `ALTER TABLE ${t} ADD COLUMN import_batch_id INTEGER REFERENCES import_batches(id)`,
+    ),
+    `CREATE INDEX notes_import_batch ON notes(import_batch_id) WHERE import_batch_id IS NOT NULL`,
+    `CREATE INDEX cards_import_batch ON cards(import_batch_id) WHERE import_batch_id IS NOT NULL`,
+    `CREATE INDEX media_import_batch ON media(import_batch_id) WHERE import_batch_id IS NOT NULL`,
+  ].map((sql) => ({ sql }));
+}
+
+const MIGRATIONS: ((now: number) => Statement[])[] = [v1, v2];
 
 async function currentVersion(db: Db): Promise<number> {
   const hasMeta = await db.query(`SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'meta'`);
@@ -100,10 +129,10 @@ async function currentVersion(db: Db): Promise<number> {
   return row ? Number(row.value) : 0;
 }
 
-/** Brings the database up to SCHEMA_VERSION. Safe to call on every launch. */
-export async function migrate(db: Db, now: number): Promise<void> {
+/** Brings the database up to SCHEMA_VERSION (or `target`, for tests). Safe to call on every launch. */
+export async function migrate(db: Db, now: number, target: number = MIGRATIONS.length): Promise<void> {
   const from = await currentVersion(db);
-  for (let v = from + 1; v <= MIGRATIONS.length; v++) {
+  for (let v = from + 1; v <= target; v++) {
     await db.batch([
       ...MIGRATIONS[v - 1]!(now),
       { sql: `INSERT OR REPLACE INTO meta (key, value) VALUES ('schema_version', ?)`, params: [String(v)] },
