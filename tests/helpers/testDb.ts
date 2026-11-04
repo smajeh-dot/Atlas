@@ -44,3 +44,19 @@ export async function createMigratedDb(now: number = T0): Promise<Db> {
   await migrate(db, now);
   return db;
 }
+
+/** A staging database as the Rust reader wrote it, opened read-only like the app does. */
+export function openStaging(path: string): Db {
+  const raw = new DatabaseSync(path, { readOnly: true });
+  return {
+    async query<T>(sql: string, params?: unknown[]) {
+      return raw.prepare(sql).all(...bind(params)).map((r) => ({ ...r })) as T[];
+    },
+    async execute() {
+      throw new Error('staging is read-only');
+    },
+    async batch() {
+      throw new Error('staging is read-only');
+    },
+  };
+}

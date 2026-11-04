@@ -24,7 +24,7 @@ copying numbers into tests by hand.
 The rich collection contains:
 
 - **Note types:** Basic; Basic (and reversed card); Basic (optional reversed card), with and without the reverse; Basic (type in the answer); Cloze (`c1`+`c2` on one note, and a note with only `c3`); Image Occlusion; and a custom "Chem Reaction" type with two templates, `{{#…}}`, `{{^…}}`, `{{hint:…}}`, an unsupported `{{furigana:…}}`, and CSS that references `_bg-tile.png`.
-- **Decks:** `Chem::Organic::Alkanes`, `Chem::Inorganic` (preset "Exam cram": 50 new, 500 reviews, retention 0.85), `Chem::States`, `Chem::Interday` (preset "Interday steps": learning 10m and 1d, relearning 10m and 2d), `Chem::Empty`, an empty `Default`, and a filtered deck `Cram`.
+- **Decks:** `Chem::Organic::Alkanes`, `Chem::Inorganic` (preset "Exam cram": 50 new, 500 reviews, retention 0.85), `Chem::States`, `Chem::Interday` (preset "Interday steps": learning 10m and 1d, relearning 10m and 2d), an empty `Default`, and a filtered deck `Cram`. The generator also makes an empty `Chem::Empty`, but Anki doesn't export decks that have no cards, so it isn't in the packages.
 - **Fields:** `<sub>` HTML; an image with a quoted `src`; an unquoted `src=café.png`; `[sound:benzene.mp3]`; a reference to a missing file; `[latex]`, `\(…\)` and `\[…\]`; `onerror=`, `<script>` and `javascript:`; non-ASCII text.
 - **Tags:** `chem::organic`, `Säure`, `Exam_2026` and others.
 - **Card states** (`Chem::States`, one note each, with real multi-week histories):
@@ -99,7 +99,7 @@ These replace the "VERIFY" guesses in the importer plan. Anything still marked
 8. **Modern** (`ver` 18): the `col` row's `models`, `decks`, `dconf` and `tags` are empty strings. Note types, fields, templates, decks, deck configs, config and tags live in their own tables, with protobuf `config`/`common`/`kind` blobs. Deck names are joined with `\x1f`. `config.val` holds JSON bytes.
 9. **Trap: `COLLATE unicase`.** Name columns in `notetypes`, `fields`, `templates`, `decks`, `deck_config` and `tags` use a custom collation that plain SQLite doesn't have. Any query that uses one of those indexes fails: Python's `sqlite3` gives `no query solution` on `SELECT * FROM tags`. The queries Atlas runs don't happen to need it, but the reader registers a `unicase` collation (case-insensitive Unicode comparison) anyway, in case SQLite picks one of those indexes.
 10. **Legacy** (`ver` 11): note types, decks and deck configs are JSON in the `col` row. `conf` omits `rollover` when it's the default; treat a missing value as `4`.
-11. Parent decks are real rows (`Chem`, `Chem::Organic`). An empty `Default` (id 1) is always present.
+11. Parent decks are real rows (`Chem`, `Chem::Organic`). An empty `Default` (id 1) is always present, but other decks with no cards (`Chem::Empty`) are left out of the export.
 
 **Cards** (v3 scheduler, as exported)
 
