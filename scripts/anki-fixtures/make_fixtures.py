@@ -291,7 +291,7 @@ def build_rich(work: str) -> Builder:
     b.col.set_user_flag_for_cards(1, b.real(s[4]))  # red, overdue
     b.col.sched.set_due_date(b.real(s[5]), "0")  # due exactly today, via a manual entry
     b.col.set_user_flag_for_cards(4, b.real(s[5]))  # blue
-    b.col.set_user_flag_for_cards(7, b.real(s[6]))  # purple: Atlas has no seventh flag
+    b.col.set_user_flag_for_cards(7, b.real(s[6]))  # purple: the highest flag number
     b.col.sched.bury_cards(b.real(s[6]), manual=True)
     b.col.sched.set_due_date(b.real(s[8]), "5")  # pushed into the future by hand
     b.answer(s[9], 3)  # intraday learning

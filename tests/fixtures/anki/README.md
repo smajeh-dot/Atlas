@@ -36,7 +36,7 @@ The rich collection contains:
 | 03 | Review, suspended |
 | 04 | Review, overdue, red flag |
 | 05 | Review, due today via "Set due date", blue flag |
-| 06 | Review, user-buried, purple flag (flag 7: Atlas only has four) |
+| 06 | Review, user-buried, purple flag (flag 7, the highest) |
 | 07 | Lapsed review, moved into the filtered deck `Cram` |
 | 08 | Review, pushed into the future by "Set due date" |
 | 09 | Learning (one step done) |
@@ -109,7 +109,7 @@ These replace the "VERIFY" guesses in the importer plan. Anything still marked
 15. Review: `type 2`, `queue 2`, `due` = day number relative to `crt`.
 16. Relearning: `type 3`, `queue 1`, `due` in epoch seconds, plus `left`.
 17. Suspended (`queue -1`) and buried (`-3` by the user, `-2` as a sibling) keep their `type`, `due` and `ivl`.
-18. `flags & 7` ranges over 1–7 (red, orange, green, blue, pink, turquoise, purple). Atlas has four, so 5–7 need a decision.
+18. `flags & 7` ranges over 1–7 (red, orange, green, blue, pink, turquoise, purple). Atlas uses the same seven numbers and colours (`setFlag` in `studySession.ts`), so copy the value across unchanged.
 19. **Filtered decks:** `did` = the filtered deck and `odid` = the home deck. `due` becomes `-100000 + n` (the card's place in the filtered deck), and the real due is in `odue` (a day number for review cards, a position for new cards). Always use `odue`/`odid` when `odid != 0`.
 20. **"Forget"** leaves a card with `type 0`/`queue 0` but keeps `reps`, `lapses` and its history. New cards can have reviews.
 21. `cards.data` is JSON. It has `pos` (original new position) and `lrt` (last review, epoch seconds), and with FSRS also `s`, `d`, `dr` and `decay` (FSRS-6). Example: `{"pos":1,"s":67.1525,"d":2.09,"dr":0.9,"decay":0.154,"lrt":…}`.
