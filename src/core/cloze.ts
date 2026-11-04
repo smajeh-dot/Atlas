@@ -1,3 +1,6 @@
+import { escapeHtml, stripHtml } from './html';
+import { findMath, texText } from './math';
+
 interface ClozeMatch {
   start: number;
   end: number; // index just past the closing }}
@@ -49,13 +52,24 @@ export function clozeNumbers(text: string): number[] {
   return [...new Set(scan(text).map((c) => c.num))].sort((a, b) => a - b);
 }
 
+/**
+ * Shows the active cloze hidden (front) or highlighted (back); the others show their answer.
+ * A cloze inside an equation becomes TeX, since HTML cannot go inside one: \htmlClass{cloze}{…},
+ * the only trusted command the card renderer allows.
+ */
 export function renderCloze(text: string, active: number, side: 'front' | 'back'): string {
+  const maths = findMath(text);
+  const inMath = (c: ClozeMatch) => maths.some((m) => c.start >= m.bodyStart && c.end <= m.bodyEnd);
   let out = '';
   let pos = 0;
   for (const c of scan(text)) {
     out += text.slice(pos, c.start);
     if (c.num !== active) out += c.answer;
-    else if (side === 'back') out += `<span class="cloze">${c.answer}</span>`;
+    else if (inMath(c)) {
+      // The hint is HTML; it goes into the field as escaped plain text, which the equation finder decodes.
+      if (side === 'back') out += `\\htmlClass{cloze}{${c.answer}}`;
+      else out += `\\htmlClass{cloze}{\\text{[${escapeHtml(texText(c.hint === null ? '…' : stripHtml(c.hint)))}]}}`;
+    } else if (side === 'back') out += `<span class="cloze">${c.answer}</span>`;
     else out += `<span class="cloze">[${c.hint ?? '…'}]</span>`;
     pos = c.end;
   }
