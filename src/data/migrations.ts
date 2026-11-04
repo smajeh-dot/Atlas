@@ -111,6 +111,16 @@ function v2(): Statement[] {
       sha1 TEXT NOT NULL,
       size INTEGER NOT NULL,
       import_batch_id INTEGER REFERENCES import_batches(id))`,
+    // An import that updates existing notes keeps their old text here until it
+    // finishes, so a failed or cancelled import can put it back.
+    `CREATE TABLE import_note_backups (
+      import_batch_id INTEGER NOT NULL REFERENCES import_batches(id),
+      note_id INTEGER NOT NULL,
+      fields TEXT NOT NULL,
+      sort_field TEXT NOT NULL,
+      tags TEXT NOT NULL,
+      updated_at INTEGER NOT NULL,
+      PRIMARY KEY (import_batch_id, note_id))`,
     ...['notes', 'cards', 'decks', 'note_types', 'presets'].map(
       (t) => `ALTER TABLE ${t} ADD COLUMN import_batch_id INTEGER REFERENCES import_batches(id)`,
     ),
