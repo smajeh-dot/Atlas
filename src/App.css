@@ -1,44 +1,79 @@
-/* Placeholder styling for the Phase 1 self-check screen; the design system arrives in Phase 2. */
-:root {
-  font-family: 'Segoe UI', system-ui, sans-serif;
-  color: #1c1c1f;
-  background: #fefefe;
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
 }
 
 body {
+  background: var(--bg-app);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: var(--fs-ui);
+  line-height: var(--lh-ui);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3 {
+  text-wrap: balance;
   margin: 0;
 }
 
-.setup {
-  max-width: 560px;
-  margin: 15vh auto 0;
-  padding: 0 24px;
-  line-height: 1.5;
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
 }
 
-.setup h1 {
-  font-size: 30px;
-  font-weight: 600;
-  margin: 0 0 24px;
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 1px;
+  box-shadow: 0 0 0 3px var(--focus-soft);
 }
 
-.setup dl {
-  display: grid;
-  grid-template-columns: 140px 1fr;
-  gap: 8px 16px;
-  margin: 0;
-}
-
-.setup dt {
-  color: #6b6b74;
-}
-
-.setup dd {
-  margin: 0;
+.tabular {
   font-variant-numeric: tabular-nums;
 }
 
-.setup .path,
-.setup .problem {
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0ms !important;
+    animation-duration: 0ms !important;
+  }
+}
+
+.startup-problem {
+  max-width: 560px;
+  margin: 15vh auto 0;
+  padding: 0 var(--sp-24);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-12);
+  font-size: var(--fs-body);
+}
+
+.startup-problem h1 {
+  font-family: var(--font-display);
+  font-weight: var(--weight-display);
+  font-size: var(--fs-3xl);
+}
+
+.startup-message {
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  color: var(--danger);
   overflow-wrap: anywhere;
 }

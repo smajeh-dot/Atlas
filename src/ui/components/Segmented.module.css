@@ -1,0 +1,26 @@
+.track {
+  display: inline-flex;
+  gap: var(--sp-2);
+  padding: 3px;
+  border-radius: 9px;
+  background: var(--bg-raised);
+}
+
+.segment {
+  padding: 5px 12px;
+  border: var(--border-w) solid transparent;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: var(--fs-ui);
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.segment[aria-checked='true'] {
+  background: var(--bg-panel);
+  color: var(--text);
+  border-color: var(--segment-border);
+  box-shadow: var(--shadow-segment);
+}

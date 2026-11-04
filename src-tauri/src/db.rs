@@ -7,7 +7,10 @@ use std::sync::Mutex;
 
 /// One connection guarded by a mutex: the app is single-user, and a single
 /// connection keeps multi-statement transactions on the same handle.
-pub struct DbState(pub Mutex<Connection>);
+/// None when start-up could not open the database (see StartupError in main.rs).
+pub struct DbState(pub Mutex<Option<Connection>>);
+
+pub(crate) const NO_DB: &str = "Atlas couldn't open its database.";
 
 pub fn open(path: &Path) -> rusqlite::Result<Connection> {
     let conn = Connection::open(path)?;
@@ -46,11 +49,11 @@ fn to_sql(v: &Value) -> Result<SqlValue, String> {
     })
 }
 
-pub(crate) fn params(values: &[Value]) -> Result<Vec<SqlValue>, String> {
+fn params(values: &[Value]) -> Result<Vec<SqlValue>, String> {
     values.iter().map(to_sql).collect()
 }
 
-pub(crate) fn to_json(v: ValueRef) -> Result<Value, String> {
+fn to_json(v: ValueRef) -> Result<Value, String> {
     Ok(match v {
         ValueRef::Null => Value::Null,
         ValueRef::Integer(i) => Value::Number(i.into()),
@@ -72,9 +75,7 @@ pub(crate) fn query_rows(
 ) -> Result<Vec<Map<String, Value>>, String> {
     let mut stmt = conn.prepare(sql).map_err(err)?;
     let names: Vec<String> = stmt.column_names().iter().map(|s| s.to_string()).collect();
-    let mut rows = stmt
-        .query(params_from_iter(self::params(params)?))
-        .map_err(err)?;
+    let mut rows = stmt.query(params_from_iter(self::params(params)?)).map_err(err)?;
     let mut out = Vec::new();
     while let Some(row) = rows.next().map_err(err)? {
         let mut obj = Map::new();
@@ -92,8 +93,9 @@ pub fn db_query(
     sql: String,
     params: Vec<Value>,
 ) -> Result<Vec<Map<String, Value>>, String> {
-    let conn = state.0.lock().map_err(|e| e.to_string())?;
-    query_rows(&conn, &sql, &params)
+    let guard = state.0.lock().map_err(|e| e.to_string())?;
+    let conn = guard.as_ref().ok_or(NO_DB)?;
+    query_rows(conn, &sql, &params)
 }
 
 #[tauri::command]
@@ -102,7 +104,8 @@ pub fn db_execute(
     sql: String,
     params: Vec<Value>,
 ) -> Result<ExecResult, String> {
-    let conn = state.0.lock().map_err(|e| e.to_string())?;
+    let guard = state.0.lock().map_err(|e| e.to_string())?;
+    let conn = guard.as_ref().ok_or(NO_DB)?;
     let changes = conn
         .execute(&sql, params_from_iter(self::params(&params)?))
         .map_err(err)?;
@@ -114,7 +117,8 @@ pub fn db_execute(
 
 #[tauri::command]
 pub fn db_batch(state: tauri::State<DbState>, statements: Vec<Statement>) -> Result<(), String> {
-    let mut conn = state.0.lock().map_err(|e| e.to_string())?;
+    let mut guard = state.0.lock().map_err(|e| e.to_string())?;
+    let conn = guard.as_mut().ok_or(NO_DB)?;
     let tx = conn.transaction().map_err(err)?;
     for s in &statements {
         tx.execute(&s.sql, params_from_iter(params(&s.params)?))

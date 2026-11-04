@@ -1,99 +1,68 @@
 import { useEffect, useState } from 'react';
+import type { Settings } from './core/model';
 import { migrate } from './data/migrations';
 import { recoverInterruptedImports } from './import/commit';
-import { chooseAnkiFile, finishImport, prepareFile, tauriImportPlatform, tauriStaging } from './platform/importBridge';
-import { getAppInfo, tauriDb, type AppInfo } from './platform/tauriDb';
+import { getSettings } from './data/settings';
 import { systemClock } from './platform/clock';
-import type { ImportFlowDeps } from './services/importFlow';
-import { runSelfCheck, type SelfCheckResult } from './services/selfCheck';
-import { ImportScreen } from './ui/ImportScreen';
+import { tauriMedia } from './platform/media';
+import { openUrl } from './platform/opener';
+import { chooseAnkiFile, finishImport, prepareFile, tauriImportPlatform, tauriStaging } from './platform/importBridge';
+import { getAppInfo, tauriDb } from './platform/tauriDb';
+import { UndoStack } from './services/undo';
+import type { AppDeps } from './ui/app/AtlasContext';
+import { AtlasApp } from './ui/AtlasApp';
+import { loadFonts } from './ui/theme/fonts';
+import { applyTheme } from './ui/theme/ThemeProvider';
 import './App.css';
 
-const importDeps: ImportFlowDeps = {
-  db: tauriDb,
-  staging: tauriStaging,
-  platform: tauriImportPlatform,
-  clock: systemClock,
-  chooseFile: chooseAnkiFile,
-  prepare: prepareFile,
-  finish: finishImport,
-};
-
 type Status =
-  | { kind: 'checking' }
-  | { kind: 'done'; info: AppInfo; check: SelfCheckResult; recovered: number }
+  | { kind: 'starting' }
+  | { kind: 'ready'; deps: AppDeps; settings: Settings; notice?: string }
   | { kind: 'error'; message: string };
 
 // Started once per page load so a double-mounted effect never migrates twice at the same time.
-let startup: Promise<{ info: AppInfo; check: SelfCheckResult; recovered: number }> | null = null;
+let startup: Promise<{ deps: AppDeps; settings: Settings; notice?: string } | { error: string }> | null = null;
+
 function start() {
   startup ??= (async () => {
-    const info = await getAppInfo();
+    const appInfo = await getAppInfo();
+    if (appInfo.startupError) return { error: appInfo.startupError };
     await migrate(tauriDb, systemClock.now());
     // An import cut off by a crash or power cut is undone before anything else reads the data.
     const recovered = await recoverInterruptedImports(tauriDb, tauriImportPlatform);
-    return { info, check: await runSelfCheck(tauriDb, systemClock.now()), recovered };
+    const settings = await getSettings(tauriDb);
+    applyTheme(settings.theme);
+    // Nothing renders until the fonts are ready, so text never flashes in a fallback font.
+    await loadFonts();
+    const importer = { staging: tauriStaging, platform: tauriImportPlatform, chooseFile: chooseAnkiFile, prepare: prepareFile, finish: finishImport };
+    const deps: AppDeps = { db: tauriDb, clock: systemClock, undo: new UndoStack(), media: tauriMedia, openUrl, appInfo, importer };
+    const notice = recovered > 0
+      ? "An import didn't finish last time Atlas was open, so Atlas undid it. Your cards are as they were before it."
+      : undefined;
+    return { deps, settings, notice };
   })();
   return startup;
 }
 
 export function App() {
-  const [status, setStatus] = useState<Status>({ kind: 'checking' });
-  const [importing, setImporting] = useState(false);
+  const [status, setStatus] = useState<Status>({ kind: 'starting' });
 
   useEffect(() => {
     start().then(
-      (r) => setStatus({ kind: 'done', ...r }),
+      (r) => setStatus('error' in r ? { kind: 'error', message: r.error } : { kind: 'ready', ...r }),
       (e: unknown) => setStatus({ kind: 'error', message: e instanceof Error ? e.message : String(e) }),
     );
   }, []);
 
-  if (status.kind === 'checking') {
-    return <main className="setup"><p>Checking your data…</p></main>;
-  }
+  if (status.kind === 'starting') return null;
   if (status.kind === 'error') {
     return (
-      <main className="setup">
+      <main className="startup-problem">
         <h1>Atlas couldn't open your data</h1>
-        <p className="problem">{status.message}</p>
+        <p className="startup-message">{status.message}</p>
+        <p>Check that you can open %APPDATA%\Atlas in File Explorer, then reopen Atlas.</p>
       </main>
     );
   }
-  if (importing) {
-    return (
-      <ImportScreen
-        deps={importDeps}
-        onClose={() => {
-          setImporting(false);
-          // Refresh the counts below after an import.
-          startup = null;
-          start().then((r) => setStatus({ kind: 'done', ...r, recovered: 0 }));
-        }}
-      />
-    );
-  }
-  const { info, check, recovered } = status;
-  return (
-    <main className="setup">
-      <h1>{check.ok ? 'Atlas is set up' : 'Atlas found a problem'}</h1>
-      {recovered > 0 && (
-        <p>An import didn't finish last time Atlas was open, so Atlas undid it. Your cards are as they were before it.</p>
-      )}
-      <dl>
-        <dt>Version</dt>
-        <dd>{info.version}</dd>
-        <dt>Data folder</dt>
-        <dd className="path">{info.dataDir}</dd>
-        <dt>Database check</dt>
-        <dd>{check.integrity === 'ok' ? 'passed' : `failed: ${check.integrity}`}</dd>
-        <dt>Scheduler check</dt>
-        <dd>{check.schedulerOk ? 'passed' : 'failed'}</dd>
-        <dt>Contents</dt>
-        <dd>Decks {check.decks} · Notes {check.notes} · Cards {check.cards}</dd>
-      </dl>
-      <div className="import-actions">
-        <button className="primary" onClick={() => setImporting(true)}>Import from Anki…</button>
-      </div>
-    </main>
-  );
+  return <AtlasApp deps={status.deps} initialSettings={status.settings} notice={status.notice} />;
 }

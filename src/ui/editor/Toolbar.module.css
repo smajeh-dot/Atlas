@@ -1,0 +1,50 @@
+.toolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-4);
+  padding: var(--sp-6);
+  background: var(--bg-panel);
+  border: var(--border-w) solid var(--border);
+  border-radius: var(--radius-lg);
+}
+
+.group {
+  display: flex;
+  gap: var(--sp-2);
+  padding-right: var(--sp-6);
+  border-right: 1px solid var(--border-soft);
+}
+
+.group:last-child {
+  border-right: 0;
+}
+
+.tool {
+  min-width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 8px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text);
+  font-size: var(--fs-ui);
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.tool:hover {
+  background: var(--hover-bg);
+}
+
+.tool[aria-pressed='true'] {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.wide {
+  padding: 0 10px;
+}

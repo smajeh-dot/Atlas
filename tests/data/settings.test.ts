@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import { getSettings, updateSettings } from '../../src/data/settings';
+import { getSettings, SettingsError, updateSettings } from '../../src/data/settings';
 import { DEFAULT_SETTINGS } from '../../src/core/model';
 import { createMigratedDb } from '../helpers/testDb';
 
@@ -20,4 +20,10 @@ test('unknown stored keys are dropped and missing keys default', async () => {
   await db.execute(`UPDATE meta SET value = ? WHERE key = 'settings'`, [JSON.stringify({ theme: 'tangerine', bogus: 1 })]);
   const s = await getSettings(db);
   expect(s).toEqual({ ...DEFAULT_SETTINGS, theme: 'tangerine' });
+});
+
+test('invalid settings are not saved', async () => {
+  const db = await createMigratedDb();
+  await expect(updateSettings(db, { dayStartHour: 25 })).rejects.toBeInstanceOf(SettingsError);
+  expect((await getSettings(db)).dayStartHour).toBe(4);
 });

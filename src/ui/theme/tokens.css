@@ -1,0 +1,88 @@
+/*
+ * Token names shared by every theme, plus the values that are the same in all of them.
+ * Theme files (workbench.css, tangerine.css) give the colours, shapes and fonts.
+ * Components only read these custom properties; adding a theme means adding one more token file.
+ */
+:root {
+  /* Flags 1–7: red, orange, green, blue, pink, turquoise, purple */
+  --flag-1: #D32F2F;
+  --flag-2: #F08A24;
+  --flag-3: #1E9E4A;
+  --flag-4: #2F6FCE;
+  --flag-5: #E0559A;
+  --flag-6: #1AA6A6;
+  --flag-7: #7A4FD0;
+
+  /* Deck colours 1–8: green, amber-brown, blue, red, purple, teal, gold, pink */
+  --deck-1: #1E7D32;
+  --deck-2: #B5651D;
+  --deck-3: #2F5FCE;
+  --deck-4: #B3261E;
+  --deck-5: #7A4FD0;
+  --deck-6: #1AA6A6;
+  --deck-7: #C28A00;
+  --deck-8: #E0559A;
+
+  /* Keyboard chips sit on any background, so they use a translucent neutral */
+  --kbd-bg: rgba(127,127,127,0.18);
+
+  /* Type scale */
+  --fs-label: 11.5px;
+  --lh-label: 1.3;
+  --fs-sm: 12.5px;
+  --lh-sm: 1.4;
+  --fs-ui: 13.5px;
+  --lh-ui: 1.45;
+  --fs-body: 15px;
+  --lh-body: 1.55;
+  --fs-lg: 17px;
+  --lh-lg: 1.5;
+  --fs-xl: 19px;
+  --lh-xl: 1.4;
+  --fs-2xl: 25px;
+  --lh-2xl: 1.3;
+  --fs-3xl: 30px;
+  --lh-3xl: 1.15;
+  --fs-4xl: 38px;
+  --lh-4xl: 1.05;
+
+  /* Spacing steps */
+  --sp-2: 2px;
+  --sp-4: 4px;
+  --sp-6: 6px;
+  --sp-8: 8px;
+  --sp-10: 10px;
+  --sp-12: 12px;
+  --sp-14: 14px;
+  --sp-16: 16px;
+  --sp-18: 18px;
+  --sp-20: 20px;
+  --sp-24: 24px;
+  --sp-28: 28px;
+  --sp-32: 32px;
+  --sp-44: 44px;
+
+  /* Sizes */
+  --sidebar-w: 224px;
+  --card-max: 780px;
+  --content-max: 1400px;
+
+  /* Motion */
+  --dur-hover: 120ms;
+  --dur-reveal: 180ms;
+  --dur-next: 140ms;
+  --dur-toast: 200ms;
+  --dur-sheet: 220ms;
+  --dur-press: 80ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-hover: 0ms;
+    --dur-reveal: 0ms;
+    --dur-next: 0ms;
+    --dur-toast: 0ms;
+    --dur-sheet: 0ms;
+    --dur-press: 0ms;
+  }
+}

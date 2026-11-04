@@ -1,0 +1,57 @@
+.page {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px 28px;
+}
+
+.column {
+  width: 100%;
+  max-width: 560px;
+  margin: 6vh auto 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-24);
+}
+
+.title {
+  font-family: var(--font-display);
+  font-weight: var(--weight-display);
+  letter-spacing: var(--tracking-display);
+  font-size: var(--fs-3xl);
+  line-height: var(--lh-3xl);
+}
+
+.lead {
+  margin: calc(-1 * var(--sp-12)) 0 0;
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--text-muted);
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-12);
+}
+
+.label {
+  font-size: var(--fs-label);
+  line-height: var(--lh-label);
+  font-weight: 500;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-12);
+  max-width: 360px;
+}
+
+.choices {
+  display: flex;
+  gap: var(--sp-12);
+  flex-wrap: wrap;
+}

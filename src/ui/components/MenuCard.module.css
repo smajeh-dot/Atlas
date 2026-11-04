@@ -1,0 +1,51 @@
+/* Floating card used by the sidebar and the Today screen: 135px wide, 4px padding, 8px corners. */
+.menuCard {
+  position: fixed;
+  z-index: 60;
+  width: 135px;
+  padding: 4px;
+  background: var(--menu-card-bg);
+  border: 1px solid var(--sidebar-header-rule);
+  border-radius: 8px;
+  box-shadow: var(--shadow-popover);
+}
+
+/* Rows, dividers and the danger colour shared by every dropdown built on MenuCard. */
+.menuItem {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-8);
+  width: 100%;
+  height: 26px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: var(--new-btn-bg);
+  color: var(--sidebar-text);
+  font-family: inherit;
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.menuItem:hover,
+.menuItem:focus-visible {
+  background: var(--new-btn-hover);
+}
+
+.menuItem svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* Same 1px grey rule as the sidebar dividers, separating the main actions from whatever sits below. */
+.menuRule {
+  flex: none;
+  height: 1px;
+  margin: 4px 4px;
+  background: var(--sidebar-header-rule);
+}
+
+.menuDanger {
+  color: var(--danger);
+}

@@ -6,7 +6,9 @@ import type { Db, Statement } from '../data/db';
 import { getNoteType } from '../data/noteTypes';
 import { getNote, normaliseTags, noteInsertStatement, noteUpdateStatement } from '../data/notes';
 import { revlogForCard, revlogInsertStatement } from '../data/revlog';
-import type { UndoStack } from './undo';
+import type { UndoEntry, UndoStack } from './undo';
+
+export { normaliseTags } from '../data/notes';
 
 export class NoCardsError extends Error {}
 
@@ -32,7 +34,7 @@ function newCard(noteId: number, ord: number, deckId: number, newPosition: numbe
 export async function addNote(
   deps: NoteServiceDeps,
   input: { noteTypeId: number; deckId: number; fields: string[]; tags: string[] },
-): Promise<{ noteId: number; cardIds: number[] }> {
+): Promise<{ noteId: number; cardIds: number[]; undoEntry: UndoEntry }> {
   const { db } = deps;
   const now = deps.clock.now();
   const noteType = await getNoteType(db, input.noteTypeId);
@@ -51,8 +53,9 @@ export async function addNote(
     noteInsertStatement(note),
     ...ords.map((ord, i) => cardInsertStatement({ id: cardIds[i]!, ...newCard(noteId, ord, input.deckId, newPosition, now) })),
   ]);
-  deps.undo.push({ label: 'add card', restore: [{ sql: `DELETE FROM notes WHERE id = ?`, params: [noteId] }] });
-  return { noteId, cardIds };
+  const undoEntry: UndoEntry = { label: 'add card', restore: [{ sql: `DELETE FROM notes WHERE id = ?`, params: [noteId] }] };
+  deps.undo.push(undoEntry);
+  return { noteId, cardIds, undoEntry };
 }
 
 /** Saves new field contents and tags. New templates or clozes get new cards; cards are never deleted here. */
@@ -60,6 +63,7 @@ export async function updateNote(
   deps: NoteServiceDeps,
   noteId: number,
   input: { fields: string[]; tags: string[] },
+  opts: { moveCard?: { cardId: number; deckId: number } } = {},
 ): Promise<{ addedCardIds: number[] }> {
   const { db } = deps;
   const now = deps.clock.now();
@@ -82,20 +86,26 @@ export async function updateNote(
       cardInsertStatement({ id: addedCardIds[i]!, ...newCard(noteId, ord, first?.deckId ?? 1, newPosition, now) }),
     ),
   ];
+  // Moving the edited card to another deck happens in the same transaction (spec 12.1).
+  if (opts.moveCard) {
+    statements.push({ sql: `UPDATE cards SET deck_id = ?, updated_at = ? WHERE id = ? AND note_id = ?`, params: [opts.moveCard.deckId, now, opts.moveCard.cardId, noteId] });
+  }
   await db.batch(statements);
   return { addedCardIds };
 }
 
-export async function deleteNote(deps: NoteServiceDeps, noteId: number): Promise<void> {
+export async function deleteNote(deps: NoteServiceDeps, noteId: number): Promise<UndoEntry> {
   const { db } = deps;
   const note = await getNote(db, noteId);
   const cards = await cardsOfNote(db, noteId);
   const revlog = (await Promise.all(cards.map((c) => revlogForCard(db, c.id)))).flat();
   await db.execute(`DELETE FROM notes WHERE id = ?`, [noteId]);
-  deps.undo.push({
+  const entry: UndoEntry = {
     label: 'delete note',
     restore: [noteInsertStatement(note), ...cards.map((c) => cardInsertStatement(c)), ...revlog.map(revlogInsertStatement)],
-  });
+  };
+  deps.undo.push(entry);
+  return entry;
 }
 
 export async function findDuplicates(db: Db, noteTypeId: number, firstField: string, excludeNoteId?: number): Promise<number[]> {
@@ -106,4 +116,12 @@ export async function findDuplicates(db: Db, noteTypeId: number, firstField: str
     [noteTypeId, text, excludeNoteId ?? -1],
   );
   return rows.map((r) => r.id);
+}
+
+/** The deck holding the first card of the first possible duplicate, or null when there is none. */
+export async function findDuplicateDeck(db: Db, noteTypeId: number, firstField: string, excludeNoteId?: number): Promise<number | null> {
+  const [noteId] = await findDuplicates(db, noteTypeId, firstField, excludeNoteId);
+  if (noteId === undefined) return null;
+  const [card] = await cardsOfNote(db, noteId);
+  return card ? card.deckId : null;
 }

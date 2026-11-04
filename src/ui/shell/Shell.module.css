@@ -1,0 +1,36 @@
+.shell {
+  height: 100%;
+  display: flex;
+  gap: var(--shell-gap);
+  padding: var(--shell-pad);
+  background: var(--bg-app);
+}
+
+.side {
+  display: flex;
+  border: var(--panel-border);
+  border-right: var(--sidebar-divider);
+  border-left: var(--sidebar-edge);
+  border-bottom: var(--sidebar-edge);
+  /* Pull the left and bottom edges out over the shell padding so they sit on the window edge. */
+  margin: 0 0 calc(var(--sidebar-bleed) * -1) calc(var(--sidebar-bleed) * -1);
+  border-radius: var(--radius-panel-side);
+  overflow: hidden;
+  background: var(--sidebar-bg);
+}
+
+.main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  /* No card: screens sit directly on the app background. */
+  overflow: hidden;
+}
+
+/* The panel takes focus after navigation so keys reach the screen; it isn't a control, so no ring. */
+.main:focus,
+.main:focus-visible {
+  outline: none;
+  box-shadow: none;
+}

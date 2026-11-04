@@ -40,3 +40,7 @@ export function cardInsertStatement(c: Omit<Card, 'id'> & { id?: number }): Stat
   const params = c.id === undefined ? cardValues(c) : [c.id, ...cardValues(c)];
   return { sql: `INSERT INTO cards (${cols.join(', ')}) VALUES (${cols.map(() => '?').join(', ')})`, params };
 }
+
+export async function setCardDeck(db: Db, cardId: number, deckId: number, now: number): Promise<void> {
+  await db.execute(`UPDATE cards SET deck_id = ?, updated_at = ? WHERE id = ?`, [deckId, now, cardId]);
+}

@@ -22,6 +22,8 @@ export interface AppInfo {
   dataDir: string;
   dbPath: string;
   version: string;
+  /** Why the database could not be opened at start-up, or null when it opened. */
+  startupError: string | null;
 }
 
 export function getAppInfo(): Promise<AppInfo> {

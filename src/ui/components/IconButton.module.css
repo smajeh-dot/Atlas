@@ -1,0 +1,19 @@
+.button {
+  width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: var(--border-w) solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-panel);
+  color: var(--text);
+  cursor: pointer;
+  transition: background var(--dur-hover) ease, transform var(--dur-press) ease;
+}
+.button:hover:not(:disabled) { background: var(--hover-bg); }
+.button:active:not(:disabled) {
+  background: var(--press-bg);
+  transform: translate(var(--press-shift), var(--press-shift));
+}
+.button:disabled { opacity: 0.45; cursor: default; }

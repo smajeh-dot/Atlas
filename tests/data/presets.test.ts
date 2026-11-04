@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import { createPreset, deletePreset, getPreset, listPresets, PresetInUseError, updatePreset } from '../../src/data/presets';
+import { createPreset, deletePreset, getPreset, listPresets, PresetConfigError, PresetInUseError, updatePreset } from '../../src/data/presets';
 import { getBuiltinNoteType, getNoteType, listNoteTypes } from '../../src/data/noteTypes';
 import { DEFAULT_PRESET } from '../../src/core/model';
 import { createMigratedDb } from '../helpers/testDb';
@@ -44,4 +44,11 @@ test('note types load with fields and templates', async () => {
   const cloze = await getBuiltinNoteType(db, 'cloze');
   expect(cloze.kind).toBe('cloze');
   expect((await getNoteType(db, cloze.id)).fields.map((f) => f.name)).toEqual(['Text', 'Extra']);
+});
+
+test('invalid preset config is not saved', async () => {
+  const db = await createMigratedDb();
+  await expect(updatePreset(db, 1, { config: { learningSteps: ['x'] } })).rejects.toBeInstanceOf(PresetConfigError);
+  await expect(createPreset(db, 'Bad', { ...DEFAULT_PRESET, newPerDay: -5 })).rejects.toBeInstanceOf(PresetConfigError);
+  expect((await getPreset(db, 1)).config.learningSteps).toEqual(['1m', '10m']);
 });

@@ -1,0 +1,32 @@
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-12);
+}
+
+.range {
+  --fill: 50%;
+  flex: 1;
+  appearance: none;
+  height: 4px;
+  border-radius: 999px;
+  background: linear-gradient(to right, var(--accent) var(--fill), var(--bg-raised) var(--fill));
+}
+
+.range::-webkit-slider-thumb {
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--bg-panel);
+  border: var(--border-w) solid var(--border);
+  box-shadow: var(--shadow-segment);
+  cursor: pointer;
+}
+
+.value {
+  min-width: 44px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+}

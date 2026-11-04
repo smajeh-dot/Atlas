@@ -1,10 +1,11 @@
-import { fileURLToPath } from 'node:url';
+import { join } from 'node:path';
 import { openStaging } from '../helpers/testDb';
 import type { StagingSource } from '../../src/import/staging';
 
 /** A staging database the Rust reader produced from one of the real .apkg fixtures. */
 export function staged(name: 'rich-modern' | 'rich-modern-nosched' | 'fsrs-modern'): StagingSource {
-  return openStaging(fileURLToPath(new URL(`../fixtures/anki/staged/${name}.staging.db`, import.meta.url)));
+  // Resolved from the project folder: under jsdom, import.meta.url isn't a file URL.
+  return openStaging(join(process.cwd(), 'tests/fixtures/anki/staged', `${name}.staging.db`));
 }
 
 export async function expected(name: string): Promise<{
@@ -15,6 +16,6 @@ export async function expected(name: string): Promise<{
   notes: { id: number; guid: string; fields: string[] }[];
 }> {
   const { readFile } = await import('node:fs/promises');
-  const path = fileURLToPath(new URL(`../fixtures/anki/${name}.expected.json`, import.meta.url));
+  const path = join(process.cwd(), 'tests/fixtures/anki', `${name}.expected.json`);
   return JSON.parse(await readFile(path, 'utf8'));
 }

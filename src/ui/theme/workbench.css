@@ -1,0 +1,107 @@
+/* Workbench: near-white floating panels, hairline borders, serif headings, cobalt used sparingly. */
+:root,
+[data-theme='workbench'] {
+  --bg-app: #F9F9F7;
+  --bg-main: #F9F9F7;
+  --bg-panel: #FFFFFF;
+  --bg-raised: #F4F4F2;
+  --bg-preview: #F7F7F5;
+  --border: #E2E2E6;
+  --border-soft: #E2E2E6;
+  --text: #1C1C1F;
+  --text-muted: #6B6B74;
+  --text-faint: #9A9AA2;
+  --text-answer: #1C1C1F;
+  --accent: #2F5FCE;
+  --accent-ink: #FFFFFF;
+  --progress-fill: #237bdb;
+  --accent-soft: #EAF0FB;
+  --sidebar-bg: #FFFFFF;
+  --sidebar-header-rule: #D4D4D4;
+  --new-btn-bg: #FFFFFF;
+  --new-btn-hover: #F7F7F7;
+  --menu-card-bg: #FFFFFF;
+  --table-head-ink: #000000;
+  --sidebar-text: #1C1C1F;
+  --sidebar-text-muted: #6B6B74;
+  --sidebar-active-bg: #EDECE8;
+  --sidebar-active-text: #1C1C1F;
+  --sidebar-active-outline: none;
+  --sidebar-label: #9A9AA2;
+  --mark-bg: #2F5FCE;
+  --mark-ink: #FFFFFF;
+  --add-bg: #FFFFFF;
+  --add-ink: #1C1C1F;
+  --hero-bg: transparent;
+  --hero-text: #1C1C1F;
+  --hero-muted: #6B6B74;
+  --hero-btn-bg: #17171A;
+  --hero-btn-ink: #FFFFFF;
+  --hero-border: none;
+  --hero-pad: 0;
+  --primary-bg: #17171A;
+  --primary-ink: #FFFFFF;
+  --primary-hover-bg: #000000;
+  --hover-bg: rgba(0,0,0,0.03);
+  --press-bg: rgba(0,0,0,0.08);
+  --count-new: #2F5FCE;
+  --count-learn: #B3261E;
+  --count-due: #1E7D32;
+  --heat: #2F5FCE;
+  --bar: #D9DEEA;
+  --tag-bg: #EEEEEF;
+  --tag-ink: #4A4A52;
+  --grade-again-bg: #d13c30;
+  --grade-again-ink: #FFFFFF;
+  --grade-hard-bg: #d98200;
+  --grade-hard-ink: #FFFFFF;
+  --grade-good-bg: #13a10e;
+  --grade-good-ink: #FFFFFF;
+  --grade-easy-bg: #237bdb;
+  --grade-easy-ink: #FFFFFF;
+  --focus: #2F5FCE;
+  --focus-soft: rgba(47,95,206,0.14);
+  --focus-edit: rgba(47,95,206,0.14);
+  --danger: #D32F2F;
+  --danger-ink: #FFFFFF;
+  --success: #1E7D32;
+  --warning-bg: #FDF3DC;
+  --warning-ink: #7A5300;
+  --overlay: rgba(0,0,0,0.40);
+
+  --border-w: 1px;
+  --radius-sm: 8px;
+  --radius-btn: 999px;
+  --radius-btn-lg: 12px;
+  --radius-lg: 12px;
+  --radius-card: 14px 14px 14px 0;
+  --radius-field: 8px;
+  --radius-panel-side: 12px 12px 12px 0;
+  --radius-panel-main: 12px 12px 0 12px;
+  --radius-hero: 0;
+  --shadow-box: none;
+  --shadow-primary: none;
+  --shadow-hero: none;
+  --shadow-grade: none;
+  --shadow-popover: 0 8px 24px rgba(0,0,0,0.08);
+  --shadow-segment: 0 1px 2px rgba(0,0,0,0.10);
+  --shell-pad: 12px;
+  --shell-gap: 12px;
+  /* Workbench draws the sidebar and main area as two outlined panels */
+  --panel-border: 1px solid #E2E2E6;
+  --sidebar-divider: 1px solid #E2E2E6;
+  /* The sidebar runs flush to the window's left and bottom edges, so those two borders are not drawn. */
+  --sidebar-edge: none;
+  --sidebar-bleed: 12px;
+  --segment-border: transparent;
+
+  /* Pressed buttons darken; they do not move */
+  --press-shift: 0px;
+  --shadow-pressed: none;
+
+  --font-display: 'Anthropic Serif', Georgia, 'Times New Roman', serif;
+  --font-body: 'Anthropic Sans', -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: 'Anthropic Mono', 'Cascadia Code', Consolas, monospace;
+  --weight-display: 500;
+  --tracking-display: -0.01em;
+}

@@ -1,0 +1,268 @@
+.page {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--sp-32);
+}
+
+/* The big card plus a row of four small cards under it; the row is exactly as wide as the big card. */
+.stack {
+  width: 100%;
+  max-width: 720px;
+  height: 100%;
+  max-height: 600px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-16);
+}
+
+/* Session controls sit in a strip above the progress bar. */
+.top {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  gap: var(--sp-10);
+}
+
+.strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.stripGroup {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-8);
+}
+
+.stripButton {
+  width: 28px;
+  height: 28px;
+}
+
+.stat {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-6);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.stat + .stat {
+  margin-left: var(--sp-12);
+}
+
+.plain {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+/* Progress bar: coloured segments for cards marked so far, grey for what is still to do. */
+.progress {
+  display: flex;
+  flex: none;
+  height: 5px;
+  overflow: hidden;
+  background: var(--bar);
+  border-radius: 2px;
+}
+
+.segment {
+  position: relative;
+  height: 100%;
+  overflow: hidden;
+  transition: width var(--dur-reveal) ease;
+}
+
+/* The colour sits 2px short of the segment's right edge, which leaves the gap; its corners are rounded by 2px. */
+.segment::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 2px;
+  background: var(--grade);
+  border-radius: 2px;
+}
+
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--sp-32);
+  cursor: pointer;
+  flex: 1;
+  min-height: 0;
+  background: var(--bg-panel);
+  border: var(--border-w) solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-box);
+}
+
+.row {
+  display: flex;
+  gap: var(--sp-16);
+  height: 96px;
+  margin-top: var(--sp-44);
+  flex: none;
+}
+
+/*
+ * Grade cards: each is filled with its own grade colour at semi opacity (a 22% wash over the panel colour),
+ * with a matching soft border. A key hint sits top-left and the word is centred. Hover deepens the wash to 32%.
+ */
+.smallCard {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  font: inherit;
+  color: var(--text);
+  cursor: pointer;
+  background: color-mix(in srgb, var(--grade) 22%, var(--bg-panel));
+  border: var(--border-w) solid color-mix(in srgb, var(--grade) 40%, var(--bg-panel));
+  border-radius: var(--radius-sm);
+  transition:
+    background var(--dur-hover) ease,
+    border-color var(--dur-hover) ease,
+    transform var(--dur-press) ease;
+}
+
+.smallCard:hover {
+  background: color-mix(in srgb, var(--grade) 32%, var(--bg-panel));
+  border-color: color-mix(in srgb, var(--grade) 60%, var(--bg-panel));
+}
+
+.smallCard:active {
+  transform: translateY(1px);
+}
+
+.smallCard:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.label {
+  font-family: var(--font-display);
+  font-size: 17px;
+  letter-spacing: 0.01em;
+}
+
+.next {
+  position: absolute;
+  bottom: var(--sp-8);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.key {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1;
+  color: var(--text-muted);
+  background: color-mix(in srgb, var(--bg-panel) 70%, transparent);
+  border: var(--border-w) solid color-mix(in srgb, var(--grade) 40%, var(--bg-panel));
+  border-radius: 4px;
+}
+
+.again { --grade: var(--grade-again-bg); }
+.hard { --grade: var(--grade-hard-bg); }
+.good { --grade: var(--grade-good-bg); }
+.easy { --grade: var(--grade-easy-bg); }
+
+.face {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-16);
+  max-width: 520px;
+  text-align: center;
+}
+
+.text {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 26px;
+  line-height: 1.3;
+  color: var(--text);
+}
+
+.textSmall {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.4;
+  color: var(--text-muted);
+}
+
+.rule {
+  width: 48px;
+  margin: var(--sp-4) 0;
+  border: 0;
+  border-top: var(--border-w) solid var(--border);
+}
+
+/* Actions for this card sit top-right and only show while the card is hovered or focused (or flagged). */
+.actions {
+  position: absolute;
+  top: var(--sp-12);
+  right: var(--sp-12);
+  display: flex;
+  gap: var(--sp-4);
+}
+
+.actionButton {
+  width: 28px;
+  height: 28px;
+  border-color: transparent;
+  background: transparent;
+  color: var(--text-muted);
+  opacity: 0;
+  transition: opacity var(--dur-hover) ease, background var(--dur-hover) ease;
+}
+
+.card:hover .actionButton,
+.card:focus-within .actionButton,
+.flagOn {
+  opacity: 1;
+}
+
+.flagOn {
+  color: var(--accent);
+}
+
+
+.restart {
+  height: 30px;
+  padding: 0 var(--sp-16);
+  font: inherit;
+  color: var(--text);
+  cursor: pointer;
+  background: var(--bg-panel);
+  border: var(--border-w) solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.restart:hover {
+  background: var(--bg-raised);
+}

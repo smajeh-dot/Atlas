@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import { ANSWER_MARKER, renderCard, renderTemplate, type TemplateContext } from '../../src/core/templates';
+import { ANSWER_MARKER, renderCard, renderTemplate, splitAnswer, type TemplateContext } from '../../src/core/templates';
 import { BUILTIN_NOTE_TYPES } from '../../src/core/builtins';
 import type { Note, NoteType } from '../../src/core/model';
 
@@ -57,4 +57,19 @@ test('cloze card uses the ord as the cloze number', () => {
   const r = renderCard(type('cloze'), note(['{{c1::a}} {{c2::b}}', 'extra']), 1, 'D');
   expect(r.question).toBe('a <span class="cloze">[…]</span>');
   expect(r.answer).toBe(`a <span class="cloze">b</span>${ANSWER_MARKER}extra`);
+});
+
+test('{{text:}} strips tags but keeps escaped characters escaped', () => {
+  const r = renderTemplate('{{text:Front}}', ctx({ Front: '<i>a</i> &lt;b&gt; x' }));
+  expect(r.html).toBe('a &lt;b&gt; x');
+});
+
+test('empty {{hint:}} renders nothing', () => {
+  expect(renderTemplate('{{hint:Extra}}', ctx({ Extra: '' })).html).toBe('');
+  expect(renderTemplate('{{hint:Extra}}', ctx({ Extra: '<br>' })).html).toBe('');
+});
+
+test('splitAnswer', () => {
+  expect(splitAnswer(`Q${ANSWER_MARKER}A`)).toEqual({ front: 'Q', answer: 'A' });
+  expect(splitAnswer('A only')).toEqual({ front: null, answer: 'A only' });
 });

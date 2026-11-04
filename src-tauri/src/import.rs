@@ -11,7 +11,7 @@ use rusqlite::{Connection, OpenFlags};
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
 
-use crate::db::{query_rows, DbState};
+use crate::db::{query_rows, DbState, NO_DB};
 use crate::paths;
 
 /// The import being prepared or run, if any. Only one at a time.
@@ -44,6 +44,10 @@ fn io_error(e: impl ToString) -> CommandError {
     ImportError::Io(e.to_string()).into()
 }
 
+fn data_dir() -> Result<std::path::PathBuf, CommandError> {
+    paths::data_dir().ok_or_else(|| io_error("Windows did not report a user data folder (%APPDATA%)."))
+}
+
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PrepareResult {
@@ -63,7 +67,7 @@ pub async fn import_prepare(
 ) -> Result<PrepareResult, CommandError> {
     // Choosing a new file ends any earlier import's work folder.
     state.0.lock().map_err(io_error)?.take();
-    let tmp = paths::data_dir().join("tmp");
+    let tmp = data_dir()?.join("tmp");
     let joined = tauri::async_runtime::spawn_blocking(
         move || -> Result<(ActiveImport, PrepareResult), CommandError> {
             let work = WorkDir::create_in(&tmp).map_err(|e| CommandError::from(ImportError::from(e)))?;
@@ -122,7 +126,7 @@ pub async fn media_install(
         let active = guard.as_ref().ok_or_else(|| io_error("no import is being prepared"))?;
         active.work.path().to_path_buf()
     };
-    let media = paths::data_dir().join("media");
+    let media = data_dir()?.join("media");
     let files: Vec<InstallFile> = files
         .into_iter()
         .map(|f| InstallFile { staged_path: f.staged_path, name: f.name, sha1: f.sha1 })
@@ -135,7 +139,7 @@ pub async fn media_install(
 
 #[tauri::command]
 pub async fn media_remove(names: Vec<String>) -> Result<(), CommandError> {
-    let media = paths::data_dir().join("media");
+    let media = data_dir()?.join("media");
     tauri::async_runtime::spawn_blocking(move || anki_package::remove_media(&media, &names))
         .await
         .map_err(io_error)?
@@ -150,8 +154,10 @@ pub async fn db_backup(db: tauri::State<'_, DbState>) -> Result<String, CommandE
         .map(|d| d.as_millis())
         .unwrap_or(0)
         .to_string();
-    let conn = db.0.lock().map_err(io_error)?;
-    let path = anki_package::backup_database(&conn, &paths::data_dir().join("backups"), &stamp)?;
+    let backups = data_dir()?.join("backups");
+    let guard = db.0.lock().map_err(io_error)?;
+    let conn = guard.as_ref().ok_or_else(|| io_error(NO_DB))?;
+    let path = anki_package::backup_database(conn, &backups, &stamp)?;
     Ok(path.display().to_string())
 }
 

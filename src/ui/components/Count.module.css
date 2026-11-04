@@ -1,0 +1,11 @@
+.count {
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+}
+.new { color: var(--count-new); }
+.learn { color: var(--count-learn); }
+.due { color: var(--count-due); }
+.count[data-zero='true'] {
+  color: var(--text-faint);
+  font-weight: 400;
+}
