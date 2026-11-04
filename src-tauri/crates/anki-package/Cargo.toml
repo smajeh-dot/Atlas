@@ -7,7 +7,8 @@ publish = false
 
 [dependencies]
 fs4 = "=1.1.0"
-rusqlite = { version = "=0.37.0", features = ["bundled"] }
+rusqlite = { version = "=0.37.0", features = ["bundled", "collation"] }
+ruzstd = "=0.9.1"
 serde_json = "=1.0.154"
 sha1 = "=0.10.6"
 sha2 = "=0.10.9"

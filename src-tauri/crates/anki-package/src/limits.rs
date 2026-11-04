@@ -117,16 +117,21 @@ impl Budget {
     }
 }
 
+/// What the zip declares for the entries Atlas will read.
+pub(crate) struct Declared {
+    pub collection: u64,
+    pub media: u64,
+}
+
 /// Checks what the zip declares before anything is extracted: the file, the
-/// entry count, each entry, the total, and free disk space.
-pub(crate) fn precheck<R: Read + std::io::Seek>(
+/// entry count, each entry and the total. For modern packages these are
+/// compressed sizes; the byte counting in `Budget::copy` covers the rest.
+pub(crate) fn check_declared<R: Read + std::io::Seek>(
     zip: &mut zip::ZipArchive<R>,
     collection_entry: &str,
     package_bytes: u64,
-    work_dir: &Path,
-    options: &Options,
-) -> Result<()> {
-    let l = &options.limits;
+    l: &Limits,
+) -> Result<Declared> {
     if package_bytes > l.max_package_bytes {
         return Err(ImportError::TooLarge(format!(
             "package is {package_bytes} bytes"
@@ -138,7 +143,10 @@ pub(crate) fn precheck<R: Read + std::io::Seek>(
             zip.len()
         )));
     }
-    let (mut collection, mut media) = (0u64, 0u64);
+    let mut declared = Declared {
+        collection: 0,
+        media: 0,
+    };
     for i in 0..zip.len() {
         let entry = zip
             .by_index_raw(i)
@@ -157,22 +165,33 @@ pub(crate) fn precheck<R: Read + std::io::Seek>(
             )));
         }
         if is_media {
-            media = media.saturating_add(entry.size());
+            declared.media = declared.media.saturating_add(entry.size());
         } else {
-            collection = entry.size();
+            declared.collection = entry.size();
         }
     }
-    let total = collection.saturating_add(media);
+    let total = declared.collection.saturating_add(declared.media);
     if total > l.max_total_bytes {
         return Err(ImportError::TooLarge(format!(
             "package declares {total} bytes in total"
         )));
     }
-    // The collection is copied out and then decoded into staging of a similar size.
+    Ok(declared)
+}
+
+/// Refuses to start if extracting would leave less than `reserve_bytes` free.
+/// The collection is copied out and then decoded into staging of a similar
+/// size, so it counts twice.
+pub(crate) fn check_disk(
+    work_dir: &Path,
+    collection: u64,
+    media: u64,
+    options: &Options,
+) -> Result<()> {
     let needed = collection
         .saturating_mul(2)
         .saturating_add(media)
-        .saturating_add(l.reserve_bytes);
+        .saturating_add(options.limits.reserve_bytes);
     let available = (options.free_space)(work_dir)?;
     if available < needed {
         return Err(ImportError::NotEnoughDiskSpace { needed, available });

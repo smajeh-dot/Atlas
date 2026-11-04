@@ -97,7 +97,7 @@ These replace the "VERIFY" guesses in the importer plan. Anything still marked
 **Collection databases**
 
 8. **Modern** (`ver` 18): the `col` row's `models`, `decks`, `dconf` and `tags` are empty strings. Note types, fields, templates, decks, deck configs, config and tags live in their own tables, with protobuf `config`/`common`/`kind` blobs. Deck names are joined with `\x1f`. `config.val` holds JSON bytes.
-9. **Trap: `COLLATE unicase`.** Name columns in `notetypes`, `fields`, `templates`, `decks`, `deck_config` and `tags` use a custom collation that plain SQLite doesn't have. Python's `sqlite3` fails with `no query solution` on `tags`. Register a `unicase` collation (case-insensitive Unicode comparison) on the connection before querying the modern tables.
+9. **Trap: `COLLATE unicase`.** Name columns in `notetypes`, `fields`, `templates`, `decks`, `deck_config` and `tags` use a custom collation that plain SQLite doesn't have. Any query that uses one of those indexes fails: Python's `sqlite3` gives `no query solution` on `SELECT * FROM tags`. The queries Atlas runs don't happen to need it, but the reader registers a `unicase` collation (case-insensitive Unicode comparison) anyway, in case SQLite picks one of those indexes.
 10. **Legacy** (`ver` 11): note types, decks and deck configs are JSON in the `col` row. `conf` omits `rollover` when it's the default; treat a missing value as `4`.
 11. Parent decks are real rows (`Chem`, `Chem::Organic`). An empty `Default` (id 1) is always present.
 

@@ -5,12 +5,21 @@
 //! media, and makes no decisions about how to import; the TypeScript importer
 //! reads the staging file and does the mapping. It deliberately has no Tauri
 //! dependency so it builds and tests on any machine.
+//!
+//! Decisions worth knowing:
+//! - zstd uses `ruzstd` (pure Rust, no C toolchain needed on Windows). It
+//!   decoded about 200 MB/s in a release build here, so a large collection
+//!   takes about a second. Swap for the `zstd` crate only if that changes.
+//! - Protobuf is decoded by hand (`proto.rs`) for the dozen fields needed,
+//!   rather than with a code generator and Anki's AGPL-licensed .proto files.
 
+mod collection;
 mod error;
 mod format;
 mod legacy;
 mod limits;
 mod media;
+mod modern;
 mod names;
 mod proto;
 mod staging;
@@ -23,9 +32,9 @@ use std::path::{Path, PathBuf};
 use rusqlite::{Connection, OpenFlags};
 use sha2::{Digest, Sha256};
 
+pub use collection::Counts;
 pub use error::{ImportError, Result};
 pub use format::SourceFormat;
-pub use legacy::Counts;
 pub use limits::{available_space, Limits, Options};
 pub use staging::{STAGING_SCHEMA, STAGING_VERSION};
 pub use workdir::{remove_stale, WorkDir};
@@ -65,31 +74,45 @@ pub fn prepare_with(apkg: &Path, work_dir: &Path, options: &Options) -> Result<P
         )));
     }
     let layout = format::detect(&mut zip)?;
-    if layout.format == SourceFormat::Modern {
-        // Read in a later version of this crate; until then, refuse clearly.
-        return Err(ImportError::UnsupportedVersion(3));
-    }
-    limits::precheck(
-        &mut zip,
-        layout.format.collection_entry(),
-        package_bytes,
-        work_dir,
-        options,
-    )?;
+    let entry_name = layout.format.collection_entry();
+    let compressed = layout.format == SourceFormat::Modern;
+    let declared = limits::check_declared(&mut zip, entry_name, package_bytes, &options.limits)?;
+    let items = media::read_list(&mut zip, layout.format)?;
+    // Modern media sizes in the zip are compressed; the manifest knows the real ones.
+    let media_estimate = if compressed {
+        items.iter().map(|i| i.size_hint).sum()
+    } else {
+        declared.media
+    };
     let mut budget = limits::Budget::new(options.limits);
 
     let collection_path = work_dir.join("collection.sqlite");
     {
         let entry = zip
-            .by_name(layout.format.collection_entry())
+            .by_name(entry_name)
             .map_err(|e| ImportError::Corrupt(format!("collection: {e}")))?;
-        let compressed = entry.compressed_size();
-        budget.copy(
-            entry,
-            compressed,
-            layout.format.collection_entry(),
-            &collection_path,
-        )?;
+        let packed = entry.compressed_size();
+        if compressed {
+            let decoder = media::zstd(entry, entry_name)?;
+            // The frame header usually states the decoded size; if not, guess
+            // generously. Either way the budget counts the real bytes.
+            let stated = decoder.decoder.content_size();
+            let estimate = if stated > 0 {
+                stated
+            } else {
+                packed.saturating_mul(8)
+            };
+            limits::check_disk(
+                work_dir,
+                estimate.min(options.limits.max_entry_bytes),
+                media_estimate,
+                options,
+            )?;
+            budget.copy(decoder, packed, entry_name, &collection_path)?;
+        } else {
+            limits::check_disk(work_dir, declared.collection, media_estimate, options)?;
+            budget.copy(entry, packed, entry_name, &collection_path)?;
+        }
     }
 
     let staging_path = work_dir.join("staging.db");
@@ -102,14 +125,14 @@ pub fn prepare_with(apkg: &Path, work_dir: &Path, options: &Options) -> Result<P
             .map(|v| v.to_string())
             .unwrap_or_default(),
     )?;
-    st.meta("collection_entry", layout.format.collection_entry())?;
+    st.meta("collection_entry", entry_name)?;
     st.meta("source_sha256", &source_sha256)?;
 
     let mut counts = {
         let src = open_collection(&collection_path)?;
-        legacy::read(&src, &st)?
+        collection::read(&src, &st)?
     };
-    counts.media = media::extract_legacy(&mut zip, work_dir, &st, &mut budget)?;
+    counts.media = media::stage(&mut zip, &items, compressed, work_dir, &st, &mut budget)?;
     st.finish()?;
     // The decoded copy is no longer needed and can be large.
     std::fs::remove_file(&collection_path)?;
@@ -146,12 +169,24 @@ fn open_collection(path: &Path) -> Result<Connection> {
             )
         })
         .map_err(not_a_collection)?;
+    // Schema-18 name columns use Anki's own `unicase` collation. The queries
+    // below don't need it today, but if SQLite ever picks one of those indexes
+    // (as any query on `tags` does), it would fail without it.
+    conn.create_collation("unicase", unicase_cmp)
+        .map_err(not_a_collection)?;
     // Opening is lazy; touch the schema so a non-database fails here.
     conn.query_row("SELECT count(*) FROM sqlite_schema", [], |r| {
         r.get::<_, i64>(0)
     })
     .map_err(not_a_collection)?;
     Ok(conn)
+}
+
+/// Case-insensitive Unicode comparison, as Anki's `unicase` collation does.
+fn unicase_cmp(a: &str, b: &str) -> std::cmp::Ordering {
+    a.chars()
+        .flat_map(char::to_lowercase)
+        .cmp(b.chars().flat_map(char::to_lowercase))
 }
 
 fn not_a_collection(e: rusqlite::Error) -> ImportError {
@@ -170,4 +205,47 @@ fn sha256_file(path: &Path) -> Result<String> {
         hasher.update(&buf[..n]);
     }
     Ok(media::hex(&hasher.finalize()))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// The real modern collection from the fixtures, decompressed to a file.
+    fn modern_collection(dir: &Path) -> PathBuf {
+        let apkg = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../../tests/fixtures/anki/rich-modern.apkg");
+        let mut zip = zip::ZipArchive::new(File::open(apkg).unwrap()).unwrap();
+        let entry = zip.by_name("collection.anki21b").unwrap();
+        let path = dir.join("c.db");
+        media::copy_hashing(&mut media::zstd(entry, "test").unwrap(), &path).unwrap();
+        path
+    }
+
+    #[test]
+    fn the_unicase_collation_lets_anki_tables_be_read() {
+        let dir = tempfile::TempDir::new().unwrap();
+        let path = modern_collection(dir.path());
+        // Comparing a name column uses its collation.
+        let sql = "SELECT count(*) FROM decks WHERE name = 'CHEM'";
+        let plain = Connection::open(&path).unwrap();
+        assert!(
+            plain.query_row(sql, [], |r| r.get::<_, i64>(0)).is_err(),
+            "expected SQLite to need unicase"
+        );
+        let ours = open_collection(&path).unwrap();
+        assert_eq!(
+            ours.query_row(sql, [], |r| r.get::<_, i64>(0)).unwrap(),
+            1,
+            "'CHEM' should match 'Chem'"
+        );
+    }
+
+    #[test]
+    fn unicase_ignores_case_across_scripts() {
+        use std::cmp::Ordering::*;
+        assert_eq!(unicase_cmp("Chem", "chem"), Equal);
+        assert_eq!(unicase_cmp("SÄURE", "säure"), Equal);
+        assert_eq!(unicase_cmp("a", "B"), Less);
+    }
 }

@@ -1,5 +1,5 @@
-//! Legacy packages decode to a staging database that matches what Anki's own
-//! library read from the same file.
+//! Every real package decodes to a staging database that matches what Anki's
+//! own library read from the same file.
 
 mod common;
 
@@ -26,7 +26,12 @@ fn check_against_anki(name: &str, format: SourceFormat) {
         meta(&db, "collection_entry"),
         exp["package"]["collection_entry"].as_str().unwrap()
     );
-    assert_eq!(meta(&db, "anki_schema"), "11");
+    let schema = if format == SourceFormat::Modern {
+        "18"
+    } else {
+        "11"
+    };
+    assert_eq!(meta(&db, "anki_schema"), schema);
     assert_eq!(meta(&db, "anki_crt"), exp["collection"]["crt"].to_string());
     assert_eq!(
         meta(&db, "anki_rollover_hour"),
@@ -272,8 +277,29 @@ fn fsrs_legacy2_matches_anki() {
 }
 
 #[test]
+fn rich_modern_matches_anki() {
+    check_against_anki("rich-modern", SourceFormat::Modern);
+}
+
+#[test]
+fn rich_modern_without_scheduling_matches_anki() {
+    check_against_anki("rich-modern-nosched", SourceFormat::Modern);
+}
+
+#[test]
+fn fsrs_modern_matches_anki() {
+    check_against_anki("fsrs-modern", SourceFormat::Modern);
+}
+
+#[test]
 fn fsrs_memory_state_comes_through() {
-    let (_work, prepared) = prepare_fixture("fsrs-legacy2");
+    for name in ["fsrs-legacy2", "fsrs-modern"] {
+        fsrs_memory_state_comes_through_in(name);
+    }
+}
+
+fn fsrs_memory_state_comes_through_in(name: &str) {
+    let (_work, prepared) = prepare_fixture(name);
     let db = open(&prepared);
     let with_state: i64 = db
         .query_row(
@@ -289,23 +315,31 @@ fn fsrs_memory_state_comes_through() {
     assert_eq!(with_state, reviewed);
 }
 
-#[test]
-fn legacy_layouts_of_one_collection_stage_the_same_content() {
-    let tables = [
-        "SELECT * FROM deck ORDER BY id",
-        "SELECT * FROM deck_config ORDER BY id",
-        "SELECT * FROM notetype ORDER BY id",
-        "SELECT * FROM field ORDER BY notetype_id, ord",
-        "SELECT * FROM template ORDER BY notetype_id, ord",
-        "SELECT * FROM note ORDER BY id",
-        "SELECT * FROM card ORDER BY id",
-        "SELECT * FROM revlog ORDER BY id",
-        "SELECT name, size, sha1 FROM media ORDER BY name",
-    ];
-    let (_a, one) = prepare_fixture("rich-legacy1");
-    let (_b, two) = prepare_fixture("rich-legacy2");
+const SAME_CONTENT: [&str; 9] = [
+    "SELECT * FROM deck ORDER BY id",
+    "SELECT * FROM deck_config ORDER BY id",
+    "SELECT * FROM notetype ORDER BY id",
+    "SELECT * FROM field ORDER BY notetype_id, ord",
+    "SELECT * FROM template ORDER BY notetype_id, ord",
+    "SELECT * FROM note ORDER BY id",
+    "SELECT * FROM card ORDER BY id",
+    "SELECT * FROM revlog ORDER BY id",
+    // Zip entry numbers differ between layouts; names and bytes must not.
+    "SELECT name, original_name, size, sha1 FROM media ORDER BY name",
+];
+
+fn assert_same_content(a: &str, b: &str) {
+    let (_a, one) = prepare_fixture(a);
+    let (_b, two) = prepare_fixture(b);
     let (one, two) = (open(&one), open(&two));
-    for sql in tables {
-        assert_eq!(rows(&one, sql), rows(&two, sql), "{sql}");
+    for sql in SAME_CONTENT {
+        assert_eq!(rows(&one, sql), rows(&two, sql), "{a} vs {b}: {sql}");
     }
+}
+
+#[test]
+fn every_layout_of_one_collection_stages_the_same_content() {
+    assert_same_content("rich-legacy1", "rich-legacy2");
+    assert_same_content("rich-legacy2", "rich-modern");
+    assert_same_content("fsrs-legacy2", "fsrs-modern");
 }

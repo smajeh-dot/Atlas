@@ -7,7 +7,7 @@
 use std::io::{Read, Seek};
 
 use crate::error::{ImportError, Result};
-use crate::proto::{Fields, Value};
+use crate::proto::Message;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SourceFormat {
@@ -95,12 +95,7 @@ pub(crate) fn detect<R: Read + Seek>(zip: &mut zip::ZipArchive<R>) -> Result<Lay
 /// Decodes `PackageMetadata { Version version = 1; }`. An absent field is
 /// protobuf's default, 0 (VERSION_UNKNOWN).
 fn package_version(buf: &[u8]) -> Result<u32> {
-    let mut version = 0u64;
-    for field in Fields::new(buf) {
-        if let (1, Value::Varint(v)) = field? {
-            version = v;
-        }
-    }
+    let version = Message::parse(buf)?.uint(1)?;
     u32::try_from(version).map_err(|_| ImportError::UnsupportedVersion(u32::MAX))
 }
 
