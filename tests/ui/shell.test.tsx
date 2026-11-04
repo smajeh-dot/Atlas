@@ -66,6 +66,14 @@ test('the notch holds Import, Add, Browse and Shared, in that order; Add opens A
   expect(await screen.findByRole('heading', { name: 'Add card' })).toBeTruthy();
 });
 
+test('Today shows a heatmap card of the last 12 weeks, below the decks card', async () => {
+  await renderApp({ db: await seeded() });
+  const card = await screen.findByTestId('today-activity-card');
+  expect(within(card).getByRole('img', { name: 'Reviews per day over the last 12 weeks' })).toBeTruthy();
+  const decks = screen.getByTestId('today-decks-card');
+  expect(decks.compareDocumentPosition(card) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+});
+
 test('Ctrl+, opens Settings', async () => {
   const { user } = await renderApp({ db: await seeded() });
   await screen.findByTestId('today-screen');

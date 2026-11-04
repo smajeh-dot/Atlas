@@ -27,3 +27,23 @@
 .cell[data-level='2'] { background: color-mix(in srgb, var(--heat) 50%, var(--bg-raised)); }
 .cell[data-level='3'] { background: color-mix(in srgb, var(--heat) 74%, var(--bg-raised)); }
 .cell[data-level='4'] { background: var(--heat); }
+
+.legend {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--fs-label);
+  color: var(--text-faint);
+}
+
+.legend .cell {
+  width: 12px;
+}
+
+.legend span:first-child {
+  margin-right: 2px;
+}
+
+.legend span:last-child {
+  margin-left: 2px;
+}

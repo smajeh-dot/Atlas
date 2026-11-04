@@ -22,3 +22,16 @@ export function Heatmap({ grid }: { grid: HeatCell[][] }) {
     </div>
   );
 }
+
+/** "Less ▢▢▢▢▢ More" key for the shading. */
+export function HeatLegend() {
+  return (
+    <div className={styles.legend} aria-hidden="true">
+      <span>Less</span>
+      {[0, 1, 2, 3, 4].map((level) => (
+        <span key={level} className={styles.cell} data-level={level} />
+      ))}
+      <span>More</span>
+    </div>
+  );
+}
