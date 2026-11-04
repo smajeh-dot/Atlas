@@ -3,6 +3,7 @@ import { MOCK_CARDS, type MockCard } from '../../placeholderCards';
 import { useAtlas } from '../../app/AtlasContext';
 import { Dialog } from '../../components/Dialog';
 import { IconButton } from '../../components/IconButton';
+import { MathText } from '../../components/MathText';
 import { TextArea } from '../../components/Input';
 import { useHotkeys } from '../../keys';
 import styles from './Session.module.css';
@@ -160,11 +161,11 @@ export function Session({ target }: { target?: string }) {
                 <IconButton icon="bury" label="Bury until tomorrow" shortcut="B" className={styles.actionButton} onClick={bury} />
               </div>
               <div className={styles.face}>
-                <p className={flipped ? styles.textSmall : styles.text}>{card?.front}</p>
+                <MathText className={flipped ? styles.textSmall : styles.text} text={card?.front ?? ''} />
                 {flipped && (
                   <>
                     <hr className={styles.rule} />
-                    <p className={styles.text}>{card?.back}</p>
+                    <MathText className={styles.text} text={card?.back ?? ''} />
                   </>
                 )}
               </div>

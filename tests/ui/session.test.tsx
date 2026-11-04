@@ -2,18 +2,21 @@
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { expect, test, vi } from 'vitest';
+import { MOCK_CARDS } from '../../src/ui/placeholderCards';
 import { Session } from '../../src/ui/screens/Session/Session';
 
 const navigate = vi.fn();
 vi.mock('../../src/ui/app/AtlasContext', () => ({ useAtlas: () => ({ navigate }) }));
 
 const left = () => screen.getByTestId('session-left').textContent;
+const ALL = `${MOCK_CARDS.length} left`;
+const ONE_LESS = `${MOCK_CARDS.length - 1} left`;
 const bar = () => Number(screen.getByTestId('session-progress').getAttribute('aria-valuenow'));
 
 test('flip, grade, undo, bury and leave on the mock session', async () => {
   const user = userEvent.setup();
   render(<Session />);
-  expect(left()).toBe('6 left');
+  expect(left()).toBe(ALL);
 
   // A grade does nothing while the question is showing.
   await user.keyboard('1');
@@ -22,18 +25,18 @@ test('flip, grade, undo, bury and leave on the mock session', async () => {
   await user.keyboard(' ');
   await user.keyboard('3');
   expect(bar()).toBe(1);
-  expect(left()).toBe('5 left');
+  expect(left()).toBe(ONE_LESS);
 
   // Undo returns to the same card with the answer showing.
   await user.keyboard('z');
   expect(bar()).toBe(0);
-  expect(left()).toBe('6 left');
+  expect(left()).toBe(ALL);
 
   // Bury removes the card from the queue; undo puts it back.
   await user.keyboard('b');
-  expect(left()).toBe('5 left');
+  expect(left()).toBe(ONE_LESS);
   await user.keyboard('z');
-  expect(left()).toBe('6 left');
+  expect(left()).toBe(ALL);
 
   // Flag toggles.
   await user.keyboard('f');
