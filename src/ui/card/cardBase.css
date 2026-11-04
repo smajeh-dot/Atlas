@@ -114,6 +114,9 @@ img {
   text-align: center;
   /* Avoids a scrollbar from sub-pixel overflow of tall glyphs. */
   padding: 2px 0;
+  /* A wide equation scrolls sideways; a thin bar shows that there is more. */
+  scrollbar-width: thin;
+  scrollbar-color: var(--text-faint) transparent;
 }
 
 /* KaTeX's own 1em display margin would double the spacing above. */
