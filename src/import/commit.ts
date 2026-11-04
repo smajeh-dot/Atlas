@@ -267,9 +267,19 @@ export interface ImportPreview {
 /** What an import would do, without writing anything. */
 export async function previewImport(db: Db, staging: StagingSource, now: number): Promise<ImportPreview> {
   const s = await setUp(db, staging, now, false);
+  // Only guids are needed here; reading whole chunks would double the work on a big deck.
   let existingNotes = 0;
-  for await (const chunk of noteChunks(staging, DEFAULT_CHUNK)) {
-    existingNotes += (await existingByGuid(db, chunk.notes.map((n) => n.guid))).size;
+  for (let after = Number.MIN_SAFE_INTEGER; ;) {
+    const rows = await staging.query<{ id: number; guid: string }>(
+      `SELECT id, guid FROM note WHERE id > ? ORDER BY id LIMIT ?`, [after, DEFAULT_CHUNK],
+    );
+    if (!rows.length) break;
+    const guids = rows.map((r) => String(r.guid));
+    const [found] = await db.query<{ n: number }>(
+      `SELECT COUNT(*) AS n FROM notes WHERE guid IN (${guids.map(() => '?').join(',')})`, guids,
+    );
+    existingNotes += Number(found?.n ?? 0);
+    after = Number(rows[rows.length - 1]!.id);
   }
   const paths = (id: number): string => {
     const d = s.decks.create.find((x) => x.id === id);
