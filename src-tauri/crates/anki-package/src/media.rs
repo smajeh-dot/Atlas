@@ -3,6 +3,7 @@
 //! Files are written under `media/<zip index>`, never under the name the
 //! package claims, so no entry name can choose where a file lands.
 
+use std::collections::HashSet;
 use std::fs::File;
 use std::io::{BufWriter, Read, Seek, Write};
 use std::path::Path;
@@ -11,7 +12,9 @@ use serde_json::Value;
 use sha1::{Digest, Sha1};
 
 use crate::error::{ImportError, Result};
-use crate::staging::Staging;
+use crate::limits::Budget;
+use crate::names;
+use crate::staging::{Media, Staging};
 
 /// A legacy manifest is a few bytes per file; 64 MB means something is wrong.
 const MAX_MANIFEST_BYTES: u64 = 64 * 1024 * 1024;
@@ -21,6 +24,7 @@ pub(crate) fn extract_legacy<R: Read + Seek>(
     zip: &mut zip::ZipArchive<R>,
     work_dir: &Path,
     st: &Staging,
+    budget: &mut Budget,
 ) -> Result<u64> {
     let Some(manifest) = read_manifest(zip)? else {
         return Ok(0);
@@ -51,21 +55,59 @@ pub(crate) fn extract_legacy<R: Read + Seek>(
     }
     list.sort();
 
+    stage_files(zip, &list, work_dir, st, budget)
+}
+
+/// Copies each listed file to `media/<index>` and records it under a name that
+/// is safe on Windows and unique ignoring case, keeping the original name so
+/// the importer can rewrite references to it.
+fn stage_files<R: Read + Seek>(
+    zip: &mut zip::ZipArchive<R>,
+    list: &[(u64, String)],
+    work_dir: &Path,
+    st: &Staging,
+    budget: &mut Budget,
+) -> Result<u64> {
     let dir = work_dir.join("media");
     std::fs::create_dir_all(&dir)?;
+    let mut taken = HashSet::new();
     let mut count = 0;
-    for (index, name) in list {
+    for (index, original) in list {
         let entry_name = index.to_string();
         // A manifest entry with no file is missing media, which the importer
         // reports from the note text; it isn't a reason to stop.
-        let Ok(mut entry) = zip.by_name(&entry_name) else {
+        let Ok(entry) = zip.by_name(&entry_name) else {
             continue;
         };
         let staged = format!("media/{index}");
-        let (size, sha1) = copy_hashing(&mut entry, &dir.join(&entry_name))?;
-        if !st.media(&name, size, &sha1, &staged)? {
+        let compressed = entry.compressed_size();
+        let (size, sha1) = budget.copy(
+            entry,
+            compressed,
+            &format!("media file {original:?}"),
+            &dir.join(&entry_name),
+        )?;
+
+        let mut name = names::safe_media_name(original);
+        if taken.contains(&names::collision_key(&name)) {
+            name = names::with_hash_suffix(&name, &sha1);
+        }
+        if taken.contains(&names::collision_key(&name)) {
+            // Same name and same content twice: the index keeps them apart.
+            name = names::with_hash_suffix(&name, &entry_name);
+        }
+        taken.insert(names::collision_key(&name));
+
+        let media = Media {
+            name: &name,
+            original_name: original,
+            size,
+            sha1: &sha1,
+            staged_path: &staged,
+        };
+        if !st.media(&media)? {
             return Err(ImportError::Corrupt(format!(
-                "media name {name:?} appears twice"
+                "media name {name:?} could not be made unique"
             )));
         }
         count += 1;

@@ -113,7 +113,8 @@ CREATE TABLE revlog (
 );
 
 CREATE TABLE media (
-  name        TEXT PRIMARY KEY,        -- filename as the package's manifest gives it
+  name          TEXT PRIMARY KEY,      -- safe on Windows, NFC, unique ignoring case (see names.rs)
+  original_name TEXT NOT NULL,         -- as the package's manifest gives it; references in notes use this
   size        INTEGER NOT NULL,        -- bytes after decompression
   sha1        TEXT NOT NULL,           -- hex SHA-1 of those bytes
   staged_path TEXT NOT NULL            -- relative to the work folder; never derived from `name`

@@ -201,14 +201,33 @@ impl Staging {
     }
 
     /// Returns false if the name is already staged, so the caller can decide.
-    pub fn media(&self, name: &str, size: u64, sha1: &str, staged_path: &str) -> Result<bool> {
+    pub fn media(&self, m: &Media) -> Result<bool> {
         let changed = self
             .conn
-            .prepare_cached("INSERT OR IGNORE INTO media (name, size, sha1, staged_path) VALUES (?1, ?2, ?3, ?4)")
-            .and_then(|mut s| s.execute(params![name, size as i64, sha1, staged_path]))
+            .prepare_cached(
+                "INSERT OR IGNORE INTO media (name, original_name, size, sha1, staged_path)
+                 VALUES (?1, ?2, ?3, ?4, ?5)",
+            )
+            .and_then(|mut s| {
+                s.execute(params![
+                    m.name,
+                    m.original_name,
+                    m.size as i64,
+                    m.sha1,
+                    m.staged_path
+                ])
+            })
             .map_err(staging)?;
         Ok(changed == 1)
     }
+}
+
+pub(crate) struct Media<'a> {
+    pub name: &'a str,
+    pub original_name: &'a str,
+    pub size: u64,
+    pub sha1: &'a str,
+    pub staged_path: &'a str,
 }
 
 /// The parts of Anki's per-card `data` JSON that matter for scheduling.

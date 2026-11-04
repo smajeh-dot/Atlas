@@ -9,9 +9,12 @@
 mod error;
 mod format;
 mod legacy;
+mod limits;
 mod media;
+mod names;
 mod proto;
 mod staging;
+mod workdir;
 
 use std::fs::File;
 use std::io::{BufReader, Read};
@@ -23,7 +26,9 @@ use sha2::{Digest, Sha256};
 pub use error::{ImportError, Result};
 pub use format::SourceFormat;
 pub use legacy::Counts;
+pub use limits::{available_space, Limits, Options};
 pub use staging::{STAGING_SCHEMA, STAGING_VERSION};
+pub use workdir::{remove_stale, WorkDir};
 
 /// What `prepare` left in the work folder.
 #[derive(Debug)]
@@ -39,20 +44,52 @@ pub struct Prepared {
 /// `work_dir` must be an empty folder the caller owns. On error it may hold
 /// partial output, and the caller should delete the whole folder.
 pub fn prepare(apkg: &Path, work_dir: &Path) -> Result<Prepared> {
+    prepare_with(apkg, work_dir, &Options::default())
+}
+
+/// `prepare` with explicit limits, for tests and callers that need them.
+pub fn prepare_with(apkg: &Path, work_dir: &Path, options: &Options) -> Result<Prepared> {
+    // Check the size before hashing, so an enormous file is refused at once.
+    let package_bytes = std::fs::metadata(apkg)?.len();
+    if package_bytes > options.limits.max_package_bytes {
+        return Err(ImportError::TooLarge(format!(
+            "package is {package_bytes} bytes"
+        )));
+    }
     let source_sha256 = sha256_file(apkg)?;
     let mut zip = open_zip(apkg)?;
+    if zip.len() > options.limits.max_entries {
+        return Err(ImportError::TooLarge(format!(
+            "package has {} entries",
+            zip.len()
+        )));
+    }
     let layout = format::detect(&mut zip)?;
     if layout.format == SourceFormat::Modern {
         // Read in a later version of this crate; until then, refuse clearly.
         return Err(ImportError::UnsupportedVersion(3));
     }
+    limits::precheck(
+        &mut zip,
+        layout.format.collection_entry(),
+        package_bytes,
+        work_dir,
+        options,
+    )?;
+    let mut budget = limits::Budget::new(options.limits);
 
     let collection_path = work_dir.join("collection.sqlite");
     {
-        let mut entry = zip
+        let entry = zip
             .by_name(layout.format.collection_entry())
             .map_err(|e| ImportError::Corrupt(format!("collection: {e}")))?;
-        media::copy_hashing(&mut entry, &collection_path)?;
+        let compressed = entry.compressed_size();
+        budget.copy(
+            entry,
+            compressed,
+            layout.format.collection_entry(),
+            &collection_path,
+        )?;
     }
 
     let staging_path = work_dir.join("staging.db");
@@ -72,7 +109,7 @@ pub fn prepare(apkg: &Path, work_dir: &Path) -> Result<Prepared> {
         let src = open_collection(&collection_path)?;
         legacy::read(&src, &st)?
     };
-    counts.media = media::extract_legacy(&mut zip, work_dir, &st)?;
+    counts.media = media::extract_legacy(&mut zip, work_dir, &st, &mut budget)?;
     st.finish()?;
     // The decoded copy is no longer needed and can be large.
     std::fs::remove_file(&collection_path)?;
