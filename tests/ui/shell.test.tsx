@@ -72,6 +72,9 @@ test('Today shows a year-long heatmap with month names, below the decks card', a
   const map = within(activity).getByRole('img', { name: 'Reviews per day over the last year' });
   expect(map.children).toHaveLength(53);
   expect(activity.textContent).toMatch(/Jan.*Feb.*Mar/);
+  expect(within(activity).getByText(String(new Date(T0).getFullYear()))).toBeTruthy();
+  expect(within(activity).queryByText('Activity')).toBeNull();
+  expect(within(activity).queryByText('Last year')).toBeNull();
   const decks = screen.getByTestId('today-decks-card');
   expect(decks.compareDocumentPosition(activity) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
 });

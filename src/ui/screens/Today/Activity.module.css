@@ -8,26 +8,14 @@
   max-width: var(--heat-width);
 }
 
-.head {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  margin-bottom: 10px;
-}
-
-.title {
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--table-head-ink);
-}
-
-.sub {
-  font-size: var(--fs-sm);
-  color: var(--text-muted);
+.year {
+  font-size: var(--fs-label);
+  color: var(--text-faint);
 }
 
 .foot {
   display: flex;
-  justify-content: flex-end;
+  align-items: center;
+  justify-content: space-between;
   margin-top: 10px;
 }
