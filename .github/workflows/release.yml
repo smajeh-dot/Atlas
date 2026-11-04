@@ -34,6 +34,9 @@ jobs:
       - name: Test
         run: npm test
 
+      - name: Test Anki package reader
+        run: cargo test -p anki-package --manifest-path src-tauri/Cargo.toml
+
       - name: Build Atlas.exe
         run: npm run tauri build -- --no-bundle
 

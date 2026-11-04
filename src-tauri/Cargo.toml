@@ -4,6 +4,12 @@ version = "0.1.0"
 description = "Atlas flashcards"
 edition = "2021"
 
+# A workspace so the package reader can be built and tested on any machine,
+# without the system libraries the Tauri app needs. The app stays the root
+# package, so the exe still lands in src-tauri/target/release.
+[workspace]
+members = ["crates/anki-package"]
+
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
 
