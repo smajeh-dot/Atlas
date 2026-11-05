@@ -13,6 +13,7 @@ import { Tooltip } from '../../components/Tooltip';
 import menuStyles from '../../components/MenuCard.module.css';
 import { Icon } from '../../icons/icons';
 import { trapTab, useOverlayLayer, useRestoreFocus } from '../../components/overlayStack';
+import { AddCardPreview } from './AddCardPreview';
 import { AddCardToolbar } from './AddCardToolbar';
 import styles from './AddCardOverlay.module.css';
 
@@ -23,7 +24,7 @@ const TYPES: BuiltinNoteType[] = ['basic', 'basic_reversed', 'basic_typein', 'cl
  * The X, Esc or a click outside the card closes it. Along the top: the card type, then the deck it's being added to
  * (the type just shows the current choice for now; the deck opens a dropdown of your decks), and in the corner the triple-dot
  * button, which doesn't do anything yet. Under those, a row of placeholder text-editing buttons, then a field for each side of the card
- * (Front and Back for Basic). Along the bottom: a tag button on the left (it doesn't do anything yet), and Add (nothing yet) and Close on
+ * (Front and Back for Basic) in the left half, and a live preview card in the right. Along the bottom: a tag button on the left (it doesn't do anything yet), and Add (nothing yet) and Close on
  * the right. What's typed is only kept while the card is open: nothing saves a card yet. `deckId` is the deck it was opened for (from a deck's menu), if any.
  */
 export function AddCardOverlay({ deckId, onClose }: { deckId?: number; onClose(): void }) {
@@ -117,7 +118,9 @@ export function AddCardOverlay({ deckId, onClose }: { deckId?: number; onClose()
                   />
                 ))}
               </div>
-              <div className={styles.right} data-testid="add-card-right" aria-hidden="true" />
+              <div className={styles.right} data-testid="add-card-right">
+                <AddCardPreview noteType={noteType} fields={fields} deckFullName={fullName(data.decks, deck.id, '::')} />
+              </div>
             </div>
             <div className={styles.footer} data-testid="add-card-footer">
               <Tooltip text="Tags">

@@ -136,7 +136,7 @@ div.dropdown {
 }
 
 /* The card under the toolbar is two halves side by side, with the bottom row below them. Front and Back are in the left half; the right half
-   is blank for now. */
+   is the live preview. */
 .halves {
   flex: 1 1 auto;
   min-height: 0;
@@ -162,7 +162,7 @@ div.dropdown {
   overflow-y: auto;
 }
 
-/* The right half: blank for now. */
+/* The right half: the live preview card, as tall as the half. */
 .right {
   min-height: 0;
 }

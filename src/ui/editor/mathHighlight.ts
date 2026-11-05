@@ -27,7 +27,7 @@ export function mathHighlights(text: string): MathHighlight[] {
 
 /**
  * Colours LaTeX as you type it, Obsidian style: once `$x^2$` or `$$x^2$$` (or `\(…\)`, `\[…\]`) has both its opening and closing
- * symbol, it takes the maths colour and typeface, and the dollar signs are slanted. Only the display changes; the text is stored
+ * symbol, it takes the maths colour and the dollar signs are slanted a little. Only the display changes; the text is stored
  * exactly as typed.
  */
 export const MathHighlight = Extension.create({

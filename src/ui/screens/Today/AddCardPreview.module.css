@@ -1,0 +1,12 @@
+/* The live preview: a card shape (the study card's corners) filling the right half. Blank until there is something to show. */
+.card {
+  box-sizing: border-box;
+  height: 100%;
+  min-height: 0;
+  padding: var(--sp-24);
+  overflow-y: auto;
+  background: var(--bg-panel);
+  border: var(--border-w) solid var(--border);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-box);
+}

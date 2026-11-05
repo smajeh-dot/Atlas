@@ -90,7 +90,7 @@ test('Close at the bottom closes the card; Add and the tag icon do nothing yet',
   expect(screen.getByTestId('today-decks-card')).toBeTruthy();
 });
 
-test('the card is split into two halves: Front and Back in the left one, the right one blank, and the bottom row under both', async () => {
+test('the card is split into two halves: Front and Back in the left one, the live preview in the right, and the bottom row under both', async () => {
   const { card } = await openAddCard();
   const left = (await within(card).findByRole('textbox', { name: 'Front' })).closest('[class*="fields"]') as HTMLElement;
   const halves = left.parentElement as HTMLElement;
@@ -99,9 +99,53 @@ test('the card is split into two halves: Front and Back in the left one, the rig
   expect(within(left).getAllByRole('textbox').map((t) => t.getAttribute('aria-label'))).toEqual(['Front', 'Back']);
   const right = within(card).getByTestId('add-card-right');
   expect(halves.children[1]).toBe(right);
-  expect(right.children).toHaveLength(0);
-  expect(right.textContent).toBe('');
+  // The right half holds the live preview card.
+  expect(right.children).toHaveLength(1);
+  expect(within(right).getByTestId('add-card-preview')).toBeTruthy();
   const footer = within(card).getByTestId('add-card-footer');
   expect(halves.compareDocumentPosition(footer) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   expect(halves.contains(footer)).toBe(false);
+});
+
+/** What the preview card is showing, as text (it draws inside a shadow root). */
+const previewText = (card: HTMLElement) => {
+  const host = within(card).getByTestId('add-card-preview').querySelector('[data-cardview]');
+  return host?.shadowRoot?.querySelector('.atlas-card')?.textContent ?? '';
+};
+
+test('the preview card is blank until there is something to show, and then follows what you type', async () => {
+  const { user, card } = await openAddCard();
+  const front = await within(card).findByRole('textbox', { name: 'Front' });
+  const preview = within(card).getByTestId('add-card-preview');
+  expect(preview.querySelector('[data-cardview]')).toBeNull();
+  expect(previewText(card)).toBe('');
+  // Only a Back: Basic makes no card from that, so still blank.
+  await user.click(within(card).getByRole('textbox', { name: 'Back' }));
+  await user.keyboard('Four');
+  expect(previewText(card)).toBe('');
+  // A Front makes the card: the front, the Answer divider, then the back.
+  await user.click(front);
+  await user.keyboard('What is 2 + 2?');
+  expect(previewText(card)).toContain('What is 2 + 2?');
+  expect(previewText(card)).toContain('Answer');
+  expect(previewText(card)).toContain('Four');
+  // Live: more typing shows up straight away.
+  await user.keyboard(' (hint)');
+  expect(previewText(card)).toContain('What is 2 + 2? (hint)');
+  // And emptying the Front takes the card away again.
+  await user.clear(front);
+  expect(previewText(card)).toBe('');
+});
+
+test('the preview card draws Obsidian-style equations with KaTeX as you finish typing them', async () => {
+  const { user, card } = await openAddCard();
+  await user.click(await within(card).findByRole('textbox', { name: 'Front' }));
+  await user.keyboard('Solve $x^2');
+  const root = () => within(card).getByTestId('add-card-preview').querySelector('[data-cardview]')!.shadowRoot!;
+  // One dollar sign is just text.
+  expect(root().querySelector('.katex')).toBeNull();
+  expect(previewText(card)).toContain('Solve $x^2');
+  await user.keyboard('$ now');
+  expect(root().querySelector('.katex')).not.toBeNull();
+  expect(previewText(card)).not.toContain('$');
 });
