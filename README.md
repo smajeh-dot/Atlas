@@ -31,7 +31,7 @@ Atlas imports Anki deck packages (`.apkg`) with your review history, so cards co
 
 1. In Anki, choose **File → Export**.
 2. Set the format to **Anki Deck Package (.apkg)**, tick **Include scheduling information** and **Include media**, and save the file.
-3. In Atlas, click **Import from Anki** on the welcome screen (or, once you have decks, click your name at the top of the sidebar and choose **Import deck**), then **Choose a file…**. Atlas shows what's in the file before changing anything; click **Import**.
+3. In Atlas, click **Import from Anki** on the welcome screen (or, once you have decks, click **Import** in the bar at the top of the Home screen), then **Choose a file…**. Atlas shows what's in the file before changing anything; click **Import**.
 
 If Atlas says the file was exported in a way it can't read, export again in Anki with **Support older Anki versions** ticked.
 
