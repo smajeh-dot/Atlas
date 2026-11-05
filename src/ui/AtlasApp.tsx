@@ -79,7 +79,7 @@ function Frame({ notice }: { notice?: string }) {
   if (!tree) return <Shell ref={main} sidebar={null}>{null}</Shell>;
   const showWelcome = !hasDecks && route.name !== 'settings' && route.name !== 'import';
   return (
-    <Shell ref={main} sidebar={studying ? null : <Sidebar />}>
+    <Shell ref={main} sidebar={studying ? null : <Sidebar decks={tree} />}>
       {showWelcome ? <Welcome /> : <Screen route={route} />}
     </Shell>
   );

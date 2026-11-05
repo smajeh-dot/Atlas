@@ -146,6 +146,45 @@ test('a sub-deck\'s menu card has no Colour item', async () => {
   expect(within(menu).queryByRole('menuitem', { name: 'Colour' })).toBeNull();
 });
 
+test('the sidebar list shows your real decks and sub-decks, not placeholders', async () => {
+  const db = await createMigratedDb();
+  const parent = await createDeck(db, { name: 'Parent' }, T0);
+  await createDeck(db, { name: 'Child', parentId: parent }, T0);
+  await createDeck(db, { name: 'Solo' }, T0);
+  await renderApp({ db });
+  const rail = await screen.findByRole('list', { name: 'Decks' });
+  await within(rail).findByRole('button', { name: 'Parent' });
+  expect(within(rail).getByRole('list', { name: 'Parent decks' })).toBeTruthy();
+  expect(within(rail).getByRole('button', { name: 'Child' })).toBeTruthy();
+  expect(within(rail).getByRole('button', { name: 'Solo' })).toBeTruthy();
+  expect(screen.queryByText('Sub-deck one')).toBeNull();
+});
+
+test('in the sidebar, a deck with sub-decks folds shut and a deck without starts studying', async () => {
+  const db = await seeded();
+  const parent = await createDeck(db, { name: 'Parent' }, T0);
+  await createDeck(db, { name: 'Child', parentId: parent }, T0);
+  const { user } = await renderApp({ db });
+  const rail = await screen.findByRole('list', { name: 'Decks' });
+  const folder = await within(rail).findByRole('button', { name: 'Parent' });
+  expect(folder.getAttribute('aria-expanded')).toBe('true');
+  await user.click(folder);
+  expect(within(rail).getByRole('button', { name: 'Parent' }).getAttribute('aria-expanded')).toBe('false');
+  await user.click(within(rail).getByRole('button', { name: '<b>Bio</b>' }));
+  expect(await screen.findByRole('button', { name: 'Leave study' })).toBeTruthy();
+});
+
+test('a sidebar deck\'s three-dot button opens the same menu card as the home screen', async () => {
+  const db = await seeded();
+  const { user } = await renderApp({ db });
+  const rail = await screen.findByRole('list', { name: 'Decks' });
+  await user.click(await within(rail).findByRole('button', { name: 'Chemistry options' }));
+  const menu = await screen.findByRole('menu', { name: 'Chemistry options' });
+  expect(within(menu).getAllByRole('menuitem').map((i) => i.textContent)).toEqual(['Study', 'Add card here', 'Add subdeck', 'Rename', 'Colour', 'Deck options', 'Delete']);
+  await user.click(within(menu).getByRole('menuitem', { name: 'Deck options' }));
+  expect(await screen.findByRole('tree', { name: 'All decks' })).toBeTruthy();
+});
+
 test('Ctrl+, opens Settings', async () => {
   const { user } = await renderApp({ db: await seeded() });
   await screen.findByTestId('today-screen');
