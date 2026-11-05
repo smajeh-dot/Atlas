@@ -4,19 +4,16 @@ import { expect, test, vi } from 'vitest';
 import { createDeck } from '../../../src/data/decks';
 import { getBuiltinNoteType } from '../../../src/data/noteTypes';
 import { updateSettings } from '../../../src/data/settings';
-import { UndoStack } from '../../../src/services/undo';
-import { fixedClock, T0 } from '../../helpers/fixtures';
-import { seedNote } from '../../helpers/seed';
+import { T0 } from '../../helpers/fixtures';
 import { renderApp } from '../../helpers/renderApp';
 import { createMigratedDb } from '../../helpers/testDb';
 
 // ProseMirror can't be typed into under jsdom, so the field editor is a plain textarea here.
 vi.mock('../../../src/ui/editor/FieldEditor', () => import('../../helpers/fieldEditorStub'));
 
-async function openAddCard(lastType?: 'cloze', existingTags: string[] = []) {
+async function openAddCard(lastType?: 'cloze') {
   const db = await createMigratedDb();
-  const physics = await createDeck(db, { name: 'Physics' }, T0);
-  if (existingTags.length) await seedNote({ db, clock: fixedClock(T0), undo: new UndoStack() }, physics, 'basic', ['q', 'a'], existingTags);
+  await createDeck(db, { name: 'Physics' }, T0);
   if (lastType) await updateSettings(db, { lastNoteTypeId: (await getBuiltinNoteType(db, lastType)).id });
   const r = await renderApp({ db });
   await r.user.click(within(await screen.findByTestId('today-notch')).getByRole('button', { name: 'Add' }));
@@ -60,25 +57,35 @@ test('the fields follow the card type: a Cloze card has Text and Extra', async (
   expect(within(card).getByRole('button', { name: 'Card type: Cloze' })).toBeTruthy();
 });
 
-test('a Tags field sits at the bottom of the card, after Front and Back; Enter turns what you typed into a tag', async () => {
-  const { user, card } = await openAddCard();
-  const tags = await within(card).findByRole('combobox', { name: 'Tags' });
-  const back = within(card).getByRole('textbox', { name: 'Back' });
-  expect(back.compareDocumentPosition(tags) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-  expect(within(card).getByText('Tags')).toBeTruthy();
-  await user.click(tags);
-  await user.keyboard('forces{Enter}');
-  expect(within(card).getByText('forces')).toBeTruthy();
-  expect((tags as HTMLInputElement).value).toBe('');
-  expect(screen.getByRole('dialog', { name: 'Add card' })).toBeTruthy();
+test('the tag prompt is gone; a tag icon sits at the bottom left with its real icon', async () => {
+  const { card } = await openAddCard();
+  const footer = await within(card).findByTestId('add-card-footer');
+  expect(within(card).queryByRole('combobox', { name: 'Tags' })).toBeNull();
+  expect(within(card).queryByPlaceholderText('Add a tag')).toBeNull();
+  expect(within(card).queryByText('Tags')).toBeNull();
+  const tag = within(footer).getByRole('button', { name: 'Tags' });
+  expect(tag.querySelector('svg path')).not.toBeNull();
+  expect(tag.querySelector('[data-placeholder="true"]')).toBeNull();
+  // Leftmost in the bottom row, and after the Back field.
+  expect(within(footer).getAllByRole('button')[0]).toBe(tag);
+  expect(within(card).getByRole('textbox', { name: 'Back' }).compareDocumentPosition(footer) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
 });
 
-test('the Tags field suggests tags you already use', async () => {
-  const { user, card } = await openAddCard(undefined, ['chemistry', 'physics']);
-  await user.click(await within(card).findByRole('combobox', { name: 'Tags' }));
-  await user.keyboard('ch');
-  const list = await screen.findByRole('listbox', { name: 'Tag suggestions' });
-  expect(within(list).getAllByRole('option').map((o) => o.textContent)).toEqual(['chemistry']);
-  await user.click(within(list).getByRole('option', { name: 'chemistry' }));
-  expect(within(card).getByText('chemistry')).toBeTruthy();
+test('Add and Close sit at the bottom right, in that order, after the tag icon', async () => {
+  const { card } = await openAddCard();
+  const footer = await within(card).findByTestId('add-card-footer');
+  expect(within(footer).getAllByRole('button').map((b) => b.getAttribute('aria-label') ?? b.textContent)).toEqual(['Tags', 'Add', 'Close']);
+});
+
+test('Close at the bottom closes the card; Add and the tag icon do nothing yet', async () => {
+  const { user, card } = await openAddCard();
+  const footer = await within(card).findByTestId('add-card-footer');
+  await user.keyboard('A question');
+  await user.click(within(footer).getByRole('button', { name: 'Tags' }));
+  await user.click(within(footer).getByRole('button', { name: 'Add' }));
+  expect(screen.getByRole('dialog', { name: 'Add card' })).toBeTruthy();
+  expect((within(card).getByRole('textbox', { name: 'Front' }) as HTMLTextAreaElement).value).toBe('A question');
+  await user.click(within(footer).getByRole('button', { name: 'Close' }));
+  expect(screen.queryByRole('dialog', { name: 'Add card' })).toBeNull();
+  expect(screen.getByTestId('today-decks-card')).toBeTruthy();
 });

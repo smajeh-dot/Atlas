@@ -4,12 +4,12 @@ import { cardDecks, pickCardDeck } from '../../../core/deckChoices';
 import { fullName } from '../../../core/deckTree';
 import type { BuiltinNoteType } from '../../../core/model';
 import { listDecks } from '../../../data/decks';
-import { listTags } from '../../../data/notes';
 import { listNoteTypes } from '../../../data/noteTypes';
 import { useAtlas, useData } from '../../app/AtlasContext';
 import { FieldEditor } from '../../editor/FieldEditor';
+import { Button } from '../../components/Button';
 import { MenuCard } from '../../components/MenuCard';
-import { TagInput } from '../../components/TagInput';
+import { Tooltip } from '../../components/Tooltip';
 import menuStyles from '../../components/MenuCard.module.css';
 import { Icon } from '../../icons/icons';
 import { trapTab, useOverlayLayer, useRestoreFocus } from '../../components/overlayStack';
@@ -23,21 +23,20 @@ const TYPES: BuiltinNoteType[] = ['basic', 'basic_reversed', 'basic_typein', 'cl
  * The X, Esc or a click outside the card closes it. Along the top: the card type, then the deck it's being added to
  * (the type just shows the current choice for now; the deck opens a dropdown of your decks), and in the corner the triple-dot
  * button, which doesn't do anything yet. Under those, a row of placeholder text-editing buttons, then a field for each side of the card
- * (Front and Back for Basic) and, bottom left, the tags. What's typed is only kept while the card is open: nothing saves a card yet. `deckId` is the deck it was opened for (from a deck's menu), if any.
+ * (Front and Back for Basic). Along the bottom: a tag button on the left (it doesn't do anything yet), and Add (nothing yet) and Close on
+ * the right. What's typed is only kept while the card is open: nothing saves a card yet. `deckId` is the deck it was opened for (from a deck's menu), if any.
  */
 export function AddCardOverlay({ deckId, onClose }: { deckId?: number; onClose(): void }) {
   const { deps, settings } = useAtlas();
   const { data } = useData(async () => ({
     decks: await listDecks(deps.db),
     types: (await listNoteTypes(deps.db)).filter((t) => t.builtin && TYPES.includes(t.builtin)),
-    tags: await listTags(deps.db),
   }), []);
   // The dropdown under the deck button: the button it hangs from while open, else null. And the deck picked from it, if any.
   const [deckMenu, setDeckMenu] = useState<HTMLElement | null>(null);
   const [chosenDeck, setChosenDeck] = useState<number | null>(null);
   // What's been typed into each field, in the order of the card type's fields.
   const [fields, setFields] = useState<string[]>([]);
-  const [tags, setTags] = useState<string[]>([]);
   // The type you used last (else Basic). The deck is the one picked here, else the one this was opened for, else the one you used last,
   // else the first deck. Subjects aren't decks, so a subject stands for the first deck inside it.
   const noteType = data && (data.types.find((t) => t.id === settings.lastNoteTypeId) ?? data.types.find((t) => t.builtin === 'basic') ?? data.types[0]);
@@ -117,17 +116,24 @@ export function AddCardOverlay({ deckId, onClose }: { deckId?: number; onClose()
                 />
               ))}
             </div>
-            <div className={styles.tags}>
-              <span className={styles.tagsLabel}>Tags</span>
-              <TagInput value={tags} onChange={setTags} suggestions={data.tags} label="Tags" />
+            <div className={styles.footer} data-testid="add-card-footer">
+              <Tooltip text="Tags">
+                <button type="button" className={styles.iconButton} aria-label="Tags">
+                  <Icon name="tag" />
+                </button>
+              </Tooltip>
+              <div className={styles.actions}>
+                <Button variant="primary">Add</Button>
+                <Button variant="secondary" onClick={onClose}>Close</Button>
+              </div>
             </div>
           </div>
         )}
-        <div className={styles.corner}>
-          <button type="button" className={styles.cornerButton} aria-label="More options" aria-haspopup="menu">
+        <div className={styles.corner} data-testid="add-card-corner">
+          <button type="button" className={styles.iconButton} aria-label="More options" aria-haspopup="menu">
             <Icon name="moreVertical" />
           </button>
-          <button type="button" className={styles.cornerButton} aria-label="Close" onClick={onClose}>
+          <button type="button" className={styles.iconButton} aria-label="Close" onClick={onClose}>
             <Icon name="close" />
           </button>
         </div>

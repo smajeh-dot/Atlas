@@ -196,7 +196,10 @@ test('Add on the notch opens a large card over Home, which stays put underneath'
   expect(card.getAttribute('aria-modal')).toBe('true');
   // Along the top: the card type, then the deck. In the corner: the triple-dot button, then the close button.
   expect(await within(card).findByRole('button', { name: 'Deck: <b>Bio</b>' })).toBeTruthy();
-  expect(within(card).getAllByRole('button').map((b) => b.getAttribute('aria-label'))).toEqual(['Card type: Basic', 'Deck: <b>Bio</b>', ...FORMAT_BUTTONS, 'More options', 'Close']);
+  // (then the bottom row: the tag icon, Add and Close).
+  expect(within(card).getAllByRole('button').map((b) => b.getAttribute('aria-label') ?? b.textContent)).toEqual(
+    ['Card type: Basic', 'Deck: <b>Bio</b>', ...FORMAT_BUTTONS, 'Tags', 'Add', 'Close', 'More options', 'Close'],
+  );
   // Home is still there, the very same elements rather than a reload, and Home is still the current sidebar item.
   expect(screen.getByTestId('today-decks-card')).toBe(decksCard);
   expect(screen.getByRole('button', { name: 'Home' }).getAttribute('aria-current')).toBe('page');
@@ -370,9 +373,10 @@ test('the X in the Add card overlay closes it and returns focus; the triple-dot 
   const add = within(await screen.findByTestId('today-notch')).getByRole('button', { name: 'Add' });
   await user.click(add);
   const card = await screen.findByRole('dialog', { name: 'Add card' });
-  await user.click(within(card).getByRole('button', { name: 'More options' }));
+  const corner = within(screen.getByTestId('add-card-corner'));
+  await user.click(corner.getByRole('button', { name: 'More options' }));
   expect(screen.getByRole('dialog', { name: 'Add card' })).toBeTruthy();
-  await user.click(within(card).getByRole('button', { name: 'Close' }));
+  await user.click(corner.getByRole('button', { name: 'Close' }));
   await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Add card' })).toBeNull());
   expect(screen.getByTestId('today-decks-card')).toBeTruthy();
   expect(add).toBe(document.activeElement);
