@@ -117,18 +117,14 @@ export function Sidebar() {
         <Icon name="plus" />
         <span>New</span>
       </button>
-      <button type="button" className={`${styles.action} ${styles.search}`}>
-        <Icon name="search" />
-        <span>Search</span>
-      </button>
       <button
         type="button"
         className={`${styles.action} ${styles.search}`}
         aria-current={route.name === 'today' ? 'page' : undefined}
         onClick={() => navigate({ name: 'today' })}
       >
-        <Icon name="bell" />
-        <span>Today</span>
+        <Icon name="home" />
+        <span>Home</span>
       </button>
       <button type="button" className={`${styles.action} ${styles.search} ${styles.decks}`}>
         <Icon name="decks" />

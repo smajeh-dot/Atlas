@@ -1,44 +1,20 @@
-import { Fragment, useState } from 'react';
-import { useAtlas } from '../../app/AtlasContext';
+import { setDeckCollapsed } from '../../../data/decks';
+import { getDeckTreeWithCounts, type DeckTreeWithCounts } from '../../../services/deckService';
+import { useAtlas, useData } from '../../app/AtlasContext';
 import { Count } from '../../components/Count';
-import { MenuCard } from '../../components/MenuCard';
-import menuStyles from '../../components/MenuCard.module.css';
+import { useToast } from '../../components/Toast';
 import { deckColour } from '../../deckColour';
-import { Icon, type IconName } from '../../icons/icons';
-import { PLACEHOLDER_SUBJECTS } from '../../placeholderSubjects';
+import { Icon } from '../../icons/icons';
 import { Activity } from './Activity';
+import { useDeckActions } from './DeckActions';
 import { Notch } from './Notch';
 import styles from './Today.module.css';
 
-interface MenuItem {
-  label: string;
-  icon?: IconName;
-  danger?: boolean;
-  onSelect?(): void;
-}
-
-/** Menu for a subject row, in groups with a divider between them. Only Study All does anything so far; the rest are placeholders. */
-const subjectMenuGroups = (studyAll: () => void): MenuItem[][] => [
-  [{ label: 'Study All', onSelect: studyAll }, { label: 'Unpin' }],
-  [{ label: 'New Deck', icon: 'newDeck' }, { label: 'Rename', icon: 'edit' }, { label: 'Colour', icon: 'droplet' }],
-  [{ label: 'Delete', icon: 'trash', danger: true }],
-];
-
-/** Today screen, being designed from the ground up. The central card is where the decks go (placeholder rows for now). */
+/** Home screen: the notch, your decks in the central card, and the activity heatmap. */
 export function Today() {
-  const { navigate } = useAtlas();
-  const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(new Set());
-  const toggle = (name: string) =>
-    setCollapsed((prev) => {
-      const next = new Set(prev);
-      if (!next.delete(name)) next.add(name);
-      return next;
-    });
-
-  // One blank dropdown at a time; `id` is the subject or sub-deck it belongs to.
-  const [menu, setMenu] = useState<{ id: string; label: string; anchor: HTMLElement; kind: 'subject' | 'subdeck' } | null>(null);
-  const toggleMenu = (id: string, label: string, anchor: HTMLElement, kind: 'subject' | 'subdeck') =>
-    setMenu((m) => (m?.id === id ? null : { id, label, anchor, kind }));
+  const { deps } = useAtlas();
+  const { data: tree } = useData(() => getDeckTreeWithCounts(deps.db, deps.clock.now()), []);
+  const actions = useDeckActions();
 
   return (
     <div className={styles.page} data-testid="today-screen">
@@ -53,88 +29,68 @@ export function Today() {
         </div>
         <div className={styles.decksRule} role="separator" />
         <div className={styles.rows}>
-          {PLACEHOLDER_SUBJECTS.map((subject) => {
-            const total = (k: 'new' | 'learn' | 'due') => subject.subdecks.reduce((n, d) => n + d[k], 0);
-            const isCollapsed = collapsed.has(subject.name);
-            return (
-              <div key={subject.name} className={styles.group}>
-                <div className={styles.rowWrap} data-open={menu?.id === subject.name || undefined}>
-                  <button type="button" className={`${styles.row} ${styles.rowMain}`} aria-expanded={!isCollapsed} onClick={() => toggle(subject.name)}>
-                    <span className={styles.subjectName}>
-                      <span className={styles.bar} style={{ background: deckColour(subject.colour) }} aria-hidden="true" />
-                      {subject.name}
-                    </span>
-                    <span className={styles.num}><Count kind="new" value={total('new')} /></span>
-                    <span className={styles.num}><Count kind="learn" value={total('learn')} /></span>
-                    <span className={styles.num}><Count kind="due" value={total('due')} /></span>
-                    <span />
-                  </button>
-                  <button
-                    type="button"
-                    className={styles.rowMore}
-                    aria-label={`${subject.name} options`}
-                    aria-haspopup="menu"
-                    aria-expanded={menu?.id === subject.name}
-                    onClick={(e) => toggleMenu(subject.name, `${subject.name} options`, e.currentTarget, 'subject')}
-                  >
-                    <Icon name="moreVertical" />
-                  </button>
-                </div>
-                <div className={styles.subWrap} data-collapsed={isCollapsed || undefined}>
-                  <div className={styles.subInner}>
-                    {subject.subdecks.map((sub) => (
-                      <div key={sub.name} className={styles.rowWrap} data-open={menu?.id === `${subject.name}/${sub.name}` || undefined}>
-                        <button type="button" className={`${styles.row} ${styles.rowMain}`} onClick={() => navigate({ name: 'session', target: `${subject.name} / ${sub.name}` })}>
-                          <span className={styles.subName}>{sub.name}</span>
-                          <span className={styles.num}><Count kind="new" value={sub.new} /></span>
-                          <span className={styles.num}><Count kind="learn" value={sub.learn} /></span>
-                          <span className={styles.num}><Count kind="due" value={sub.due} /></span>
-                          <span />
-                        </button>
-                        <button
-                          type="button"
-                          className={styles.rowMore}
-                          aria-label={`${sub.name} options`}
-                          aria-haspopup="menu"
-                          aria-expanded={menu?.id === `${subject.name}/${sub.name}`}
-                          onClick={(e) => toggleMenu(`${subject.name}/${sub.name}`, `${sub.name} options`, e.currentTarget, 'subdeck')}
-                        >
-                          <Icon name="moreVertical" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            );
-          })}
+          {tree?.map((node) => <DeckRow key={node.deck.id} node={node} depth={0} openMenu={actions.openMenu} />)}
         </div>
       </section>
       <Activity />
-      {menu && (
-        <MenuCard anchor={menu.anchor} label={menu.label} onClose={() => setMenu(null)} className={menu.kind === 'subdeck' ? styles.dropdown : undefined}>
-          {menu.kind === 'subject' &&
-            subjectMenuGroups(() => navigate({ name: 'session', target: `${menu.id} (all)` })).map((group, i) => (
-              <Fragment key={i}>
-                {i > 0 && <div className={menuStyles.menuRule} role="separator" />}
-                {group.map((item) => (
-                  <button
-                    key={item.label}
-                    type="button"
-                    role="menuitem"
-                    className={`${menuStyles.menuItem} ${item.danger ? menuStyles.menuDanger : ''}`}
-                    onClick={() => {
-                      setMenu(null);
-                      item.onSelect?.();
-                    }}
-                  >
-                    {item.icon && <Icon name={item.icon} />}
-                    <span>{item.label}</span>
-                  </button>
-                ))}
-              </Fragment>
-            ))}
-        </MenuCard>
+      {actions.ui}
+    </div>
+  );
+}
+
+/**
+ * One deck and, underneath it, its sub-decks. A deck with sub-decks opens and closes when you click it (and stays that way,
+ * like in the Decks screen); a deck without any starts a study session.
+ */
+function DeckRow({ node, depth, openMenu }: { node: DeckTreeWithCounts; depth: number; openMenu: ReturnType<typeof useDeckActions>['openMenu'] }) {
+  const { deps, navigate, changed } = useAtlas();
+  const toast = useToast();
+  const { deck, counts, children } = node;
+  const hasChildren = children.length > 0;
+
+  const toggle = () =>
+    setDeckCollapsed(deps.db, deck.id, !deck.collapsed).then(changed, (e: unknown) =>
+      toast.show({ message: `Atlas couldn't change the deck: ${e instanceof Error ? e.message : String(e)}` }),
+    );
+
+  return (
+    <div className={depth === 0 ? styles.group : undefined}>
+      <div className={styles.rowWrap}>
+        <button
+          type="button"
+          className={`${styles.row} ${styles.rowMain}`}
+          aria-expanded={hasChildren ? !deck.collapsed : undefined}
+          onClick={hasChildren ? toggle : () => navigate({ name: 'study', deckId: deck.id })}
+        >
+          {depth === 0 ? (
+            <span className={styles.subjectName}>
+              <span className={styles.bar} style={{ background: deckColour(deck.colour) }} aria-hidden="true" />
+              {deck.name}
+            </span>
+          ) : (
+            <span className={styles.subName}>{deck.name}</span>
+          )}
+          <span className={styles.num}><Count kind="new" value={counts.new} /></span>
+          <span className={styles.num}><Count kind="learn" value={counts.learn} /></span>
+          <span className={styles.num}><Count kind="due" value={counts.review} /></span>
+          <span />
+        </button>
+        <button
+          type="button"
+          className={styles.rowMore}
+          aria-label={`${deck.name} options`}
+          aria-haspopup="menu"
+          onClick={(e) => openMenu(deck, e.currentTarget)}
+        >
+          <Icon name="moreVertical" />
+        </button>
+      </div>
+      {hasChildren && (
+        <div className={styles.subWrap} data-collapsed={deck.collapsed || undefined}>
+          <div className={styles.subInner}>
+            {children.map((child) => <DeckRow key={child.deck.id} node={child} depth={depth + 1} openMenu={openMenu} />)}
+          </div>
+        </div>
       )}
     </div>
   );

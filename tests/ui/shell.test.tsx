@@ -2,6 +2,7 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import { expect, test } from 'vitest';
 import { UndoStack } from '../../src/services/undo';
+import { createDeck, listDecks } from '../../src/data/decks';
 import { createMigratedDb } from '../helpers/testDb';
 import { DAY, fixedClock, T0 } from '../helpers/fixtures';
 import { countRows, makeReview, seedDeck, seedNote } from '../helpers/seed';
@@ -30,15 +31,15 @@ test('A opens Add card, but not while typing', async () => {
   expect(await screen.findByRole('heading', { name: 'Add card' })).toBeTruthy();
 });
 
-test('the sidebar Today button returns to the Today screen with the decks card', async () => {
+test('the sidebar Home button returns to the home screen with the decks card', async () => {
   const { user } = await renderApp({ db: await seeded(), route: { name: 'settings' } });
   await screen.findByRole('heading', { name: 'Settings' });
-  const today = screen.getByRole('button', { name: 'Today' });
+  const today = screen.getByRole('button', { name: 'Home' });
   expect(today.getAttribute('aria-current')).toBeNull();
   await user.click(today);
   expect(await screen.findByTestId('today-decks-card')).toBeTruthy();
   expect(screen.queryByRole('heading', { name: 'Settings' })).toBeNull();
-  expect(screen.getByRole('button', { name: 'Today' }).getAttribute('aria-current')).toBe('page');
+  expect(screen.getByRole('button', { name: 'Home' }).getAttribute('aria-current')).toBe('page');
 });
 
 test('the blank notch hangs from the top of Today and appears on no other screen', async () => {
@@ -48,7 +49,7 @@ test('the blank notch hangs from the top of Today and appears on no other screen
   await user.keyboard('{Control>},{/Control}');
   await screen.findByRole('heading', { name: 'Settings' });
   expect(screen.queryByTestId('today-notch')).toBeNull();
-  await user.click(screen.getByRole('button', { name: 'Today' }));
+  await user.click(screen.getByRole('button', { name: 'Home' }));
   expect(await screen.findByTestId('today-notch')).toBeTruthy();
 });
 
@@ -79,6 +80,48 @@ test('Today shows a year-long heatmap with month names, below the decks card', a
   expect(decks.compareDocumentPosition(activity) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
 });
 
+test('the sidebar has no Search button', async () => {
+  await renderApp({ db: await seeded() });
+  await screen.findByTestId('today-screen');
+  expect(screen.queryByRole('button', { name: 'Search' })).toBeNull();
+});
+
+test('the decks card lists your real decks with their counts, not placeholders', async () => {
+  await renderApp({ db: await seeded() });
+  const card = await screen.findByTestId('today-decks-card');
+  const bio = await within(card).findByRole('button', { name: /^<b>Bio<\/b>\d/ });
+  expect(bio.querySelector('[data-count="due"]')!.textContent).toBe('2');
+  expect(within(card).getByRole('button', { name: /^Chemistry\d/ })).toBeTruthy();
+  expect(within(card).queryByText('Sub-deck one')).toBeNull();
+});
+
+test('clicking a deck with no sub-decks starts studying it', async () => {
+  const { user } = await renderApp({ db: await seeded() });
+  await user.click(await screen.findByRole('button', { name: /^<b>Bio<\/b>\d/ }));
+  expect(await screen.findByRole('button', { name: 'Leave study' })).toBeTruthy();
+});
+
+test('clicking a deck with sub-decks opens and closes it, and remembers that', async () => {
+  const db = await createMigratedDb();
+  const parent = await createDeck(db, { name: 'Parent' }, T0);
+  await createDeck(db, { name: 'Child', parentId: parent }, T0);
+  const { user } = await renderApp({ db });
+  const row = await screen.findByRole('button', { name: /^Parent\d/ });
+  expect(row.getAttribute('aria-expanded')).toBe('true');
+  await user.click(row);
+  await waitFor(async () => expect((await listDecks(db)).find((d) => d.name === 'Parent')!.collapsed).toBe(true));
+  await waitFor(() => expect(screen.getByRole('button', { name: /^Parent\d/ }).getAttribute('aria-expanded')).toBe('false'));
+  await user.click(screen.getByRole('button', { name: /^Parent\d/ }));
+  await waitFor(async () => expect((await listDecks(db)).find((d) => d.name === 'Parent')!.collapsed).toBe(false));
+});
+
+test('a deck\'s three-dot button opens the real deck menu', async () => {
+  const { user } = await renderApp({ db: await seeded() });
+  await user.click(await screen.findByRole('button', { name: 'Chemistry options' }));
+  expect(await screen.findByRole('menuitem', { name: 'Rename' })).toBeTruthy();
+  expect(screen.getByRole('menuitem', { name: 'Add card here' })).toBeTruthy();
+});
+
 test('Ctrl+, opens Settings', async () => {
   const { user } = await renderApp({ db: await seeded() });
   await screen.findByTestId('today-screen');
@@ -107,22 +150,4 @@ test('Ctrl+, opens Settings even while typing in a field', async () => {
   await user.keyboard('{Control>},{/Control}');
   expect(await screen.findByRole('heading', { name: 'Settings' })).toBeTruthy();
   field.remove();
-});
-
-test('a sub-deck row opens the blank session screen, and Esc returns to Today', async () => {
-  const { user } = await renderApp({ db: await seeded() });
-  const card = await screen.findByTestId('today-decks-card');
-  await user.click(within(card).getAllByRole('button', { name: /Sub-deck one/ })[0]!);
-  expect(await screen.findByTestId('session-screen')).toBeTruthy();
-  expect(screen.queryByTestId('today-decks-card')).toBeNull();
-  await user.keyboard('{Escape}');
-  expect(await screen.findByTestId('today-decks-card')).toBeTruthy();
-});
-
-test('Study All in a subject menu opens the blank session screen', async () => {
-  const { user } = await renderApp({ db: await seeded() });
-  const card = await screen.findByTestId('today-decks-card');
-  await user.click(within(card).getByRole('button', { name: 'Biology options' }));
-  await user.click(await screen.findByRole('menuitem', { name: 'Study All' }));
-  expect(await screen.findByTestId('session-screen')).toBeTruthy();
 });
