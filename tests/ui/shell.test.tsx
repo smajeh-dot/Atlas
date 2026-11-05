@@ -245,20 +245,67 @@ test('the Add card overlay starts on the deck it was opened for, with its full p
   expect(within(card).getByRole('button', { name: /^Card type: / }).textContent).toBe('Cloze');
 });
 
-test('the deck button opens a blank dropdown, and clicking it again closes it', async () => {
-  const { user } = await renderApp({ db: await seeded() });
-  await user.click(within(await screen.findByTestId('today-notch')).getByRole('button', { name: 'Add' }));
+/** Biology and Maths are subjects (they hold decks); Solo is a deck on its own. */
+async function withSubjects() {
+  const db = await createMigratedDb();
+  const biology = await createDeck(db, { name: 'Biology' }, T0);
+  await createDeck(db, { name: 'Cells', parentId: biology }, T0);
+  await createDeck(db, { name: 'Genetics', parentId: biology }, T0);
+  const maths = await createDeck(db, { name: 'Maths' }, T0);
+  await createDeck(db, { name: 'Algebra', parentId: maths }, T0);
+  await createDeck(db, { name: 'Solo' }, T0);
+  return db;
+}
+
+async function openAddCard(db: Awaited<ReturnType<typeof withSubjects>>) {
+  const r = await renderApp({ db });
+  await r.user.click(within(await screen.findByTestId('today-notch')).getByRole('button', { name: 'Add' }));
   const card = await screen.findByRole('dialog', { name: 'Add card' });
   const deck = await within(card).findByRole('button', { name: /^Deck: / });
+  return { ...r, card, deck };
+}
+
+test('the deck dropdown lists every deck, leaves subjects out, and clicking the button again closes it', async () => {
+  const { user, card, deck } = await openAddCard(await withSubjects());
   expect(deck.getAttribute('aria-expanded')).toBe('false');
+  // Opened from the notch with no deck chosen: the first deck. Biology is a subject, so it is not the answer.
+  expect(deck.textContent).toBe('Biology › Cells');
   await user.click(deck);
   const menu = await screen.findByRole('menu', { name: 'Deck' });
-  expect(menu.textContent).toBe('');
-  expect(within(menu).queryAllByRole('menuitem')).toHaveLength(0);
   expect(deck.getAttribute('aria-expanded')).toBe('true');
+  const items = within(menu).getAllByRole('menuitemradio');
+  expect(items.map((i) => i.textContent)).toEqual(['Cells', 'Genetics', 'Algebra', 'Solo']);
+  expect(items.map((i) => i.getAttribute('aria-label'))).toEqual(['Biology › Cells', 'Biology › Genetics', 'Maths › Algebra', 'Solo']);
+  expect(within(menu).queryByRole('menuitemradio', { name: 'Biology' })).toBeNull();
+  expect(within(menu).queryByRole('menuitemradio', { name: 'Maths' })).toBeNull();
+  expect(items[0]!.getAttribute('aria-checked')).toBe('true');
   await user.click(deck);
   await waitFor(() => expect(screen.queryByRole('menu', { name: 'Deck' })).toBeNull());
+  expect(card.isConnected).toBe(true);
+});
+
+test('choosing a deck in the dropdown puts it on the deck button and closes the dropdown', async () => {
+  const { user, card, deck } = await openAddCard(await withSubjects());
+  await user.click(deck);
+  await user.click(await screen.findByRole('menuitemradio', { name: 'Maths › Algebra' }));
+  await waitFor(() => expect(screen.queryByRole('menu', { name: 'Deck' })).toBeNull());
+  expect(within(card).getByRole('button', { name: 'Deck: Maths › Algebra' })).toBe(deck);
+  expect(deck.textContent).toBe('Maths › Algebra');
+  expect(deck).toBe(document.activeElement);
   expect(screen.getByRole('dialog', { name: 'Add card' })).toBeTruthy();
+  // The dropdown remembers the choice.
+  await user.click(deck);
+  expect((await screen.findByRole('menuitemradio', { name: 'Maths › Algebra' })).getAttribute('aria-checked')).toBe('true');
+  expect(screen.getByRole('menuitemradio', { name: 'Biology › Cells' }).getAttribute('aria-checked')).toBe('false');
+});
+
+test('Add card here on a subject starts on the first deck inside it', async () => {
+  const db = await withSubjects();
+  const { user } = await renderApp({ db });
+  await user.click(await screen.findByRole('button', { name: 'Maths options' }));
+  await user.click(await screen.findByRole('menuitem', { name: 'Add card here' }));
+  const card = await screen.findByRole('dialog', { name: 'Add card' });
+  expect((await within(card).findByRole('button', { name: /^Deck: / })).textContent).toBe('Maths › Algebra');
 });
 
 test('with the deck dropdown open, Esc closes only the dropdown, then the next Esc closes the card', async () => {

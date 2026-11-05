@@ -96,9 +96,23 @@
   background: var(--new-btn-hover);
 }
 
-/* The blank deck dropdown. Width, padding, border and corners come from the shared MenuCard, whose layer (60) is below this overlay's (70),
-   so it is raised above it; the element name makes this rule beat the MenuCard's own. Change the height to resize it. */
+/* The deck dropdown. Padding, border and corners come from the shared MenuCard, whose layer (60) is below this overlay's (70), so it is
+   raised above it; the element name makes this rule beat the MenuCard's own. A long list scrolls instead of growing. */
 div.dropdown {
   z-index: 80;
-  height: 184px;
+  width: 220px;
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+/* One deck per row: just its name, cut off with "…" if it is too long (hover shows the full path). The chosen deck is a little bolder. */
+.deckName {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.deckItem[data-selected] {
+  font-weight: 500;
 }

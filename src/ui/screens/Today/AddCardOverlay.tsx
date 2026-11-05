@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { fullName, treeOrder } from '../../../core/deckTree';
+import { cardDecks, pickCardDeck } from '../../../core/deckChoices';
+import { fullName } from '../../../core/deckTree';
 import type { BuiltinNoteType } from '../../../core/model';
 import { listDecks } from '../../../data/decks';
 import { listNoteTypes } from '../../../data/noteTypes';
 import { useAtlas, useData } from '../../app/AtlasContext';
 import { MenuCard } from '../../components/MenuCard';
+import menuStyles from '../../components/MenuCard.module.css';
 import { Icon } from '../../icons/icons';
 import { trapTab, useOverlayLayer, useRestoreFocus } from '../../components/overlayStack';
 import styles from './AddCardOverlay.module.css';
@@ -15,8 +17,8 @@ const TYPES: BuiltinNoteType[] = ['basic', 'basic_reversed', 'basic_typein', 'cl
 /**
  * A large card in the middle of the window over the Home screen, with everything around it darkened.
  * The X, Esc or a click outside the card closes it. Along the top: the card type, then the deck it's being added to
- * (the type just shows the current choice for now; the deck opens a blank dropdown), and in the corner the triple-dot button,
- * which doesn't do anything yet. `deckId` is the deck it was opened for (from a deck's menu), if any.
+ * (the type just shows the current choice for now; the deck opens a dropdown of your decks), and in the corner the triple-dot
+ * button, which doesn't do anything yet. `deckId` is the deck it was opened for (from a deck's menu), if any.
  */
 export function AddCardOverlay({ deckId, onClose }: { deckId?: number; onClose(): void }) {
   const { deps, settings } = useAtlas();
@@ -24,13 +26,14 @@ export function AddCardOverlay({ deckId, onClose }: { deckId?: number; onClose()
     decks: await listDecks(deps.db),
     types: (await listNoteTypes(deps.db)).filter((t) => t.builtin && TYPES.includes(t.builtin)),
   }), []);
-  // The same defaults the old Add card screen used: the type you used last (else Basic), and the deck you opened this from,
-  // else the one you used last, else the first deck.
-  const noteType = data && (data.types.find((t) => t.id === settings.lastNoteTypeId) ?? data.types.find((t) => t.builtin === 'basic') ?? data.types[0]);
-  const deck = data && ([deckId, settings.lastDeckId].find((id) => id != null && data.decks.some((d) => d.id === id)) ?? treeOrder(data.decks)[0]);
-  const card = useRef<HTMLDivElement>(null);
-  // The blank dropdown under the deck button: the button it hangs from while open, else null.
+  // The dropdown under the deck button: the button it hangs from while open, else null. And the deck picked from it, if any.
   const [deckMenu, setDeckMenu] = useState<HTMLElement | null>(null);
+  const [chosenDeck, setChosenDeck] = useState<number | null>(null);
+  // The type you used last (else Basic). The deck is the one picked here, else the one this was opened for, else the one you used last,
+  // else the first deck. Subjects aren't decks, so a subject stands for the first deck inside it.
+  const noteType = data && (data.types.find((t) => t.id === settings.lastNoteTypeId) ?? data.types.find((t) => t.builtin === 'basic') ?? data.types[0]);
+  const deck = data && pickCardDeck(data.decks, [chosenDeck, deckId, settings.lastDeckId]);
+  const card = useRef<HTMLDivElement>(null);
   const isTop = useOverlayLayer();
   useRestoreFocus();
   useEffect(() => card.current?.focus(), []);
@@ -61,18 +64,18 @@ export function AddCardOverlay({ deckId, onClose }: { deckId?: number; onClose()
           } else trapTab(e, card.current);
         }}
       >
-        {data && noteType && deck != null && (
+        {data && noteType && deck && (
           <div className={styles.selectors}>
             <button type="button" className={styles.selector} aria-label={`Card type: ${noteType.name}`}>{noteType.name}</button>
             <button
               type="button"
               className={styles.selector}
-              aria-label={`Deck: ${fullName(data.decks, deck)}`}
+              aria-label={`Deck: ${fullName(data.decks, deck.id)}`}
               aria-haspopup="menu"
               aria-expanded={deckMenu !== null}
               onClick={(e) => setDeckMenu(deckMenu ? null : e.currentTarget)}
             >
-              {fullName(data.decks, deck)}
+              {fullName(data.decks, deck.id)}
             </button>
           </div>
         )}
@@ -85,7 +88,29 @@ export function AddCardOverlay({ deckId, onClose }: { deckId?: number; onClose()
           </button>
         </div>
       </div>
-      {deckMenu && <MenuCard anchor={deckMenu} label="Deck" onClose={() => setDeckMenu(null)} className={styles.dropdown} />}
+      {deckMenu && data && deck && (
+        <MenuCard anchor={deckMenu} label="Deck" onClose={() => setDeckMenu(null)} className={styles.dropdown}>
+          {cardDecks(data.decks).map((d) => (
+            <button
+              key={d.id}
+              type="button"
+              role="menuitemradio"
+              aria-checked={d.id === deck.id}
+              aria-label={fullName(data.decks, d.id)}
+              title={fullName(data.decks, d.id)}
+              className={`${menuStyles.menuItem} ${styles.deckItem}`}
+              data-selected={d.id === deck.id || undefined}
+              onClick={() => {
+                setChosenDeck(d.id);
+                setDeckMenu(null);
+                deckMenu.focus();
+              }}
+            >
+              <span className={styles.deckName}>{d.name}</span>
+            </button>
+          ))}
+        </MenuCard>
+      )}
     </div>,
     document.body,
   );
