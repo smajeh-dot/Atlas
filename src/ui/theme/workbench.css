@@ -71,7 +71,8 @@
 
   --border-w: 1px;
   --radius-sm: 8px;
-  --radius-btn: 999px;
+  /* Buttons are rounded rectangles, never pills: the same corner as every hand-built button. */
+  --radius-btn: 8px;
   --radius-btn-lg: 12px;
   --radius-lg: 12px;
   --radius-card: 14px 14px 14px 0;

@@ -35,7 +35,7 @@ const SPEC: [string, string][] = [
   ['--danger', '#D32F2F'], ['--danger-ink', '#FFFFFF'], ['--success', '#1E7D32'],
   ['--warning-bg', '#FDF3DC'], ['--warning-ink', '#7A5300'], ['--overlay', 'rgba(0,0,0,0.40)'],
   ['--text-answer', '#1C1C1F'],
-  ['--border-w', '1px'], ['--radius-sm', '8px'], ['--radius-btn', '999px'], ['--radius-btn-lg', '12px'],
+  ['--border-w', '1px'], ['--radius-sm', '8px'], ['--radius-btn', '8px'], ['--radius-btn-lg', '12px'],
   ['--radius-lg', '12px'], ['--radius-card', '14px 14px 14px 0'], ['--radius-field', '8px'],
   ['--radius-panel-side', '12px 12px 12px 0'], ['--radius-panel-main', '12px 12px 0 12px'], ['--radius-hero', '0'],
   ['--shadow-box', 'none'], ['--shadow-primary', 'none'],
