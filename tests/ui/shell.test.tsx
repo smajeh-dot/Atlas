@@ -115,11 +115,35 @@ test('clicking a deck with sub-decks opens and closes it, and remembers that', a
   await waitFor(async () => expect((await listDecks(db)).find((d) => d.name === 'Parent')!.collapsed).toBe(false));
 });
 
-test('a deck\'s three-dot button opens the real deck menu', async () => {
-  const { user } = await renderApp({ db: await seeded() });
+test('a deck\'s three-dot button opens the menu card, whose items do real things', async () => {
+  const db = await seeded();
+  const { user } = await renderApp({ db });
   await user.click(await screen.findByRole('button', { name: 'Chemistry options' }));
-  expect(await screen.findByRole('menuitem', { name: 'Rename' })).toBeTruthy();
-  expect(screen.getByRole('menuitem', { name: 'Add card here' })).toBeTruthy();
+  const menu = await screen.findByRole('menu', { name: 'Chemistry options' });
+  expect(within(menu).getAllByRole('menuitem').map((i) => i.textContent)).toEqual(['Study', 'Add card here', 'Add subdeck', 'Rename', 'Colour', 'Deck options', 'Delete']);
+  await user.click(within(menu).getByRole('menuitem', { name: 'Rename' }));
+  await user.type(await screen.findByLabelText('Deck name'), '{Control>}a{/Control}Chem{Enter}');
+  await waitFor(async () => expect((await listDecks(db)).map((d) => d.name).sort()).toEqual(['<b>Bio</b>', 'Chem']));
+});
+
+test('Colour in a deck\'s menu card opens a colour card and saves the choice', async () => {
+  const db = await seeded();
+  const { user } = await renderApp({ db });
+  await user.click(await screen.findByRole('button', { name: 'Chemistry options' }));
+  await user.click(await screen.findByRole('menuitem', { name: 'Colour' }));
+  const colours = await screen.findByRole('menu', { name: 'Colour' });
+  await user.click(within(colours).getByRole('menuitem', { name: 'Purple' }));
+  await waitFor(async () => expect((await listDecks(db)).find((d) => d.name === 'Chemistry')!.colour).toBe(5));
+});
+
+test('a sub-deck\'s menu card has no Colour item', async () => {
+  const db = await createMigratedDb();
+  const parent = await createDeck(db, { name: 'Parent' }, T0);
+  await createDeck(db, { name: 'Child', parentId: parent }, T0);
+  const { user } = await renderApp({ db });
+  await user.click(await screen.findByRole('button', { name: 'Child options' }));
+  const menu = await screen.findByRole('menu', { name: 'Child options' });
+  expect(within(menu).queryByRole('menuitem', { name: 'Colour' })).toBeNull();
 });
 
 test('Ctrl+, opens Settings', async () => {

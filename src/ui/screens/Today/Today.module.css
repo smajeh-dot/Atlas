@@ -177,6 +177,14 @@
   pointer-events: none;
 }
 
+/* Colour dot in the colour card. */
+.swatch {
+  flex: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+
 /* Sub-decks of a sub-deck: indented a further 20px, with their own guide line. */
 .subInner .subWrap {
   margin-left: 20px;

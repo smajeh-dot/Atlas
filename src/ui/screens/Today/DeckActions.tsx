@@ -23,8 +23,22 @@ export function deletionText(name: string, s: { subdecks: number; cards: number 
   return `Delete ${name}${subs}? This deletes ${plural(s.cards, 'card', 'cards')} and their review history. This can't be undone.`;
 }
 
+export interface DeckHandlers {
+  study(): void;
+  addCard(): void;
+  rename(): void;
+  addSubdeck(): void;
+  options(): void;
+  remove(): Promise<void>;
+}
+
 /** The deck menu (spec 10.3) and its dialogs, shared by Today and Decks. */
-export function useDeckActions(): { openMenu(deck: Deck, anchor: Anchor): void; newDeck(parentId?: number | null): void; ui: ReactNode } {
+export function useDeckActions(): {
+  openMenu(deck: Deck, anchor: Anchor): void;
+  deckHandlers(deck: Deck): DeckHandlers;
+  newDeck(parentId?: number | null): void;
+  ui: ReactNode;
+} {
   const { deps, navigate, changed } = useAtlas();
   const toast = useToast();
   const [open, setOpen] = useState<Open>(null);
@@ -44,26 +58,35 @@ export function useDeckActions(): { openMenu(deck: Deck, anchor: Anchor): void; 
 
   const failed = (e: unknown) => toast.show({ message: `Atlas couldn't change the deck: ${e instanceof Error ? e.message : String(e)}` });
 
-  const menuItems = (deck: Deck, anchor: Anchor): MenuItem[] => [
-    { label: 'Study', onSelect: () => navigate({ name: 'study', deckId: deck.id }) },
-    { label: 'Add card here', onSelect: () => navigate({ name: 'add', deckId: deck.id }) },
-    { label: 'Rename', shortcut: 'F2', onSelect: () => askName('Rename deck', 'Rename', deck.name, (n) => renameDeck(deps.db, deck.id, n)) },
-    { label: 'Add subdeck', onSelect: () => newDeck(deck.id) },
-    { label: 'Deck options', onSelect: () => navigate({ name: 'decks', deckId: deck.id }) },
-    ...(deck.parentId === null ? [{ label: 'Colour', onSelect: () => setOpen({ kind: 'colour', deck, anchor }) }] : []),
-    'divider',
-    {
-      label: 'Delete',
-      danger: true,
-      onSelect: async () => {
-        try {
-          setOpen({ kind: 'delete', deck, text: deletionText(deck.name, await deckDeletionSummary(deps.db, deck.id)) });
-        } catch (e) {
-          failed(e);
-        }
-      },
+  /** What each deck-menu item does, so a screen can show these in its own style of menu. Colour is left to the screen. */
+  const deckHandlers = (deck: Deck): DeckHandlers => ({
+    study: () => navigate({ name: 'study', deckId: deck.id }),
+    addCard: () => navigate({ name: 'add', deckId: deck.id }),
+    rename: () => askName('Rename deck', 'Rename', deck.name, (n) => renameDeck(deps.db, deck.id, n)),
+    addSubdeck: () => newDeck(deck.id),
+    options: () => navigate({ name: 'decks', deckId: deck.id }),
+    remove: async () => {
+      try {
+        setOpen({ kind: 'delete', deck, text: deletionText(deck.name, await deckDeletionSummary(deps.db, deck.id)) });
+      } catch (e) {
+        failed(e);
+      }
     },
-  ];
+  });
+
+  const menuItems = (deck: Deck, anchor: Anchor): MenuItem[] => {
+    const h = deckHandlers(deck);
+    return [
+      { label: 'Study', onSelect: h.study },
+      { label: 'Add card here', onSelect: h.addCard },
+      { label: 'Rename', shortcut: 'F2', onSelect: h.rename },
+      { label: 'Add subdeck', onSelect: h.addSubdeck },
+      { label: 'Deck options', onSelect: h.options },
+      ...(deck.parentId === null ? [{ label: 'Colour', onSelect: () => setOpen({ kind: 'colour', deck, anchor }) }] : []),
+      'divider',
+      { label: 'Delete', danger: true, onSelect: h.remove },
+    ];
+  };
 
   let ui: ReactNode = null;
   if (open?.kind === 'menu') {
@@ -130,5 +153,5 @@ export function useDeckActions(): { openMenu(deck: Deck, anchor: Anchor): void; 
     );
   }
 
-  return { openMenu: (deck, anchor) => setOpen({ kind: 'menu', deck, anchor }), newDeck, ui };
+  return { openMenu: (deck, anchor) => setOpen({ kind: 'menu', deck, anchor }), deckHandlers, newDeck, ui };
 }
