@@ -15,6 +15,16 @@
 .card {
   --inset: 12px;
   --control: 28px;
+  /* Field labels use the main text colour and are only capitalised at the start; a focused field has one solid blue frame (the fields' default is a blue
+     border plus a soft blue halo, and the tag box's text box adds a second and third). The tag suggestions open upward, as the box is at the bottom. */
+  --field-label-colour: var(--text);
+  --field-label-case: none;
+  --field-label-tracking: 0;
+  --field-focus-shadow: 0 0 0 1px var(--accent);
+  --field-input-ring: none;
+  --field-input-outline: none;
+  --tag-list-top: auto;
+  --tag-list-bottom: calc(100% + 8px);
   position: relative;
   --card-width: 960px;
   --card-height: 640px;
@@ -117,17 +127,43 @@ div.dropdown {
   font-weight: 500;
 }
 
-/* Front and Back, one under the other below the toolbar, filling the rest of the card. The 4px of padding (pulled back out with the
-   offsets) leaves room for a field's focus ring, which a scrolling box would otherwise cut off. */
-.fields {
+/* Everything under the toolbar: Front and Back (scrolling if they get long), with the tags under them at the bottom left. */
+.body {
+  --tags-width: 360px;
   position: absolute;
-  top: calc(var(--inset) + var(--control) + var(--sp-12) + var(--control) + var(--sp-16) - 4px);
-  left: calc(var(--inset) - 4px);
-  right: calc(var(--inset) - 4px);
-  bottom: calc(var(--inset) - 4px);
+  top: calc(var(--inset) + var(--control) + var(--sp-12) + var(--control) + var(--sp-16));
+  left: var(--inset);
+  right: var(--inset);
+  bottom: var(--inset);
   display: flex;
   flex-direction: column;
   gap: var(--sp-16);
-  padding: 4px;
+}
+
+/* The 2px of padding (pulled back out with the margin) leaves room for a field's blue frame, which a scrolling box would cut off. */
+.fields {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-16);
+  margin: -2px;
+  padding: 2px;
   overflow-y: auto;
+}
+
+.tags {
+  flex: none;
+  width: min(var(--tags-width), 100%);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-6);
+}
+
+/* Same look as the Front and Back labels. */
+.tagsLabel {
+  font-size: var(--fs-label);
+  line-height: var(--lh-label);
+  font-weight: 500;
+  color: var(--text);
 }

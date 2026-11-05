@@ -12,7 +12,7 @@
 
 .box:focus-within {
   border-color: var(--focus);
-  box-shadow: 0 0 0 3px var(--focus-soft);
+  box-shadow: var(--field-focus-shadow, 0 0 0 3px var(--focus-soft));
 }
 
 .inputWrap {
@@ -29,10 +29,19 @@
   font-size: var(--fs-body);
 }
 
+/* The app-wide focus ring (an outline and a soft halo) lands on this text box too, inside the box's own frame; a screen can switch
+   that second ring off. The defaults here are the app-wide ring, so other screens look as they did. */
+.input:focus-visible {
+  outline: var(--field-input-outline, 2px solid var(--focus));
+  outline-offset: 1px;
+  box-shadow: var(--field-input-ring, 0 0 0 3px var(--focus-soft));
+}
+
 .list {
   position: absolute;
   z-index: 60;
-  top: calc(100% + 8px);
+  top: var(--tag-list-top, calc(100% + 8px));
+  bottom: var(--tag-list-bottom, auto);
   left: 0;
   min-width: 200px;
   padding: var(--sp-4);
