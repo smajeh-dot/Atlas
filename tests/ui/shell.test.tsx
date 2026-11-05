@@ -356,10 +356,9 @@ test('under the type and deck buttons: bold to colour, the two lists, four align
   const groups = [...bar.children].map((g) => within(g as HTMLElement).queryAllByRole('button').length);
   expect(groups).toEqual([4, 2, 4, 1]);
   expect(within(bar).getAllByRole('separator')).toHaveLength(3);
-  // Everything has its icon except the numbered list, which is the dashed placeholder until you supply one.
-  expect(buttons.map((b) => b.querySelector('[data-placeholder="true"]') !== null)).toEqual(
-    [false, false, false, false, false, true, false, false, false, false, false],
-  );
+  // Every button has its real icon now; none is the dashed placeholder any more.
+  expect(buttons.map((b) => b.querySelector('[data-placeholder="true"]') !== null)).toEqual(Array(11).fill(false));
+  expect(buttons.every((b) => b.querySelector('svg path') !== null)).toBe(true);
   // They look active but do nothing yet.
   for (const b of buttons) await user.click(b);
   expect(screen.getByRole('dialog', { name: 'Add card' })).toBeTruthy();
