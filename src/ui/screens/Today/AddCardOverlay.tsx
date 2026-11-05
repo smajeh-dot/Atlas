@@ -10,6 +10,7 @@ import { MenuCard } from '../../components/MenuCard';
 import menuStyles from '../../components/MenuCard.module.css';
 import { Icon } from '../../icons/icons';
 import { trapTab, useOverlayLayer, useRestoreFocus } from '../../components/overlayStack';
+import { AddCardToolbar } from './AddCardToolbar';
 import styles from './AddCardOverlay.module.css';
 
 const TYPES: BuiltinNoteType[] = ['basic', 'basic_reversed', 'basic_typein', 'cloze'];
@@ -18,7 +19,7 @@ const TYPES: BuiltinNoteType[] = ['basic', 'basic_reversed', 'basic_typein', 'cl
  * A large card in the middle of the window over the Home screen, with everything around it darkened.
  * The X, Esc or a click outside the card closes it. Along the top: the card type, then the deck it's being added to
  * (the type just shows the current choice for now; the deck opens a dropdown of your decks), and in the corner the triple-dot
- * button, which doesn't do anything yet. `deckId` is the deck it was opened for (from a deck's menu), if any.
+ * button, which doesn't do anything yet. Under those, a row of placeholder text-editing buttons. `deckId` is the deck it was opened for (from a deck's menu), if any.
  */
 export function AddCardOverlay({ deckId, onClose }: { deckId?: number; onClose(): void }) {
   const { deps, settings } = useAtlas();
@@ -79,6 +80,7 @@ export function AddCardOverlay({ deckId, onClose }: { deckId?: number; onClose()
             </button>
           </div>
         )}
+        {data && noteType && deck && <AddCardToolbar />}
         <div className={styles.corner}>
           <button type="button" className={styles.cornerButton} aria-label="More options" aria-haspopup="menu">
             <Icon name="moreVertical" />

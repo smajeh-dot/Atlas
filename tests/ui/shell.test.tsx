@@ -196,7 +196,7 @@ test('Add on the notch opens a large card over Home, which stays put underneath'
   expect(card.getAttribute('aria-modal')).toBe('true');
   // Along the top: the card type, then the deck. In the corner: the triple-dot button, then the close button.
   expect(await within(card).findByRole('button', { name: 'Deck: <b>Bio</b>' })).toBeTruthy();
-  expect(within(card).getAllByRole('button').map((b) => b.getAttribute('aria-label'))).toEqual(['Card type: Basic', 'Deck: <b>Bio</b>', 'More options', 'Close']);
+  expect(within(card).getAllByRole('button').map((b) => b.getAttribute('aria-label'))).toEqual(['Card type: Basic', 'Deck: <b>Bio</b>', ...FORMAT_BUTTONS, 'More options', 'Close']);
   // Home is still there, the very same elements rather than a reload, and Home is still the current sidebar item.
   expect(screen.getByTestId('today-decks-card')).toBe(decksCard);
   expect(screen.getByRole('button', { name: 'Home' }).getAttribute('aria-current')).toBe('page');
@@ -244,6 +244,14 @@ test('the Add card overlay starts on the deck it was opened for, with its full p
   expect((await within(card).findByRole('button', { name: /^Deck: / })).textContent).toBe('Chemistry › Organic');
   expect(within(card).getByRole('button', { name: /^Card type: / }).textContent).toBe('Cloze');
 });
+
+/** The text-editing buttons under the card type and deck, left to right. */
+const FORMAT_BUTTONS = [
+  'Bold', 'Italic', 'Underline', 'Text colour', 'Highlight colour',
+  'Bulleted list', 'Numbered list',
+  'Align left', 'Align centre', 'Align right', 'Justify',
+  'Attach file',
+];
 
 /** Biology and Maths are subjects (they hold decks); Solo is a deck on its own. */
 async function withSubjects() {
@@ -334,6 +342,28 @@ test('with the deck dropdown open, a click on the dark area closes only the drop
   expect(screen.getByRole('dialog', { name: 'Add card' })).toBeTruthy();
   await user.click(screen.getByTestId('add-card-overlay'));
   await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Add card' })).toBeNull());
+});
+
+test('under the type and deck buttons: bold to highlight, the two lists, four alignments, then attach file, with breaks between', async () => {
+  const { user, card } = await openAddCard(await withSubjects());
+  const bar = await within(card).findByRole('toolbar', { name: 'Formatting' });
+  // Below the card type and deck buttons.
+  const deck = within(card).getByRole('button', { name: /^Deck: / });
+  expect(deck.compareDocumentPosition(bar) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  const buttons = within(bar).getAllByRole('button');
+  expect(buttons.map((b) => b.getAttribute('aria-label'))).toEqual(FORMAT_BUTTONS);
+  // Groups of 5, 2, 4 and 1, with a break between each.
+  const groups = [...bar.children].map((g) => within(g as HTMLElement).queryAllByRole('button').length);
+  expect(groups).toEqual([5, 2, 4, 1]);
+  expect(within(bar).getAllByRole('separator')).toHaveLength(3);
+  // Bold, italic and underline have their icons; the rest are the dashed placeholder until you supply one.
+  expect(buttons.map((b) => b.querySelector('[data-placeholder="true"]') !== null)).toEqual(
+    [false, false, false, true, true, true, true, true, true, true, true, true],
+  );
+  // They look active but do nothing yet.
+  for (const b of buttons) await user.click(b);
+  expect(screen.getByRole('dialog', { name: 'Add card' })).toBeTruthy();
+  expect(screen.queryByRole('menu')).toBeNull();
 });
 
 test('the X in the Add card overlay closes it and returns focus; the triple-dot button does nothing yet', async () => {

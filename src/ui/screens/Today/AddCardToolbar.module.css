@@ -1,0 +1,49 @@
+/* Sits under the card-type and deck buttons, lined up with them on the left. --inset and --control come from the card. */
+.toolbar {
+  position: absolute;
+  top: calc(var(--inset) + var(--control) + var(--sp-12));
+  left: var(--inset);
+  right: var(--inset);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  row-gap: var(--sp-4);
+}
+
+.group {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+/* The break between groups: a thin vertical line with room either side. */
+.divider {
+  align-self: center;
+  width: 1px;
+  height: 16px;
+  margin: 0 var(--sp-8);
+  background: var(--border);
+}
+
+.button {
+  width: var(--control);
+  height: var(--control);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.button:hover {
+  background: var(--new-btn-hover);
+}
+
+.button svg {
+  width: 16px;
+  height: 16px;
+}
