@@ -356,9 +356,9 @@ test('under the type and deck buttons: bold to highlight, the two lists, four al
   const groups = [...bar.children].map((g) => within(g as HTMLElement).queryAllByRole('button').length);
   expect(groups).toEqual([5, 2, 4, 1]);
   expect(within(bar).getAllByRole('separator')).toHaveLength(3);
-  // Bold, italic, underline and the bulleted list have their icons; the rest are the dashed placeholder until you supply one.
+  // Bold, italic, underline, the bulleted list and the four alignments have their icons; the rest are the dashed placeholder until you supply one.
   expect(buttons.map((b) => b.querySelector('[data-placeholder="true"]') !== null)).toEqual(
-    [false, false, false, true, true, false, true, true, true, true, true, true],
+    [false, false, false, true, true, false, true, false, false, false, false, true],
   );
   // They look active but do nothing yet.
   for (const b of buttons) await user.click(b);
