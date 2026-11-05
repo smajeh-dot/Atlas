@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { screen, waitFor } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import { expect, test } from 'vitest';
 import { createDeck } from '../../../src/data/decks';
 import type { ImportPlatform } from '../../../src/import/commit';
@@ -44,15 +44,16 @@ test('a new student imports their Anki deck from the Welcome screen and lands on
   expect(screen.queryByRole('button', { name: 'Start from scratch' })).toBeNull();
 });
 
-test('Import in the Today notch opens a blank card over a darkened window; Esc and a click outside close it', async () => {
+test('Import in the Today notch opens a card over a darkened window; Esc and a click outside close it', async () => {
   const db = await createMigratedDb();
   await createDeck(db, { name: 'Physics' }, NOW);
   const { user } = await renderApp({ db, clock: fixedClock(NOW), importer: importer() });
   await user.click(await screen.findByRole('button', { name: 'Import' }));
   const card = await screen.findByRole('dialog', { name: 'Import' });
-  expect(card.children).toHaveLength(0);
-  expect(card.textContent).toBe('');
   expect(card.getAttribute('aria-modal')).toBe('true');
+  // Top right: the triple-dot button, then the close button. Nothing else yet.
+  expect(within(card).getAllByRole('button').map((b) => b.getAttribute('aria-label'))).toEqual(['More options', 'Close']);
+  expect(card.textContent).toBe('');
   // The home screen is still behind it, not replaced.
   expect(screen.getByTestId('today-screen')).toBeTruthy();
   await user.keyboard('{Escape}');
@@ -65,7 +66,20 @@ test('Import in the Today notch opens a blank card over a darkened window; Esc a
   await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Import' })).toBeNull());
 });
 
-test('clicking inside the blank card does not close it', async () => {
+test('the X in the card closes it; the triple-dot button does nothing yet', async () => {
+  const db = await createMigratedDb();
+  await createDeck(db, { name: 'Physics' }, NOW);
+  const { user } = await renderApp({ db, clock: fixedClock(NOW), importer: importer() });
+  await user.click(await screen.findByRole('button', { name: 'Import' }));
+  const card = await screen.findByRole('dialog', { name: 'Import' });
+  await user.click(within(card).getByRole('button', { name: 'More options' }));
+  expect(screen.getByRole('dialog', { name: 'Import' })).toBeTruthy();
+  await user.click(within(card).getByRole('button', { name: 'Close' }));
+  await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Import' })).toBeNull());
+  expect(screen.getByRole('button', { name: 'Import' })).toBe(document.activeElement);
+});
+
+test('clicking inside the card does not close it', async () => {
   const db = await createMigratedDb();
   await createDeck(db, { name: 'Physics' }, NOW);
   const { user } = await renderApp({ db, clock: fixedClock(NOW), importer: importer() });

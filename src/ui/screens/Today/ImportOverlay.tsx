@@ -1,9 +1,10 @@
 import { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
+import { Icon } from '../../icons/icons';
 import { trapTab, useOverlayLayer, useRestoreFocus } from '../../components/overlayStack';
 import styles from './ImportOverlay.module.css';
 
-/** A blank card in the middle of the window with everything around it darkened. Esc or a click outside the card closes it. */
+/** A card in the middle of the window with everything around it darkened. The X, Esc or a click outside the card closes it. The triple-dot button doesn't do anything yet. */
 export function ImportOverlay({ onClose }: { onClose(): void }) {
   const card = useRef<HTMLDivElement>(null);
   const isTop = useOverlayLayer();
@@ -33,7 +34,16 @@ export function ImportOverlay({ onClose }: { onClose(): void }) {
             onClose();
           } else trapTab(e, card.current);
         }}
-      />
+      >
+        <div className={styles.corner}>
+          <button type="button" className={styles.cornerButton} aria-label="More options" aria-haspopup="menu">
+            <Icon name="moreVertical" />
+          </button>
+          <button type="button" className={styles.cornerButton} aria-label="Close" onClick={onClose}>
+            <Icon name="close" />
+          </button>
+        </div>
+      </div>
     </div>,
     document.body,
   );
