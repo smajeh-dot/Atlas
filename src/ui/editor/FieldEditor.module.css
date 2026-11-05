@@ -67,9 +67,11 @@
   outline: 2px solid var(--focus);
 }
 
-/* LaTeX as it is typed: `$x^2$` and `$$x^2$$` change colour from the opening dollar sign, and the dollar signs are italic. */
+/* LaTeX as it is typed: `$x^2$` and `$$x^2$$` change colour and typeface (Anthropic Mono) from the opening dollar sign, and the dollar
+   signs are italic. */
 .prose :global(.atlas-math-source) {
   color: var(--math-ink);
+  font-family: var(--font-mono);
 }
 
 .prose :global(.atlas-math-delim) {
