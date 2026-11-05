@@ -15,7 +15,7 @@
   --accent: #2F5FCE;
   --accent-ink: #FFFFFF;
   /* LaTeX you are typing (from its opening $), so the start of an equation is easy to see. */
-  --math-ink: #7C3AED;
+  --math-ink: var(--accent);
   --progress-fill: #237bdb;
   --accent-soft: #EAF0FB;
   --sidebar-bg: #FFFFFF;

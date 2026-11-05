@@ -9,6 +9,8 @@ export interface MathHighlight {
   to: number;
   /** True for an equation still being typed: its opening $ is there but no closing one yet. */
   open: boolean;
+  /** The dollar signs themselves (`$` or `$$`, opening and closing), which are drawn in italic. `\(` and `\[` have none. */
+  delimiters: { from: number; to: number }[];
 }
 
 /**
@@ -45,10 +47,16 @@ function findOpener(text: string, done: { start: number; end: number }[], caret:
 export function mathHighlights(text: string, caret: number | null): MathHighlight[] {
   if (!text.includes('$') && !text.includes('\\')) return [];
   const spans = findMath(text);
-  const out: MathHighlight[] = spans.map((s) => ({ from: s.start, to: s.end, open: false }));
+  const out: MathHighlight[] = spans.map((s) => ({
+    from: s.start,
+    to: s.end,
+    open: false,
+    delimiters: text[s.start] === '$' ? [{ from: s.start, to: s.bodyStart }, { from: s.bodyEnd, to: s.end }] : [],
+  }));
   if (caret !== null) {
     const at = findOpener(text, spans, caret);
-    if (at !== null) out.push({ from: at, to: text.length, open: true });
+    // Only the opening dollar sign(s): `$$` is one opener, a lone `$` another.
+    if (at !== null) out.push({ from: at, to: text.length, open: true, delimiters: [{ from: at, to: at + (text[at + 1] === '$' ? 2 : 1) }] });
   }
   return out;
 }
@@ -58,7 +66,7 @@ export const mathHighlightKey = new PluginKey<{ focused: boolean }>('atlasMathHi
 
 /**
  * Colours LaTeX as you type it, Obsidian style: `$x^2$` and `$$x^2$$` (and `\(…\)`, `\[…\]`) take the maths colour, starting from the
- * opening `$`. Only the colour changes; the text is stored exactly as typed.
+ * opening `$`, and the dollar signs are drawn in italic. Only the display changes; the text is stored exactly as typed.
  */
 export const MathHighlight = Extension.create({
   name: 'atlasMathHighlight',
@@ -98,6 +106,9 @@ export const MathHighlight = Extension.create({
                 for (const h of mathHighlights(text, caret)) {
                   if (h.to > h.from) {
                     decorations.push(Decoration.inline(pos + 1 + h.from, pos + 1 + h.to, { class: h.open ? 'atlas-math-source atlas-math-source-open' : 'atlas-math-source' }));
+                  }
+                  for (const d of h.delimiters) {
+                    decorations.push(Decoration.inline(pos + 1 + d.from, pos + 1 + d.to, { class: 'atlas-math-delim' }));
                   }
                 }
               }
