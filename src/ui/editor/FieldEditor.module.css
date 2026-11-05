@@ -67,6 +67,11 @@
   outline: 2px solid var(--focus);
 }
 
+/* LaTeX as it is typed: `$x^2$` and `$$x^2$$` change colour from the opening dollar sign. */
+.prose :global(.atlas-math-source) {
+  color: var(--math-ink);
+}
+
 .prose :global(.atlas-math) {
   display: inline-flex;
   align-items: center;

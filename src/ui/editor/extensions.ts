@@ -5,6 +5,7 @@ import { Subscript } from '@tiptap/extension-subscript';
 import { Superscript } from '@tiptap/extension-superscript';
 import katex from 'katex';
 import { nextClozeNumber } from '../../core/cloze';
+import { MathHighlight } from './mathHighlight';
 
 declare module '@tiptap/core' {
   interface Commands<ReturnType> {
@@ -228,6 +229,7 @@ export function atlasExtensions(opts: { mediaUrl(name: string): string; getAllTe
     }),
     atlasImage(opts.mediaUrl),
     MathNode,
+    MathHighlight,
     clozeKeys(opts.getAllText),
     // Ctrl+Enter adds or saves the note (spec 11). The editor would otherwise insert a line break
     // and keep the key from ever reaching the screen.
