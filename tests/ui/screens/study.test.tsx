@@ -125,7 +125,8 @@ test('studying a deck with nothing due shows the empty state with Add card', asy
   expect(await screen.findByRole('heading', { name: 'Nothing to study in Chemistry right now' })).toBeTruthy();
   expect(screen.getByText('New cards you add will show up here.')).toBeTruthy();
   await user.click(screen.getByRole('button', { name: 'Add card' }));
-  expect(await screen.findByRole('heading', { name: 'Add card' })).toBeTruthy();
+  expect(await screen.findByRole('dialog', { name: 'Add card' })).toBeTruthy();
+  expect(screen.getByTestId('today-screen')).toBeTruthy();
 });
 
 test('session complete shows stats and Enter goes back to Today', async () => {

@@ -131,7 +131,7 @@ export function Sidebar({ decks }: { decks: DeckTreeWithCounts[] }) {
       <button
         type="button"
         className={`${styles.action} ${styles.search}`}
-        aria-current={route.name === 'today' ? 'page' : undefined}
+        aria-current={route.name === 'today' || route.name === 'add' ? 'page' : undefined}
         onClick={() => navigate({ name: 'today' })}
       >
         <Icon name="home" />

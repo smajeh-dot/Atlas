@@ -7,13 +7,17 @@ import { useToast } from '../../components/Toast';
 import { deckColour } from '../../deckColour';
 import { Icon } from '../../icons/icons';
 import { Activity } from './Activity';
+import { AddCardOverlay } from './AddCardOverlay';
 import { useDeckMenu } from './DeckMenu';
 import { Notch } from './Notch';
 import styles from './Today.module.css';
 
-/** Home screen: the notch, your decks in the central card, and the activity heatmap. */
-export function Today() {
-  const { deps } = useAtlas();
+/**
+ * Home screen: the notch, your decks in the central card, and the activity heatmap.
+ * With `addCard` set, the Add card overlay is open on top of it (the 'add' route is Home with that overlay showing).
+ */
+export function Today({ addCard }: { addCard?: { deckId?: number } }) {
+  const { deps, navigate } = useAtlas();
   const { data: tree } = useData(() => getDeckTreeWithCounts(deps.db, deps.clock.now()), []);
   const menu = useDeckMenu();
 
@@ -35,6 +39,7 @@ export function Today() {
       </section>
       <Activity />
       {menu.ui}
+      {addCard && <AddCardOverlay deckId={addCard.deckId} onClose={() => navigate({ name: 'today' })} />}
     </div>
   );
 }

@@ -3,9 +3,9 @@ import type { Settings as SettingsModel } from '../core/model';
 import { getDeckTreeWithCounts } from '../services/deckService';
 import { undoLast } from '../services/undo';
 import { AtlasProvider, useAtlas, useData, type AppDeps, type Route } from './app/AtlasContext';
+import { anyOverlayOpen } from './components/overlayStack';
 import { ToastProvider, useToast } from './components/Toast';
 import { useHotkeys } from './keys';
-import { AddCard } from './screens/Editor/AddCard';
 import { Decks } from './screens/Decks/Decks';
 import { ImportScreen } from './screens/Import/ImportScreen';
 import { Session } from './screens/Session/Session';
@@ -57,8 +57,10 @@ function Frame({ notice }: { notice?: string }) {
 
   // After moving to another screen, keys go to that screen (Space on Today, for example), not to the
   // sidebar button that was clicked. A field the new screen focused itself keeps its focus.
+  // An overlay that opened with the new screen (Add card) keeps the focus it took.
   useEffect(() => {
     const el = main.current;
+    if (anyOverlayOpen()) return;
     if (el && !el.contains(document.activeElement)) el.focus({ preventScroll: true });
   }, [route]);
 
@@ -91,14 +93,15 @@ function Screen({ route }: { route: Route }) {
       return <Welcome />;
     case 'today':
       return <Today />;
+    case 'add':
+      // Same element as 'today', so Home stays put (no reload) while the Add card overlay opens over it.
+      return <Today addCard={{ deckId: route.deckId }} />;
     case 'decks':
       return <Decks deckId={route.deckId} />;
     case 'study':
       return <Study key={String(route.deckId)} deckId={route.deckId} />;
     case 'session':
       return <Session target={route.target} />;
-    case 'add':
-      return <AddCard deckId={route.deckId} />;
     case 'settings':
       return <Settings section={route.section} />;
     case 'import':

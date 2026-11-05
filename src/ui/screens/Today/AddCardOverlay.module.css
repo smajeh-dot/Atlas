@@ -1,0 +1,29 @@
+/* The darkening comes from the same --overlay colour every dialog in Atlas uses. */
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--sp-24);
+  background: var(--overlay);
+}
+
+/* Blank for now. Change --card-width and --card-height to resize it. */
+.card {
+  --card-width: 960px;
+  --card-height: 640px;
+  box-sizing: border-box;
+  width: min(var(--card-width), 100%);
+  height: min(var(--card-height), 100%);
+  background: var(--bg-panel);
+  border: var(--border-w) solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-box);
+}
+
+.card:focus,
+.card:focus-visible {
+  outline: none;
+}

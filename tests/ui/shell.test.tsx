@@ -17,18 +17,18 @@ async function seeded() {
   return db;
 }
 
-test('A opens Add card, but not while typing', async () => {
+test('A opens the Add card overlay, but not while typing', async () => {
   const { user } = await renderApp({ db: await seeded() });
   await screen.findByTestId('today-screen');
   const stray = document.createElement('input');
   document.body.append(stray);
   stray.focus();
   await user.keyboard('a');
-  expect(screen.queryByRole('heading', { name: 'Add card' })).toBeNull();
+  expect(screen.queryByRole('dialog', { name: 'Add card' })).toBeNull();
   stray.blur();
   stray.remove();
   await user.keyboard('a');
-  expect(await screen.findByRole('heading', { name: 'Add card' })).toBeTruthy();
+  expect(await screen.findByRole('dialog', { name: 'Add card' })).toBeTruthy();
 });
 
 test('the sidebar Home button returns to the home screen with the decks card', async () => {
@@ -53,7 +53,7 @@ test('the blank notch hangs from the top of Today and appears on no other screen
   expect(await screen.findByTestId('today-notch')).toBeTruthy();
 });
 
-test('the notch holds Import, Add, Browse and Shared, in that order; Add opens Add card and the others stay put', async () => {
+test('the notch holds Import, Add, Browse and Shared, in that order; Add opens the Add card overlay and the others stay put', async () => {
   const { user } = await renderApp({ db: await seeded() });
   const notch = await screen.findByTestId('today-notch');
   expect(within(notch).getAllByRole('button').map((b) => b.textContent)).toEqual(['Import', 'Add', 'Browse', 'Shared']);
@@ -64,7 +64,7 @@ test('the notch holds Import, Add, Browse and Shared, in that order; Add opens A
   }
   expect(screen.getByTestId('today-screen')).toBeTruthy();
   await user.click(within(notch).getByRole('button', { name: 'Add' }));
-  expect(await screen.findByRole('heading', { name: 'Add card' })).toBeTruthy();
+  expect(await screen.findByRole('dialog', { name: 'Add card' })).toBeTruthy();
 });
 
 test('Today shows a year-long heatmap with month names, below the decks card', async () => {
@@ -183,6 +183,54 @@ test('a sidebar deck\'s three-dot button opens the same menu card as the home sc
   expect(within(menu).getAllByRole('menuitem').map((i) => i.textContent)).toEqual(['Study', 'Add card here', 'Add subdeck', 'Rename', 'Colour', 'Deck options', 'Delete']);
   await user.click(within(menu).getByRole('menuitem', { name: 'Deck options' }));
   expect(await screen.findByRole('tree', { name: 'All decks' })).toBeTruthy();
+});
+
+test('Add on the notch opens a large blank card over Home, which stays put underneath', async () => {
+  const { user } = await renderApp({ db: await seeded() });
+  const decksCard = await screen.findByTestId('today-decks-card');
+  const add = within(screen.getByTestId('today-notch')).getByRole('button', { name: 'Add' });
+  await user.click(add);
+  const card = await screen.findByRole('dialog', { name: 'Add card' });
+  expect(card.getAttribute('aria-modal')).toBe('true');
+  // Completely blank for now.
+  expect(card.children).toHaveLength(0);
+  expect(card.textContent).toBe('');
+  // Home is still there, the very same elements rather than a reload, and Home is still the current sidebar item.
+  expect(screen.getByTestId('today-decks-card')).toBe(decksCard);
+  expect(screen.getByRole('button', { name: 'Home' }).getAttribute('aria-current')).toBe('page');
+  // The overlay holds focus (Home must not take it back).
+  expect(card.contains(document.activeElement)).toBe(true);
+});
+
+test('Esc closes the Add card overlay and focus returns to the Add button', async () => {
+  const { user } = await renderApp({ db: await seeded() });
+  const add = within(await screen.findByTestId('today-notch')).getByRole('button', { name: 'Add' });
+  await user.click(add);
+  await screen.findByRole('dialog', { name: 'Add card' });
+  await user.keyboard('{Escape}');
+  await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Add card' })).toBeNull());
+  expect(screen.getByTestId('today-decks-card')).toBeTruthy();
+  expect(add).toBe(document.activeElement);
+});
+
+test('a click outside the Add card overlay closes it; a click inside does not', async () => {
+  const { user } = await renderApp({ db: await seeded() });
+  await user.click(within(await screen.findByTestId('today-notch')).getByRole('button', { name: 'Add' }));
+  const card = await screen.findByRole('dialog', { name: 'Add card' });
+  await user.click(card);
+  expect(screen.getByRole('dialog', { name: 'Add card' })).toBeTruthy();
+  await user.click(screen.getByTestId('add-card-overlay'));
+  await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Add card' })).toBeNull());
+});
+
+test('a deck menu\'s Add card here opens the overlay for that deck', async () => {
+  const db = await seeded();
+  const chem = (await listDecks(db)).find((d) => d.name === 'Chemistry')!;
+  const { user } = await renderApp({ db });
+  await user.click(await screen.findByRole('button', { name: 'Chemistry options' }));
+  await user.click(await screen.findByRole('menuitem', { name: 'Add card here' }));
+  const card = await screen.findByRole('dialog', { name: 'Add card' });
+  expect(card.getAttribute('data-deck-id')).toBe(String(chem.id));
 });
 
 test('Ctrl+, opens Settings', async () => {

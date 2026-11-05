@@ -27,6 +27,7 @@ export type Route =
   | { name: 'study'; deckId: number | null }
   /** The blank study session screen. `target` names what was opened (a sub-deck or a whole subject) until real decks exist. */
   | { name: 'session'; target?: string }
+  /** Home with the Add card overlay open on top of it. `deckId` is the deck it was opened for, if any. */
   | { name: 'add'; deckId?: number }
   | { name: 'settings'; section?: 'study' | 'about' }
   | { name: 'import' };

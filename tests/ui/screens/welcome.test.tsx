@@ -14,14 +14,15 @@ test('Welcome explains Atlas, in the Light theme with no theme picker', async ()
   expect(screen.queryByRole('button', { name: /Import from Anki/ })).toBeNull();
 });
 
-test('Start from scratch creates the deck and opens Add card on it', async () => {
+test('Start from scratch creates the deck and opens the Add card overlay on it', async () => {
   const { user, db } = await renderApp();
   await user.click(await screen.findByRole('button', { name: 'Start from scratch' }));
   const input = screen.getByLabelText('Deck name') as HTMLInputElement;
   expect(input.value).toBe('My first deck');
   await user.keyboard('{Enter}');
-  expect(await screen.findByRole('heading', { name: 'Add card' })).toBeTruthy();
+  const card = await screen.findByRole('dialog', { name: 'Add card' });
   expect((await listDecks(db)).map((d) => d.name)).toEqual(['My first deck']);
+  expect(card.getAttribute('data-deck-id')).toBe(String((await listDecks(db))[0]!.id));
   expect((await getSettings(db)).lastDeckId).toBe((await listDecks(db))[0]!.id);
 });
 
