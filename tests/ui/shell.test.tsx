@@ -3,6 +3,8 @@ import { screen, waitFor, within } from '@testing-library/react';
 import { expect, test } from 'vitest';
 import { UndoStack } from '../../src/services/undo';
 import { createDeck, listDecks } from '../../src/data/decks';
+import { getBuiltinNoteType } from '../../src/data/noteTypes';
+import { updateSettings } from '../../src/data/settings';
 import { createMigratedDb } from '../helpers/testDb';
 import { DAY, fixedClock, T0 } from '../helpers/fixtures';
 import { countRows, makeReview, seedDeck, seedNote } from '../helpers/seed';
@@ -192,9 +194,9 @@ test('Add on the notch opens a large card over Home, which stays put underneath'
   await user.click(add);
   const card = await screen.findByRole('dialog', { name: 'Add card' });
   expect(card.getAttribute('aria-modal')).toBe('true');
-  // Top right: the triple-dot button, then the close button. Nothing else yet.
-  expect(within(card).getAllByRole('button').map((b) => b.getAttribute('aria-label'))).toEqual(['More options', 'Close']);
-  expect(card.textContent).toBe('');
+  // Along the top: the card type, then the deck. In the corner: the triple-dot button, then the close button.
+  expect(await within(card).findByRole('button', { name: 'Deck: <b>Bio</b>' })).toBeTruthy();
+  expect(within(card).getAllByRole('button').map((b) => b.getAttribute('aria-label'))).toEqual(['Card type: Basic', 'Deck: <b>Bio</b>', 'More options', 'Close']);
   // Home is still there, the very same elements rather than a reload, and Home is still the current sidebar item.
   expect(screen.getByTestId('today-decks-card')).toBe(decksCard);
   expect(screen.getByRole('button', { name: 'Home' }).getAttribute('aria-current')).toBe('page');
@@ -211,6 +213,36 @@ test('Esc closes the Add card overlay and focus returns to the Add button', asyn
   await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Add card' })).toBeNull());
   expect(screen.getByTestId('today-decks-card')).toBeTruthy();
   expect(add).toBe(document.activeElement);
+});
+
+test('the Add card overlay shows the card type, then the deck, and clicking them does nothing yet', async () => {
+  const { user } = await renderApp({ db: await seeded() });
+  await user.click(within(await screen.findByTestId('today-notch')).getByRole('button', { name: 'Add' }));
+  const card = await screen.findByRole('dialog', { name: 'Add card' });
+  const type = await within(card).findByRole('button', { name: 'Card type: Basic' });
+  const deck = within(card).getByRole('button', { name: /^Deck: / });
+  expect(type.textContent).toBe('Basic');
+  // Opened from the notch with no deck chosen: the first deck.
+  expect(deck.textContent).toBe('<b>Bio</b>');
+  // The type comes first.
+  expect(type.compareDocumentPosition(deck) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  await user.click(type);
+  await user.click(deck);
+  expect(screen.getByRole('dialog', { name: 'Add card' })).toBeTruthy();
+});
+
+test('the Add card overlay starts on the deck it was opened for, with its full path, and on your last card type', async () => {
+  const db = await seeded();
+  const parent = (await listDecks(db)).find((d) => d.name === 'Chemistry')!.id;
+  await createDeck(db, { name: 'Organic', parentId: parent }, T0);
+  const cloze = await getBuiltinNoteType(db, 'cloze');
+  await updateSettings(db, { lastNoteTypeId: cloze.id });
+  const { user } = await renderApp({ db });
+  await user.click(await screen.findByRole('button', { name: 'Organic options' }));
+  await user.click(await screen.findByRole('menuitem', { name: 'Add card here' }));
+  const card = await screen.findByRole('dialog', { name: 'Add card' });
+  expect((await within(card).findByRole('button', { name: /^Deck: / })).textContent).toBe('Chemistry › Organic');
+  expect(within(card).getByRole('button', { name: /^Card type: / }).textContent).toBe('Cloze');
 });
 
 test('the X in the Add card overlay closes it and returns focus; the triple-dot button does nothing yet', async () => {

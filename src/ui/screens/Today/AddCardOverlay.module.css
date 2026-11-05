@@ -10,8 +10,11 @@
   background: var(--overlay);
 }
 
-/* Change --card-width and --card-height to resize it. */
+/* Change --card-width and --card-height to resize it. --inset and --control are the gap from the card's edge and the height of the
+   buttons along the top. */
 .card {
+  --inset: 12px;
+  --control: 28px;
   position: relative;
   --card-width: 960px;
   --card-height: 640px;
@@ -29,21 +32,19 @@
   outline: none;
 }
 
-/* Top right corner: the triple-dot button, then the close button. Change the two variables to move or resize them. */
+/* Top right corner: the triple-dot button, then the close button. */
 .corner {
-  --corner-inset: 12px;
-  --corner-size: 28px;
   position: absolute;
-  top: var(--corner-inset);
-  right: var(--corner-inset);
+  top: var(--inset);
+  right: var(--inset);
   display: flex;
   align-items: center;
   gap: var(--sp-4);
 }
 
 .cornerButton {
-  width: var(--corner-size);
-  height: var(--corner-size);
+  width: var(--control);
+  height: var(--control);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -62,4 +63,35 @@
 .cornerButton svg {
   width: 16px;
   height: 16px;
+}
+
+/* Top left: the card type, then the deck. They stop short of the corner buttons, and a long deck name is cut off with "…". */
+.selectors {
+  position: absolute;
+  top: var(--inset);
+  left: var(--inset);
+  right: calc(var(--inset) + 2 * var(--control) + var(--sp-4) + var(--sp-12));
+  display: flex;
+  align-items: center;
+  gap: var(--sp-8);
+}
+
+.selector {
+  min-width: 0;
+  height: var(--control);
+  padding: 0 var(--sp-12);
+  border: var(--border-w) solid var(--border);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text);
+  font-family: inherit;
+  font-size: var(--fs-ui);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+
+.selector:hover {
+  background: var(--new-btn-hover);
 }
