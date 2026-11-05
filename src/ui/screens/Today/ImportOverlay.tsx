@@ -4,7 +4,7 @@ import { Icon } from '../../icons/icons';
 import { trapTab, useOverlayLayer, useRestoreFocus } from '../../components/overlayStack';
 import styles from './ImportOverlay.module.css';
 
-/** A card in the middle of the window with everything around it darkened. The X, Esc or a click outside the card closes it. The triple-dot button doesn't do anything yet. */
+/** A card in the middle of the window with everything around it darkened. The X, Esc or a click outside the card closes it (the import flow ignores that while it's busy reading or importing). The triple-dot button doesn't do anything yet. */
 export function ImportOverlay({ onClose }: { onClose(): void }) {
   const card = useRef<HTMLDivElement>(null);
   const isTop = useOverlayLayer();

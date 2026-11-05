@@ -11,7 +11,7 @@ import { staged } from '../../import/helpers';
 
 const NOW = 1793821483999; // when the rich-modern test package was exported
 
-function importer() {
+function importer(over: { chooseFile?: () => Promise<string | null>; finish?: () => Promise<void> } = {}) {
   const platform: ImportPlatform = {
     installMedia: async () => {},
     removeMedia: async () => {},
@@ -20,9 +20,9 @@ function importer() {
   return {
     staging: staged('rich-modern'),
     platform,
-    chooseFile: async () => 'C:\\Users\\sam\\Downloads\\Chemistry.apkg',
+    chooseFile: over.chooseFile ?? (async () => 'C:\\Users\\sam\\Downloads\\Chemistry.apkg'),
     prepare: async () => ({}),
-    finish: async () => {},
+    finish: over.finish ?? (async () => {}),
   };
 }
 
@@ -44,10 +44,33 @@ test('a new student imports their Anki deck from the Welcome screen and lands on
   expect(screen.queryByRole('button', { name: 'Start from scratch' })).toBeNull();
 });
 
-test('Import in the Today notch opens a card over a darkened window; Esc and a click outside close it', async () => {
+/** Presses Esc until the card closes: the first presses are ignored while Atlas is still reading the file. */
+async function closeWithEsc(user: ReturnType<typeof import('@testing-library/user-event').default.setup>) {
+  await waitFor(async () => {
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('dialog', { name: 'Import' })).toBeNull();
+  }, { timeout: 10_000 });
+}
+
+async function homeWithDeck(imp?: ReturnType<typeof importer>) {
   const db = await createMigratedDb();
   await createDeck(db, { name: 'Physics' }, NOW);
-  const { user } = await renderApp({ db, clock: fixedClock(NOW), importer: importer() });
+  return renderApp({ db, clock: fixedClock(NOW), importer: imp });
+}
+
+test('Import on the notch opens the file picker straight away, and nothing else appears if you cancel it', async () => {
+  let asked = 0;
+  const { user } = await homeWithDeck(importer({ chooseFile: async () => (asked++, null) }));
+  await user.click(await screen.findByRole('button', { name: 'Import' }));
+  await waitFor(() => expect(asked).toBe(1));
+  expect(screen.queryByRole('dialog', { name: 'Import' })).toBeNull();
+  expect(screen.queryByTestId('import-overlay')).toBeNull();
+  expect(screen.getByTestId('today-screen')).toBeTruthy();
+});
+
+test('choosing a file opens a card over a darkened window; Esc closes it, discards the file and returns focus', async () => {
+  let finished = 0;
+  const { user } = await homeWithDeck(importer({ finish: async () => void finished++ }));
   await user.click(await screen.findByRole('button', { name: 'Import' }));
   const card = await screen.findByRole('dialog', { name: 'Import' });
   expect(card.getAttribute('aria-modal')).toBe('true');
@@ -56,36 +79,39 @@ test('Import in the Today notch opens a card over a darkened window; Esc and a c
   expect(card.textContent).toBe('');
   // The home screen is still behind it, not replaced.
   expect(screen.getByTestId('today-screen')).toBeTruthy();
-  await user.keyboard('{Escape}');
-  await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Import' })).toBeNull());
+  await closeWithEsc(user);
+  await waitFor(() => expect(finished).toBeGreaterThan(0));
   expect(screen.getByRole('button', { name: 'Import' })).toBe(document.activeElement);
-
-  await user.click(screen.getByRole('button', { name: 'Import' }));
-  await screen.findByRole('dialog', { name: 'Import' });
-  await user.click(screen.getByTestId('import-overlay'));
-  await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Import' })).toBeNull());
 });
 
-test('the X in the card closes it; the triple-dot button does nothing yet', async () => {
-  const db = await createMigratedDb();
-  await createDeck(db, { name: 'Physics' }, NOW);
-  const { user } = await renderApp({ db, clock: fixedClock(NOW), importer: importer() });
+test('a click outside the card closes it', async () => {
+  const { user } = await homeWithDeck(importer());
+  await user.click(await screen.findByRole('button', { name: 'Import' }));
+  await screen.findByRole('dialog', { name: 'Import' });
+  await waitFor(async () => {
+    await user.click(screen.getByTestId('import-overlay'));
+    expect(screen.queryByRole('dialog', { name: 'Import' })).toBeNull();
+  }, { timeout: 10_000 });
+});
+
+test('the X in the card closes it; the triple-dot button does nothing yet; clicking inside the card does not close it', async () => {
+  const { user } = await homeWithDeck(importer());
   await user.click(await screen.findByRole('button', { name: 'Import' }));
   const card = await screen.findByRole('dialog', { name: 'Import' });
+  await user.click(card);
   await user.click(within(card).getByRole('button', { name: 'More options' }));
   expect(screen.getByRole('dialog', { name: 'Import' })).toBeTruthy();
-  await user.click(within(card).getByRole('button', { name: 'Close' }));
-  await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Import' })).toBeNull());
+  await waitFor(async () => {
+    await user.click(within(card).getByRole('button', { name: 'Close' }));
+    expect(screen.queryByRole('dialog', { name: 'Import' })).toBeNull();
+  }, { timeout: 10_000 });
   expect(screen.getByRole('button', { name: 'Import' })).toBe(document.activeElement);
 });
 
-test('clicking inside the card does not close it', async () => {
-  const db = await createMigratedDb();
-  await createDeck(db, { name: 'Physics' }, NOW);
-  const { user } = await renderApp({ db, clock: fixedClock(NOW), importer: importer() });
+test('without an importer, Import on the notch does nothing', async () => {
+  const { user } = await homeWithDeck();
   await user.click(await screen.findByRole('button', { name: 'Import' }));
-  await user.click(await screen.findByRole('dialog', { name: 'Import' }));
-  expect(screen.getByRole('dialog', { name: 'Import' })).toBeTruthy();
+  expect(screen.queryByTestId('import-overlay')).toBeNull();
 });
 
 test('without an importer (tests, browser preview) the Welcome screen offers only Start from scratch', async () => {
