@@ -185,15 +185,15 @@ test('a sidebar deck\'s three-dot button opens the same menu card as the home sc
   expect(await screen.findByRole('tree', { name: 'All decks' })).toBeTruthy();
 });
 
-test('Add on the notch opens a large blank card over Home, which stays put underneath', async () => {
+test('Add on the notch opens a large card over Home, which stays put underneath', async () => {
   const { user } = await renderApp({ db: await seeded() });
   const decksCard = await screen.findByTestId('today-decks-card');
   const add = within(screen.getByTestId('today-notch')).getByRole('button', { name: 'Add' });
   await user.click(add);
   const card = await screen.findByRole('dialog', { name: 'Add card' });
   expect(card.getAttribute('aria-modal')).toBe('true');
-  // Completely blank for now.
-  expect(card.children).toHaveLength(0);
+  // Top right: the triple-dot button, then the close button. Nothing else yet.
+  expect(within(card).getAllByRole('button').map((b) => b.getAttribute('aria-label'))).toEqual(['More options', 'Close']);
   expect(card.textContent).toBe('');
   // Home is still there, the very same elements rather than a reload, and Home is still the current sidebar item.
   expect(screen.getByTestId('today-decks-card')).toBe(decksCard);
@@ -208,6 +208,19 @@ test('Esc closes the Add card overlay and focus returns to the Add button', asyn
   await user.click(add);
   await screen.findByRole('dialog', { name: 'Add card' });
   await user.keyboard('{Escape}');
+  await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Add card' })).toBeNull());
+  expect(screen.getByTestId('today-decks-card')).toBeTruthy();
+  expect(add).toBe(document.activeElement);
+});
+
+test('the X in the Add card overlay closes it and returns focus; the triple-dot button does nothing yet', async () => {
+  const { user } = await renderApp({ db: await seeded() });
+  const add = within(await screen.findByTestId('today-notch')).getByRole('button', { name: 'Add' });
+  await user.click(add);
+  const card = await screen.findByRole('dialog', { name: 'Add card' });
+  await user.click(within(card).getByRole('button', { name: 'More options' }));
+  expect(screen.getByRole('dialog', { name: 'Add card' })).toBeTruthy();
+  await user.click(within(card).getByRole('button', { name: 'Close' }));
   await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Add card' })).toBeNull());
   expect(screen.getByTestId('today-decks-card')).toBeTruthy();
   expect(add).toBe(document.activeElement);

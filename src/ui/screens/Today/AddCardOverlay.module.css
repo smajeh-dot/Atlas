@@ -10,8 +10,9 @@
   background: var(--overlay);
 }
 
-/* Blank for now. Change --card-width and --card-height to resize it. */
+/* Change --card-width and --card-height to resize it. */
 .card {
+  position: relative;
   --card-width: 960px;
   --card-height: 640px;
   box-sizing: border-box;
@@ -26,4 +27,39 @@
 .card:focus,
 .card:focus-visible {
   outline: none;
+}
+
+/* Top right corner: the triple-dot button, then the close button. Change the two variables to move or resize them. */
+.corner {
+  --corner-inset: 12px;
+  --corner-size: 28px;
+  position: absolute;
+  top: var(--corner-inset);
+  right: var(--corner-inset);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+}
+
+.cornerButton {
+  width: var(--corner-size);
+  height: var(--corner-size);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.cornerButton:hover {
+  background: var(--new-btn-hover);
+}
+
+.cornerButton svg {
+  width: 16px;
+  height: 16px;
 }
