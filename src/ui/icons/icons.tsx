@@ -4,7 +4,7 @@ import styles from './icons.module.css';
  * Every icon Atlas draws (spec Appendix A). Untitled UI line icons, 24 × 24, stroke inherits the text colour.
  * Icons not yet supplied render a dashed placeholder; supplying one is a one-line change here.
 */
-export const ICON_NAMES = ['today', 'home', 'decks', 'browse', 'search', 'bell', 'moreVertical', 'droplet', 'palette', 'dailyLimit', 'stats', 'settings', 'plus', 'chevronDown', 'chevronRight', 'back', 'more', 'newDeck', 'edit', 'flag', 'undo', 'bury', 'suspend', 'trash', 'info', 'checkCircle', 'check', 'close', 'warning', 'error', 'sigma', 'superscript', 'subscript', 'bold', 'italic', 'underline', 'textColour', 'highlight', 'bulletList', 'numberedList', 'alignLeft', 'alignCenter', 'alignRight', 'alignJustify', 'attach', 'image', 'tag', 'filter', 'sort', 'folder', 'reset', 'reschedule', 'clock', 'target', 'forecast', 'streak', 'import', 'shared', 'export', 'backup', 'restore', 'audio', 'help'] as const;
+export const ICON_NAMES = ['today', 'home', 'decks', 'browse', 'search', 'bell', 'moreVertical', 'droplet', 'palette', 'dailyLimit', 'stats', 'settings', 'plus', 'chevronDown', 'chevronRight', 'back', 'more', 'newDeck', 'edit', 'flag', 'undo', 'bury', 'suspend', 'trash', 'info', 'checkCircle', 'check', 'close', 'warning', 'error', 'sigma', 'superscript', 'subscript', 'bold', 'italic', 'underline', 'colour', 'bulletList', 'numberedList', 'alignLeft', 'alignCenter', 'alignRight', 'alignJustify', 'attach', 'image', 'tag', 'filter', 'sort', 'folder', 'reset', 'reschedule', 'clock', 'target', 'forecast', 'streak', 'import', 'shared', 'export', 'backup', 'restore', 'audio', 'help'] as const;
 export type IconName = (typeof ICON_NAMES)[number];
 
 const PATHS: Partial<Record<IconName, string[]>> = {
@@ -46,6 +46,9 @@ const PATHS: Partial<Record<IconName, string[]>> = {
   ],
   attach: [
     'M21.1525 10.8995L12.1369 19.9151C10.0866 21.9653 6.7625 21.9653 4.71225 19.9151C2.662 17.8648 2.662 14.5407 4.71225 12.4904L13.7279 3.47483C15.0947 2.108 17.3108 2.108 18.6776 3.47483C20.0444 4.84167 20.0444 7.05775 18.6776 8.42458L10.0156 17.0866C9.33213 17.7701 8.22409 17.7701 7.54068 17.0866C6.85726 16.4032 6.85726 15.2952 7.54068 14.6118L15.1421 7.01037',
+  ],
+  colour: [
+    'M12 20.4722C13.0615 21.4223 14.4633 22 16 22C19.3137 22 22 19.3137 22 16C22 13.2331 20.1271 10.9036 17.5798 10.2102M6.42018 10.2102C3.87293 10.9036 2 13.2331 2 16C2 19.3137 4.68629 22 8 22C11.3137 22 14 19.3137 14 16C14 15.2195 13.851 14.4738 13.5798 13.7898M18 8C18 11.3137 15.3137 14 12 14C8.68629 14 6 11.3137 6 8C6 4.68629 8.68629 2 12 2C15.3137 2 18 4.68629 18 8Z',
   ],
   moreVertical: [
     'M12 13C12.5523 13 13 12.5523 13 12C13 11.4477 12.5523 11 12 11C11.4477 11 11 11.4477 11 12C11 12.5523 11.4477 13 12 13Z',

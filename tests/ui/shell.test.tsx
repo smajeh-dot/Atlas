@@ -247,7 +247,7 @@ test('the Add card overlay starts on the deck it was opened for, with its full p
 
 /** The text-editing buttons under the card type and deck, left to right. */
 const FORMAT_BUTTONS = [
-  'Bold', 'Italic', 'Underline', 'Text colour', 'Highlight colour',
+  'Bold', 'Italic', 'Underline', 'Colour',
   'Bulleted list', 'Numbered list',
   'Align left', 'Align centre', 'Align right', 'Justify',
   'Attach file',
@@ -344,7 +344,7 @@ test('with the deck dropdown open, a click on the dark area closes only the drop
   await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Add card' })).toBeNull());
 });
 
-test('under the type and deck buttons: bold to highlight, the two lists, four alignments, then attach file, with breaks between', async () => {
+test('under the type and deck buttons: bold to colour, the two lists, four alignments, then attach file, with breaks between', async () => {
   const { user, card } = await openAddCard(await withSubjects());
   const bar = await within(card).findByRole('toolbar', { name: 'Formatting' });
   // Below the card type and deck buttons.
@@ -352,13 +352,13 @@ test('under the type and deck buttons: bold to highlight, the two lists, four al
   expect(deck.compareDocumentPosition(bar) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   const buttons = within(bar).getAllByRole('button');
   expect(buttons.map((b) => b.getAttribute('aria-label'))).toEqual(FORMAT_BUTTONS);
-  // Groups of 5, 2, 4 and 1, with a break between each.
+  // Groups of 4, 2, 4 and 1, with a break between each.
   const groups = [...bar.children].map((g) => within(g as HTMLElement).queryAllByRole('button').length);
-  expect(groups).toEqual([5, 2, 4, 1]);
+  expect(groups).toEqual([4, 2, 4, 1]);
   expect(within(bar).getAllByRole('separator')).toHaveLength(3);
-  // Everything has its icon except text colour, highlight colour and the numbered list, which are the dashed placeholder until you supply one.
+  // Everything has its icon except the numbered list, which is the dashed placeholder until you supply one.
   expect(buttons.map((b) => b.querySelector('[data-placeholder="true"]') !== null)).toEqual(
-    [false, false, false, true, true, false, true, false, false, false, false, false],
+    [false, false, false, false, false, true, false, false, false, false, false],
   );
   // They look active but do nothing yet.
   for (const b of buttons) await user.click(b);

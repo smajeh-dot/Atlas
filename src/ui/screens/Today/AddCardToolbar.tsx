@@ -7,14 +7,13 @@ interface Tool {
   icon: IconName;
 }
 
-/** The text-editing buttons, left to right; a thin divider is drawn between groups. They're placeholders: none does anything yet. */
+/** The text-editing buttons, left to right; a thin divider is drawn between groups. They're placeholders: none does anything yet. Colour is one button for both text and highlight colour. */
 const GROUPS: Tool[][] = [
   [
     { label: 'Bold', icon: 'bold' },
     { label: 'Italic', icon: 'italic' },
     { label: 'Underline', icon: 'underline' },
-    { label: 'Text colour', icon: 'textColour' },
-    { label: 'Highlight colour', icon: 'highlight' },
+    { label: 'Colour', icon: 'colour' },
   ],
   [
     { label: 'Bulleted list', icon: 'bulletList' },
