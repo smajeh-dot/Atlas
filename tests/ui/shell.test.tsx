@@ -215,7 +215,7 @@ test('Esc closes the Add card overlay and focus returns to the Add button', asyn
   expect(add).toBe(document.activeElement);
 });
 
-test('the Add card overlay shows the card type, then the deck, and clicking them does nothing yet', async () => {
+test('the Add card overlay shows the card type, then the deck; the type button does nothing yet', async () => {
   const { user } = await renderApp({ db: await seeded() });
   await user.click(within(await screen.findByTestId('today-notch')).getByRole('button', { name: 'Add' }));
   const card = await screen.findByRole('dialog', { name: 'Add card' });
@@ -227,7 +227,7 @@ test('the Add card overlay shows the card type, then the deck, and clicking them
   // The type comes first.
   expect(type.compareDocumentPosition(deck) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   await user.click(type);
-  await user.click(deck);
+  expect(screen.queryByRole('menu')).toBeNull();
   expect(screen.getByRole('dialog', { name: 'Add card' })).toBeTruthy();
 });
 
@@ -243,6 +243,50 @@ test('the Add card overlay starts on the deck it was opened for, with its full p
   const card = await screen.findByRole('dialog', { name: 'Add card' });
   expect((await within(card).findByRole('button', { name: /^Deck: / })).textContent).toBe('Chemistry › Organic');
   expect(within(card).getByRole('button', { name: /^Card type: / }).textContent).toBe('Cloze');
+});
+
+test('the deck button opens a blank dropdown, and clicking it again closes it', async () => {
+  const { user } = await renderApp({ db: await seeded() });
+  await user.click(within(await screen.findByTestId('today-notch')).getByRole('button', { name: 'Add' }));
+  const card = await screen.findByRole('dialog', { name: 'Add card' });
+  const deck = await within(card).findByRole('button', { name: /^Deck: / });
+  expect(deck.getAttribute('aria-expanded')).toBe('false');
+  await user.click(deck);
+  const menu = await screen.findByRole('menu', { name: 'Deck' });
+  expect(menu.textContent).toBe('');
+  expect(within(menu).queryAllByRole('menuitem')).toHaveLength(0);
+  expect(deck.getAttribute('aria-expanded')).toBe('true');
+  await user.click(deck);
+  await waitFor(() => expect(screen.queryByRole('menu', { name: 'Deck' })).toBeNull());
+  expect(screen.getByRole('dialog', { name: 'Add card' })).toBeTruthy();
+});
+
+test('with the deck dropdown open, Esc closes only the dropdown, then the next Esc closes the card', async () => {
+  const { user } = await renderApp({ db: await seeded() });
+  await user.click(within(await screen.findByTestId('today-notch')).getByRole('button', { name: 'Add' }));
+  const card = await screen.findByRole('dialog', { name: 'Add card' });
+  const deck = await within(card).findByRole('button', { name: /^Deck: / });
+  await user.click(deck);
+  await screen.findByRole('menu', { name: 'Deck' });
+  await user.keyboard('{Escape}');
+  await waitFor(() => expect(screen.queryByRole('menu', { name: 'Deck' })).toBeNull());
+  expect(screen.getByRole('dialog', { name: 'Add card' })).toBeTruthy();
+  expect(deck).toBe(document.activeElement);
+  await user.keyboard('{Escape}');
+  await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Add card' })).toBeNull());
+});
+
+test('with the deck dropdown open, a click on the dark area closes only the dropdown', async () => {
+  const { user } = await renderApp({ db: await seeded() });
+  await user.click(within(await screen.findByTestId('today-notch')).getByRole('button', { name: 'Add' }));
+  const card = await screen.findByRole('dialog', { name: 'Add card' });
+  await user.click(await within(card).findByRole('button', { name: /^Deck: / }));
+  await screen.findByRole('menu', { name: 'Deck' });
+  await user.click(screen.getByTestId('add-card-overlay'));
+  await waitFor(() => expect(screen.queryByRole('menu', { name: 'Deck' })).toBeNull());
+  expect(screen.getByRole('dialog', { name: 'Add card' })).toBeTruthy();
+  await user.click(screen.getByTestId('add-card-overlay'));
+  await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Add card' })).toBeNull());
 });
 
 test('the X in the Add card overlay closes it and returns focus; the triple-dot button does nothing yet', async () => {
