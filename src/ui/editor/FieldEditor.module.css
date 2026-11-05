@@ -67,15 +67,20 @@
   outline: 2px solid var(--focus);
 }
 
-/* LaTeX as it is typed: `$x^2$` and `$$x^2$$` change colour and typeface (Anthropic Mono) from the opening dollar sign, and the dollar
-   signs are italic. */
+/* LaTeX as it is typed: once `$x^2$` or `$$x^2$$` has both its dollar signs it changes colour and typeface (Anthropic Mono), and the
+   dollar signs lean. Anthropic Mono has no italic, and the browser's fake one barely shows on a `$`, so they are slanted directly:
+   change --math-slant for more or less lean. */
 .prose :global(.atlas-math-source) {
   color: var(--math-ink);
   font-family: var(--font-mono);
 }
 
 .prose :global(.atlas-math-delim) {
-  font-style: italic;
+  --math-slant: -24deg;
+  display: inline-block;
+  transform: skewX(var(--math-slant));
+  /* Pivot on the middle so each dollar sign leans in place instead of drifting toward its neighbours. */
+  transform-origin: 50% 50%;
 }
 
 .prose :global(.atlas-math) {
