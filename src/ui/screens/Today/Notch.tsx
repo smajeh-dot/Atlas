@@ -1,13 +1,16 @@
+import { useState } from 'react';
 import { useAtlas } from '../../app/AtlasContext';
 import { Icon, type IconName } from '../../icons/icons';
+import { ImportOverlay } from './ImportOverlay';
 import styles from './Notch.module.css';
 
 /** The tab hanging from the top of the Today screen: quick access to the things you reach for most. */
 export function Notch() {
-  const { deps, navigate } = useAtlas();
-  // Browse and Shared look active but don't do anything yet. Import does nothing when this build has no importer (tests, browser preview).
+  const { navigate } = useAtlas();
+  const [importing, setImporting] = useState(false);
+  // Browse and Shared look active but don't do anything yet. Import opens a blank card for now.
   const buttons: { label: string; icon: IconName; onClick?: () => void }[] = [
-    { label: 'Import', icon: 'import', onClick: deps.importer ? () => navigate({ name: 'import' }) : undefined },
+    { label: 'Import', icon: 'import', onClick: () => setImporting(true) },
     { label: 'Add', icon: 'plus', onClick: () => navigate({ name: 'add' }) },
     { label: 'Browse', icon: 'browse' },
     { label: 'Shared', icon: 'shared' },
@@ -22,6 +25,7 @@ export function Notch() {
           </button>
         ))}
       </div>
+      {importing && <ImportOverlay onClose={() => setImporting(false)} />}
     </div>
   );
 }

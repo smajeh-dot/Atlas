@@ -44,14 +44,34 @@ test('a new student imports their Anki deck from the Welcome screen and lands on
   expect(screen.queryByRole('button', { name: 'Start from scratch' })).toBeNull();
 });
 
-test('Import in the Today notch opens the importer', async () => {
+test('Import in the Today notch opens a blank card over a darkened window; Esc and a click outside close it', async () => {
   const db = await createMigratedDb();
   await createDeck(db, { name: 'Physics' }, NOW);
   const { user } = await renderApp({ db, clock: fixedClock(NOW), importer: importer() });
   await user.click(await screen.findByRole('button', { name: 'Import' }));
-  await screen.findByRole('heading', { name: 'Import from Anki' });
-  await user.click(screen.getByRole('button', { name: 'Back' }));
-  await waitFor(() => expect(screen.queryByRole('heading', { name: 'Import from Anki' })).toBeNull());
+  const card = await screen.findByRole('dialog', { name: 'Import' });
+  expect(card.children).toHaveLength(0);
+  expect(card.textContent).toBe('');
+  expect(card.getAttribute('aria-modal')).toBe('true');
+  // The home screen is still behind it, not replaced.
+  expect(screen.getByTestId('today-screen')).toBeTruthy();
+  await user.keyboard('{Escape}');
+  await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Import' })).toBeNull());
+  expect(screen.getByRole('button', { name: 'Import' })).toBe(document.activeElement);
+
+  await user.click(screen.getByRole('button', { name: 'Import' }));
+  await screen.findByRole('dialog', { name: 'Import' });
+  await user.click(screen.getByTestId('import-overlay'));
+  await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Import' })).toBeNull());
+});
+
+test('clicking inside the blank card does not close it', async () => {
+  const db = await createMigratedDb();
+  await createDeck(db, { name: 'Physics' }, NOW);
+  const { user } = await renderApp({ db, clock: fixedClock(NOW), importer: importer() });
+  await user.click(await screen.findByRole('button', { name: 'Import' }));
+  await user.click(await screen.findByRole('dialog', { name: 'Import' }));
+  expect(screen.getByRole('dialog', { name: 'Import' })).toBeTruthy();
 });
 
 test('without an importer (tests, browser preview) the Welcome screen offers only Start from scratch', async () => {
