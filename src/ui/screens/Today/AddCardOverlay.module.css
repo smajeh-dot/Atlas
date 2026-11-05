@@ -161,3 +161,14 @@ div.dropdown {
   align-items: center;
   gap: var(--sp-8);
 }
+
+/* Add is blue (the app's accent) instead of the standard dark primary button. The element name makes these beat the Button's own rules. */
+button.add {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+
+button.add:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--accent) 85%, var(--primary-hover-bg));
+}

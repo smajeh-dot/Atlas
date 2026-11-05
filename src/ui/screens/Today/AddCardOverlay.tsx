@@ -123,8 +123,8 @@ export function AddCardOverlay({ deckId, onClose }: { deckId?: number; onClose()
                 </button>
               </Tooltip>
               <div className={styles.actions}>
-                <Button variant="primary">Add</Button>
-                <Button variant="secondary" onClick={onClose}>Close</Button>
+                <Button variant="primary" size="sm" className={styles.add}>Add</Button>
+                <Button variant="secondary" size="sm" onClick={onClose}>Close</Button>
               </div>
             </div>
           </div>
