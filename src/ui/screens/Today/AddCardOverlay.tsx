@@ -6,6 +6,7 @@ import type { BuiltinNoteType } from '../../../core/model';
 import { listDecks } from '../../../data/decks';
 import { listNoteTypes } from '../../../data/noteTypes';
 import { useAtlas, useData } from '../../app/AtlasContext';
+import { FieldEditor } from '../../editor/FieldEditor';
 import { MenuCard } from '../../components/MenuCard';
 import menuStyles from '../../components/MenuCard.module.css';
 import { Icon } from '../../icons/icons';
@@ -19,7 +20,8 @@ const TYPES: BuiltinNoteType[] = ['basic', 'basic_reversed', 'basic_typein', 'cl
  * A large card in the middle of the window over the Home screen, with everything around it darkened.
  * The X, Esc or a click outside the card closes it. Along the top: the card type, then the deck it's being added to
  * (the type just shows the current choice for now; the deck opens a dropdown of your decks), and in the corner the triple-dot
- * button, which doesn't do anything yet. Under those, a row of placeholder text-editing buttons. `deckId` is the deck it was opened for (from a deck's menu), if any.
+ * button, which doesn't do anything yet. Under those, a row of placeholder text-editing buttons, then a field for each side of the card
+ * (Front and Back for Basic). What's typed is only kept while the card is open: nothing saves a card yet. `deckId` is the deck it was opened for (from a deck's menu), if any.
  */
 export function AddCardOverlay({ deckId, onClose }: { deckId?: number; onClose(): void }) {
   const { deps, settings } = useAtlas();
@@ -30,6 +32,8 @@ export function AddCardOverlay({ deckId, onClose }: { deckId?: number; onClose()
   // The dropdown under the deck button: the button it hangs from while open, else null. And the deck picked from it, if any.
   const [deckMenu, setDeckMenu] = useState<HTMLElement | null>(null);
   const [chosenDeck, setChosenDeck] = useState<number | null>(null);
+  // What's been typed into each field, in the order of the card type's fields.
+  const [fields, setFields] = useState<string[]>([]);
   // The type you used last (else Basic). The deck is the one picked here, else the one this was opened for, else the one you used last,
   // else the first deck. Subjects aren't decks, so a subject stands for the first deck inside it.
   const noteType = data && (data.types.find((t) => t.id === settings.lastNoteTypeId) ?? data.types.find((t) => t.builtin === 'basic') ?? data.types[0]);
@@ -37,7 +41,9 @@ export function AddCardOverlay({ deckId, onClose }: { deckId?: number; onClose()
   const card = useRef<HTMLDivElement>(null);
   const isTop = useOverlayLayer();
   useRestoreFocus();
-  useEffect(() => card.current?.focus(), []);
+  useEffect(() => {
+    if (!card.current?.contains(document.activeElement)) card.current?.focus();
+  }, []);
 
   return createPortal(
     <div
@@ -81,6 +87,32 @@ export function AddCardOverlay({ deckId, onClose }: { deckId?: number; onClose()
           </div>
         )}
         {data && noteType && deck && <AddCardToolbar />}
+        {data && noteType && deck && (
+          <div className={styles.fields}>
+            {noteType.fields.map((f, i) => (
+              <FieldEditor
+                key={`${noteType.id}-${f.name}`}
+                label={f.name}
+                value={fields[i] ?? ''}
+                autoFocus={i === 0}
+                mediaUrl={deps.media.url}
+                getAllText={() => fields.join('\n')}
+                // Pictures would be saved to your media folder for a card that can't be saved yet, so they wait.
+                onImage={async () => {
+                  throw new Error("Pictures can't be added to a card here yet.");
+                }}
+                onChange={(html) =>
+                  setFields((prev) => {
+                    const next = [...prev];
+                    while (next.length < noteType.fields.length) next.push('');
+                    next[i] = html;
+                    return next;
+                  })
+                }
+              />
+            ))}
+          </div>
+        )}
         <div className={styles.corner}>
           <button type="button" className={styles.cornerButton} aria-label="More options" aria-haspopup="menu">
             <Icon name="moreVertical" />

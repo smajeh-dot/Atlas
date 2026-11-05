@@ -116,3 +116,18 @@ div.dropdown {
 .deckItem[data-selected] {
   font-weight: 500;
 }
+
+/* Front and Back, one under the other below the toolbar, filling the rest of the card. The 4px of padding (pulled back out with the
+   offsets) leaves room for a field's focus ring, which a scrolling box would otherwise cut off. */
+.fields {
+  position: absolute;
+  top: calc(var(--inset) + var(--control) + var(--sp-12) + var(--control) + var(--sp-16) - 4px);
+  left: calc(var(--inset) - 4px);
+  right: calc(var(--inset) - 4px);
+  bottom: calc(var(--inset) - 4px);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-16);
+  padding: 4px;
+  overflow-y: auto;
+}
