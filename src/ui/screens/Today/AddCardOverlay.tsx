@@ -92,29 +92,32 @@ export function AddCardOverlay({ deckId, onClose }: { deckId?: number; onClose()
         {data && noteType && deck && <AddCardToolbar />}
         {data && noteType && deck && (
           <div className={styles.body}>
-            <div className={styles.fields}>
-              {noteType.fields.map((f, i) => (
-                <FieldEditor
-                  key={`${noteType.id}-${f.name}`}
-                  label={f.name}
-                  value={fields[i] ?? ''}
-                  autoFocus={i === 0}
-                  mediaUrl={deps.media.url}
-                  getAllText={() => fields.join('\n')}
-                  // Pictures would be saved to your media folder for a card that can't be saved yet, so they wait.
-                  onImage={async () => {
-                    throw new Error("Pictures can't be added to a card here yet.");
-                  }}
-                  onChange={(html) =>
-                    setFields((prev) => {
-                      const next = [...prev];
-                      while (next.length < noteType.fields.length) next.push('');
-                      next[i] = html;
-                      return next;
-                    })
-                  }
-                />
-              ))}
+            <div className={styles.halves}>
+              <div className={styles.fields}>
+                {noteType.fields.map((f, i) => (
+                  <FieldEditor
+                    key={`${noteType.id}-${f.name}`}
+                    label={f.name}
+                    value={fields[i] ?? ''}
+                    autoFocus={i === 0}
+                    mediaUrl={deps.media.url}
+                    getAllText={() => fields.join('\n')}
+                    // Pictures would be saved to your media folder for a card that can't be saved yet, so they wait.
+                    onImage={async () => {
+                      throw new Error("Pictures can't be added to a card here yet.");
+                    }}
+                    onChange={(html) =>
+                      setFields((prev) => {
+                        const next = [...prev];
+                        while (next.length < noteType.fields.length) next.push('');
+                        next[i] = html;
+                        return next;
+                      })
+                    }
+                  />
+                ))}
+              </div>
+              <div className={styles.right} data-testid="add-card-right" aria-hidden="true" />
             </div>
             <div className={styles.footer} data-testid="add-card-footer">
               <Tooltip text="Tags">

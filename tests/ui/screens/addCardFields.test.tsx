@@ -89,3 +89,19 @@ test('Close at the bottom closes the card; Add and the tag icon do nothing yet',
   expect(screen.queryByRole('dialog', { name: 'Add card' })).toBeNull();
   expect(screen.getByTestId('today-decks-card')).toBeTruthy();
 });
+
+test('the card is split into two halves: Front and Back in the left one, the right one blank, and the bottom row under both', async () => {
+  const { card } = await openAddCard();
+  const left = (await within(card).findByRole('textbox', { name: 'Front' })).closest('[class*="fields"]') as HTMLElement;
+  const halves = left.parentElement as HTMLElement;
+  expect(halves.children).toHaveLength(2);
+  expect(halves.children[0]).toBe(left);
+  expect(within(left).getAllByRole('textbox').map((t) => t.getAttribute('aria-label'))).toEqual(['Front', 'Back']);
+  const right = within(card).getByTestId('add-card-right');
+  expect(halves.children[1]).toBe(right);
+  expect(right.children).toHaveLength(0);
+  expect(right.textContent).toBe('');
+  const footer = within(card).getByTestId('add-card-footer');
+  expect(halves.compareDocumentPosition(footer) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  expect(halves.contains(footer)).toBe(false);
+});

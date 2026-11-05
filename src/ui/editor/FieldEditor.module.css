@@ -1,8 +1,12 @@
+/* A screen can make every field (label, then box) share out the height it is given by setting the --field-* variables on a parent: the
+   fields grow, the box fills its field and scrolls if the text is longer. Without them (Edit card) fields are as tall as their text. */
 .field {
   display: flex;
   flex-direction: column;
   gap: var(--sp-6);
   min-width: 0;
+  flex: var(--field-grow, 0 1 auto);
+  min-height: var(--field-min-height, auto);
 }
 
 /* A screen can restyle every field's label and focus frame by setting these variables on a parent; Edit card leaves them alone. */
@@ -19,6 +23,11 @@
   background: var(--bg-panel);
   border: var(--border-w) solid var(--border);
   border-radius: var(--radius-field);
+  display: var(--field-box-display, block);
+  flex-direction: column;
+  flex: var(--field-grow, 0 1 auto);
+  min-height: var(--field-min-height, auto);
+  overflow-y: var(--field-box-overflow, visible);
 }
 
 .box:focus-within {
@@ -33,6 +42,7 @@
 }
 
 .prose {
+  flex: var(--field-grow, 0 1 auto);
   min-height: 74px;
   padding: 12px 14px;
   font-size: var(--fs-body);
