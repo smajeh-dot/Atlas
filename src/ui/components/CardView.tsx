@@ -1,8 +1,9 @@
-import renderMathInElement from 'katex/contrib/auto-render';
 import katexCss from 'katex/dist/katex.min.css?inline';
 import { useLayoutEffect, useRef } from 'react';
+import { extractMath } from '../../core/math';
 import { ANSWER_MARKER } from '../../core/templates';
 import baseCss from '../card/cardBase.css?inline';
+import { hydrateMath } from '../card/math';
 import { sanitizeCardHtml } from '../card/sanitize';
 
 const DIVIDER = '<div class="atlas-divider"><span>Answer</span></div>';
@@ -14,7 +15,8 @@ function region(cls: string, html: string, size: Size | undefined): HTMLDivEleme
   const div = document.createElement('div');
   div.className = cls;
   if (size) div.dataset.size = size;
-  div.innerHTML = sanitizeCardHtml(html.replace(ANSWER_MARKER, DIVIDER));
+  // Equations become placeholders before sanitising and are rendered after it (see hydrateMath).
+  div.innerHTML = sanitizeCardHtml(extractMath(html.replace(ANSWER_MARKER, DIVIDER)));
   return div;
 }
 
@@ -62,14 +64,7 @@ export function CardView({ html, css, mediaUrl, size, answer, answerSize, classN
       input.disabled = true;
       input.placeholder = 'Type your answer, then press Enter';
     }
-    renderMathInElement(card, {
-      delimiters: [
-        { left: '\\[', right: '\\]', display: true },
-        { left: '\\(', right: '\\)', display: false },
-      ],
-      throwOnError: false,
-      trust: false,
-    });
+    hydrateMath(card);
   }, [html, css, size, answer, answerSize, mediaUrl]);
   return <div ref={host} className={className} data-cardview="" />;
 }

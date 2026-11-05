@@ -24,3 +24,15 @@ test('isShortHtml', () => {
   expect(isShortHtml('x'.repeat(61), 60)).toBe(false);
   expect(isShortHtml('x'.repeat(60), 60)).toBe(true);
 });
+
+test('isShortHtml with equations', () => {
+  expect(isShortHtml('$$x$$', 140)).toBe(false);
+  expect(isShortHtml('What is $\\pi$?', 140)).toBe(true);
+  expect(isShortHtml('\\(x\\) is fine', 140)).toBe(true);
+  expect(isShortHtml('<code>\\[x\\]</code>', 140)).toBe(true);
+  // Each inline equation counts as 6 characters, however long its TeX.
+  expect(isShortHtml(`Find $${'\\alpha+'.repeat(20)}1$`, 12)).toBe(true);
+  expect(isShortHtml('Find $x$ $y$', 12)).toBe(false);
+  // Currency is ordinary text.
+  expect(isShortHtml(`Costs $5 and $${'1'.repeat(10)}`, 12)).toBe(false);
+});

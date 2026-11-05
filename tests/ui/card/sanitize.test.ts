@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { expect, test } from 'vitest';
+import { extractMath } from '../../../src/core/math';
 import { sanitizeCardHtml } from '../../../src/ui/card/sanitize';
 
 test.each([
@@ -21,5 +22,11 @@ test.each([
 
 test('keeps the type-in box, cloze spans, hints and formatting', () => {
   const html = '<span class="cloze">[…]</span><input class="atlas-typein" data-field="Back"><details class="atlas-hint"><summary>Show hint</summary>h</details><b>b</b><sub>2</sub>';
+  expect(sanitizeCardHtml(html)).toBe(html);
+});
+
+test('keeps equation placeholders, including TeX that looks like markup', () => {
+  const html = extractMath('a $x^2$ b $$[A]&gt;0$$ $\\ce{A &lt;--&gt; B}$');
+  expect(html.match(/data-tex=/g)).toHaveLength(3);
   expect(sanitizeCardHtml(html)).toBe(html);
 });

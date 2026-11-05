@@ -1,3 +1,5 @@
+import { findMath } from './math';
+
 const ENTITIES: Record<string, string> = {
   '&nbsp;': ' ',
   '&amp;': '&',
@@ -27,7 +29,22 @@ export function escapeHtml(s: string): string {
 
 const BLOCK = /<(div|p|ul|ol|li|table|pre|blockquote|h[1-6]|hr|details|br)\b/i;
 
-/** Short enough, and simple enough, to show in the large display font (spec 10.4). */
+/** Roughly how wide an inline equation reads, whatever the length of its TeX. */
+const INLINE_MATH_CHARS = 6;
+
+/**
+ * Short enough, and simple enough, to show in the large display font (spec 10.4).
+ * Inline equations are allowed and count as a few characters; a display equation makes it long.
+ */
 export function isShortHtml(html: string, maxChars: number): boolean {
-  return stripHtml(html).length <= maxChars && !/<img\b/i.test(html) && !BLOCK.test(html) && !html.includes('\\[');
+  const maths = findMath(html);
+  if (maths.some((m) => m.kind === 'display')) return false;
+  let text = '';
+  let pos = 0;
+  for (const m of maths) {
+    text += html.slice(pos, m.start) + 'x'.repeat(INLINE_MATH_CHARS);
+    pos = m.end;
+  }
+  text += html.slice(pos);
+  return stripHtml(text).length <= maxChars && !/<img\b/i.test(html) && !BLOCK.test(text);
 }

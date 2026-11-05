@@ -41,6 +41,18 @@ What doesn't, yet: sound playback, LaTeX maths, Image Occlusion masks (the notes
 
 Importing is safe to repeat: notes you already have are left exactly as they are, progress and all, and only new notes and cards are added. If an import fails or you press **Cancel**, Atlas undoes everything it did, and if Atlas is closed in the middle of one, it undoes it the next time it opens.
 
+## Equations
+
+Write equations in LaTeX the way Obsidian does:
+
+| Write | Shows |
+|---|---|
+| `$x^2$` | an equation inside the sentence |
+| `$$x^2$$` | an equation on its own centred line |
+| `\$` | a plain dollar sign |
+
+Prices are left alone: in `It costs $5 and $10` neither dollar starts an equation, because an equation's opening `$` can't be followed by a space and its closing `$` can't be preceded by one or followed by a digit. Anki's `\( \)` and `\[ \]` keep working. Chemistry works with `\ce{…}`, for example `$\ce{2H2 + O2 -> 2H2O}$`. A cloze can sit inside an equation: `$E = {{c1::mc^2}}$`.
+
 ## Build from source
 
 In Windows PowerShell, install [Node.js LTS](https://nodejs.org) and [Rust](https://rustup.rs), then:

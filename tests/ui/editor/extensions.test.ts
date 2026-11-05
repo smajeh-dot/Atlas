@@ -62,17 +62,25 @@ test('pasted remote images and scripts are dropped; data images survive', () => 
   expect(html).toContain('data:image/png;base64,AAAA');
 });
 
-test('insertMath inserts an inline equation stored as \\( \\)', () => {
+test('insertMath inserts an inline equation stored as $…$', () => {
   const e = editor('a');
   e.commands.setTextSelection(2);
   e.commands.insertMath();
   e.commands.updateAttributes('math', { tex: 'x^2' });
-  expect(fromEditorHtml(e.getHTML())).toBe('a\\(x^2\\)');
+  expect(fromEditorHtml(e.getHTML())).toBe('a$x^2$');
 });
 
 test('equations render with KaTeX when not being edited', () => {
   const e = editor('E \\(x^2\\)');
   expect(e.view.dom.querySelector('.katex')).not.toBeNull();
+});
+
+test('Obsidian-style equations load as math nodes and save unchanged', () => {
+  const field = 'E $x^2$ and $$a&lt;b$$, costs $5';
+  const e = editor(field);
+  expect(e.view.dom.querySelectorAll('.katex')).toHaveLength(2);
+  expect(e.view.dom.querySelectorAll('.katex-display')).toHaveLength(1);
+  expect(fromEditorHtml(e.getHTML())).toBe(field);
 });
 
 test('superscript and subscript marks', () => {
