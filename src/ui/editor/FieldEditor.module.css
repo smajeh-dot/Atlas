@@ -76,7 +76,7 @@
 }
 
 .prose :global(.atlas-math-delim) {
-  --math-slant: -24deg;
+  --math-slant: -18deg;
   display: inline-block;
   transform: skewX(var(--math-slant));
   /* Pivot on the middle so each dollar sign leans in place instead of drifting toward its neighbours. */
