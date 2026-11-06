@@ -162,9 +162,11 @@ div.dropdown {
   overflow-y: auto;
 }
 
-/* The right half: the live preview card, as tall as the half. */
+/* The right half: the live preview card. Its top edge lines up with the top of the Front box, so it starts below where Front's label sits
+   (the label's line plus the gap under it, as in the shared field styles), and it ends where the Back box ends. */
 .right {
   min-height: 0;
+  padding-top: calc(var(--fs-label) * var(--lh-label) + var(--sp-6));
 }
 
 /* The bottom row: the tag button on the left, Add and Close on the right. */

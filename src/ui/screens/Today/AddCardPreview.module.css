@@ -1,4 +1,4 @@
-/* The live preview: a card shape (the study card's corners) filling the right half. Blank until there is something to show. */
+/* The live preview: a card filling the right half, with the same rounded corners as the boxes beside it. Blank until there is something to show. */
 .card {
   box-sizing: border-box;
   height: 100%;
@@ -7,6 +7,6 @@
   overflow-y: auto;
   background: var(--bg-panel);
   border: var(--border-w) solid var(--border);
-  border-radius: var(--radius-card);
+  border-radius: var(--radius-field);
   box-shadow: var(--shadow-box);
 }

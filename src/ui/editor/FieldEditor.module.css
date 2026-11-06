@@ -77,10 +77,11 @@
   outline: 2px solid var(--focus);
 }
 
-/* LaTeX as it is typed: once `$x^2$` or `$$x^2$$` has both its dollar signs it turns blue (in the card's own typeface), and the dollar signs
-   lean a little. Anthropic Mono has no italic, and the browser's fake one barely shows on a `$`, so they are slanted directly:
-   change --math-slant for more or less lean. */
-.prose :global(.atlas-math-source) {
+/* LaTeX as it is typed: once `$x^2$` or `$$x^2$$` has both its dollar signs, they turn blue and lean a little, and what is inside is coloured
+   by kind (see core/mathTokens and the --math-* colours in the theme). Anthropic Mono has no italic, and the browser's fake one barely shows
+   on a `$`, so the dollar signs are slanted directly: change --math-slant for more or less lean. */
+.prose :global(.atlas-math-delim),
+.prose :global(.atlas-math-delim-tex) {
   color: var(--math-ink);
 }
 
@@ -90,6 +91,22 @@
   transform: skewX(var(--math-slant));
   /* Pivot on the middle so each dollar sign leans in place instead of drifting toward its neighbours. */
   transform-origin: 50% 50%;
+}
+
+.prose :global(.atlas-math-t-command) { color: var(--math-command); }
+.prose :global(.atlas-math-t-symbol) { color: var(--math-symbol); }
+.prose :global(.atlas-math-t-operator) { color: var(--math-operator); }
+.prose :global(.atlas-math-t-number) { color: var(--math-number); }
+.prose :global(.atlas-math-t-script),
+.prose :global(.atlas-math-t-dim) { color: var(--math-dim); }
+.prose :global(.atlas-math-t-bracket-0) { color: var(--math-bracket-0); }
+.prose :global(.atlas-math-t-bracket-1) { color: var(--math-bracket-1); }
+.prose :global(.atlas-math-t-bracket-2) { color: var(--math-bracket-2); }
+
+/* A brace that never closes (or closes nothing): underlined, so it is not only a matter of colour. */
+.prose :global(.atlas-math-t-error) {
+  text-decoration: underline wavy var(--math-error);
+  text-underline-offset: 3px;
 }
 
 .prose :global(.atlas-math) {

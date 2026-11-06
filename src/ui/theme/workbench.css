@@ -14,8 +14,18 @@
   --text-answer: #1C1C1F;
   --accent: #2F5FCE;
   --accent-ink: #FFFFFF;
-  /* LaTeX you are typing (from its opening $), so the start of an equation is easy to see. */
+  /* LaTeX as you type it. Cool colours mark structure, warm colours mark the maths itself; variables stay in the normal text colour.
+     All pass 4.5:1 contrast on white. The dollar signs are --math-ink; brackets cycle through the three cool colours by depth. */
   --math-ink: var(--accent);
+  --math-command: #7C3AED;
+  --math-symbol: #115E59;
+  --math-operator: #B45309;
+  --math-number: #BE185D;
+  --math-dim: var(--text-muted);
+  --math-bracket-0: var(--accent);
+  --math-bracket-1: var(--math-command);
+  --math-bracket-2: var(--math-symbol);
+  --math-error: var(--danger);
   --progress-fill: #237bdb;
   --accent-soft: #EAF0FB;
   --sidebar-bg: #FFFFFF;
