@@ -8,7 +8,7 @@
 
 use rusqlite::{Connection, OpenFlags};
 use std::fmt;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::time::Duration;
 
 /// Why a backup was made.
@@ -205,4 +205,96 @@ pub fn clean_temps(dir: &Path) {
             let _ = std::fs::remove_file(entry.path());
         }
     }
+}
+
+/// What a backup says about itself.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Inspected {
+    /// The data-format version stored inside the backup (Atlas's `meta.schema_version`).
+    pub schema_version: u32,
+}
+
+/// Opens a backup read-only and checks it is whole and is an Atlas database.
+pub fn inspect(path: &Path) -> Result<Inspected, Error> {
+    let unusable = || Error::Invalid("That backup is damaged, or isn't an Atlas backup.".into());
+    let conn = Connection::open_with_flags(path, OpenFlags::SQLITE_OPEN_READ_ONLY)
+        .map_err(|_| unusable())?;
+    let check: String = conn
+        .query_row("PRAGMA quick_check", [], |r| r.get(0))
+        .map_err(|_| unusable())?;
+    if check != "ok" {
+        return Err(unusable());
+    }
+    for table in ["meta", "notes", "cards"] {
+        let found: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = ?1",
+                [table],
+                |r| r.get(0),
+            )
+            .map_err(|_| unusable())?;
+        if found == 0 {
+            return Err(unusable());
+        }
+    }
+    let version: String = conn
+        .query_row("SELECT value FROM meta WHERE key = 'schema_version'", [], |r| r.get(0))
+        .map_err(|_| unusable())?;
+    let schema_version = version.parse().map_err(|_| unusable())?;
+    Ok(Inspected { schema_version })
+}
+
+/// Where a staged restore waits, right beside the database so the final swap is one rename.
+pub fn restore_temp_path(db_path: &Path) -> PathBuf {
+    let mut name = db_path.as_os_str().to_owned();
+    name.push(".restore.tmp");
+    PathBuf::from(name)
+}
+
+/// Removes a staged restore left by a crash.
+pub fn clean_restore_temp(db_path: &Path) {
+    let _ = std::fs::remove_file(restore_temp_path(db_path));
+}
+
+/// Checks the backup called `name` in `backups_dir` and copies it beside the database. The current
+/// database is not touched. `max_version` is the newest data format this Atlas understands.
+pub fn stage_restore(
+    backups_dir: &Path,
+    name: &str,
+    db_path: &Path,
+    max_version: u32,
+) -> Result<PathBuf, Error> {
+    // Only a name Atlas itself listed: never a path, so nothing outside the folder is reachable.
+    if !list(backups_dir)?.iter().any(|b| b.name == name) {
+        return Err(Error::Invalid("That backup isn't in Atlas's backups folder.".into()));
+    }
+    let source = backups_dir.join(name);
+    if inspect(&source)?.schema_version > max_version {
+        return Err(Error::Invalid(
+            "That backup was made by a newer version of Atlas. Update Atlas to restore it.".into(),
+        ));
+    }
+    let staged = restore_temp_path(db_path);
+    let _ = std::fs::remove_file(&staged);
+    if let Err(e) = std::fs::copy(&source, &staged) {
+        let _ = std::fs::remove_file(&staged);
+        return Err(e.into());
+    }
+    Ok(staged)
+}
+
+/// Swaps the staged copy in as the database. The database must not be open. Stale `-wal` and
+/// `-shm` files belong to the database being replaced, so they go first.
+pub fn finish_restore(staged: &Path, db_path: &Path) -> Result<(), Error> {
+    for suffix in ["-wal", "-shm"] {
+        let mut side = db_path.as_os_str().to_owned();
+        side.push(suffix);
+        match std::fs::remove_file(PathBuf::from(side)) {
+            Ok(()) => {}
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => {}
+            Err(e) => return Err(e.into()),
+        }
+    }
+    std::fs::rename(staged, db_path)?;
+    Ok(())
 }
