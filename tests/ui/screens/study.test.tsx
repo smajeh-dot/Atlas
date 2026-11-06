@@ -52,15 +52,15 @@ test('Space reveals, buttons show the intervals the session will give, 3 grades 
   expect(log).toEqual({ card_id: probe.current()!.card.id, rating: 3 });
 });
 
-test('shows the breadcrumb, chips and progress, with no hint line or Show answer button', async () => {
+test('shows the breadcrumb and progress, with no tag chips, hint line or Show answer button', async () => {
   const org = await seedDeck(db, 'Organic Mechanisms', deck);
   await seedNote(seedDeps, org, 'basic', ['q1', 'a'], ['paper-1', 'organic', 'third']);
   await seedNote(seedDeps, org, 'basic', ['q2', 'a']);
   await study();
   const top = await screen.findByRole('navigation', { name: 'Breadcrumb' });
   expect(top.textContent).toBe('Chemistry›Organic Mechanisms');
-  const chips = within(screen.getByTestId('study-chips')).getAllByText(/./).map((c) => c.textContent);
-  expect(chips).toEqual(['paper-1', 'organic']);
+  expect(screen.queryByTestId('study-chips')).toBeNull();
+  expect(screen.queryByText('paper-1')).toBeNull();
   expect(screen.getByText('2 left')).toBeTruthy();
   expect(screen.queryByText(/Space = Good/)).toBeNull();
   expect(screen.queryByRole('button', { name: 'Show answer' })).toBeNull();

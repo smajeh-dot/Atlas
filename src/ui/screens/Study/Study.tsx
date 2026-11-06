@@ -1,14 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { formatInterval } from '../../../core/format';
-import type { Rating } from '../../../core/model';
+import type { NoteType, Rating } from '../../../core/model';
 import { cardsOfNote, getCard } from '../../../data/cards';
 import { listDecks } from '../../../data/decks';
+import { getNoteType } from '../../../data/noteTypes';
+import { getNote } from '../../../data/notes';
 import { StudySession, type SessionCard } from '../../../services/studySession';
 import { useAtlas } from '../../app/AtlasContext';
 import { answerView, questionView } from '../../card/display';
 import { Button } from '../../components/Button';
 import { CardView } from '../../components/CardView';
-import { Chip } from '../../components/Chip';
 import { Dialog } from '../../components/Dialog';
 import { EmptyState } from '../../components/EmptyState';
 import { IconButton } from '../../components/IconButton';
@@ -34,9 +35,11 @@ const GRADES: { rating: Rating; word: string; cls: string }[] = [
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
 const message = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
+type Editing = { noteType: NoteType; fields: string[]; deckId: number };
+
 type Overlay =
   | { kind: 'flag' | 'more'; anchor: HTMLElement }
-  | { kind: 'add' }
+  | { kind: 'add'; editing: Editing }
   | { kind: 'info'; cardId: number; unknownFilters: string[] }
   | { kind: 'delete'; cards: number }
   | null;
@@ -99,6 +102,18 @@ export function Study({ deckId }: { deckId: number | null }) {
     }
   };
 
+  const editingOf = (c: SessionCard): Editing => ({ noteType: c.noteType, fields: c.note.fields, deckId: c.card.deckId });
+  // The leech toast outlives the card on screen, so this card is read back from the database.
+  const editCardById = async (cardId: number) => {
+    try {
+      const card = await getCard(deps.db, cardId);
+      const note = await getNote(deps.db, card.noteId);
+      setOverlay({ kind: 'add', editing: { noteType: await getNoteType(deps.db, note.noteTypeId), fields: note.fields, deckId: card.deckId } });
+    } catch (e) {
+      toast.show({ message: `Atlas couldn't open that card: ${message(e)}` });
+    }
+  };
+
   const grade = (rating: Rating) => {
     if (phase !== 'answer' || !current) return;
     const id = current.card.id;
@@ -113,7 +128,7 @@ export function Study({ deckId }: { deckId: number | null }) {
           message: suspended
             ? "This card keeps slipping, so it's been tagged as a leech and suspended."
             : "This card keeps slipping, so it's been tagged as a leech.",
-          action: { label: 'Edit', onClick: () => setOverlay({ kind: 'add' }) },
+          action: { label: 'Edit', onClick: () => void editCardById(id) },
         });
       }
     }, "Atlas couldn't save that answer");
@@ -156,7 +171,7 @@ export function Study({ deckId }: { deckId: number | null }) {
       2: () => grade(2),
       3: () => grade(3),
       4: () => grade(4),
-      E: () => setOverlay({ kind: 'add' }),
+      E: () => setOverlay({ kind: 'add', editing: editingOf(current) }),
       I: () => setOverlay({ kind: 'info', cardId: current.card.id, unknownFilters: current.unknownFilters }),
       '-': () => change(() => session!.buryCurrent(current.card.id), 'Card buried until tomorrow'),
       '@': () => change(() => session!.suspendCurrent(current.card.id), 'Card suspended'),
@@ -215,7 +230,7 @@ export function Study({ deckId }: { deckId: number | null }) {
         <div className={styles.right}>
           {current && (
             <>
-              <IconButton icon="edit" label="Edit card" shortcut="E" onClick={() => setOverlay({ kind: 'add' })} />
+              <IconButton icon="edit" label="Edit card" shortcut="E" onClick={() => setOverlay({ kind: 'add', editing: editingOf(current) })} />
               <IconButton icon="flag" label="Flag" shortcut="Ctrl+1" onClick={(e) => setOverlay({ kind: 'flag', anchor: e.currentTarget })} />
               <IconButton icon="more" label="More" onClick={(e) => setOverlay({ kind: 'more', anchor: e.currentTarget })} />
             </>
@@ -271,7 +286,7 @@ export function Study({ deckId }: { deckId: number | null }) {
           { label: 'Delete note', icon: 'trash', shortcut: 'Ctrl+Delete', danger: true, onSelect: () => void askDelete() },
         ]} />
       )}
-      {overlay?.kind === 'add' && <AddCardOverlay onClose={() => setOverlay(null)} />}
+      {overlay?.kind === 'add' && <AddCardOverlay editing={overlay.editing} onClose={() => setOverlay(null)} />}
       {overlay?.kind === 'info' && <CardInfoDialog cardId={overlay.cardId} unknownFilters={overlay.unknownFilters} onClose={() => setOverlay(null)} />}
       {overlay?.kind === 'delete' && (
         <Dialog title="Delete this note?" confirmLabel="Delete note" confirmVariant="danger" onCancel={() => setOverlay(null)}
@@ -301,11 +316,6 @@ function StudyCard({ card, phase, typed, onTyped, onReveal, mediaUrl }: {
   const a = phase === 'answer' ? answerView(card.answer, q.typeIn ? { text: typed, fields } : undefined) : null;
   return (
     <div className={styles.card} data-testid="study-card">
-      {card.note.tags.length > 0 && (
-        <div className={styles.chips} data-testid="study-chips">
-          {card.note.tags.slice(0, 2).map((t) => <Chip key={t}>{t}</Chip>)}
-        </div>
-      )}
       <div key={card.card.id} className={styles.cardBody}>
         {!a ? (
           <>

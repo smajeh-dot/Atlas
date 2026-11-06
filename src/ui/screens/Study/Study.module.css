@@ -111,12 +111,6 @@
   border-radius: var(--radius-lg);
 }
 
-.chips {
-  display: flex;
-  gap: var(--sp-6);
-  flex-wrap: wrap;
-}
-
 .cardBody {
   display: flex;
   flex-direction: column;

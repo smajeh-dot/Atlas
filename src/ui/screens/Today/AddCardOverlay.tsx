@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { cardDecks, pickCardDeck } from '../../../core/deckChoices';
 import { fullName } from '../../../core/deckTree';
-import type { BuiltinNoteType } from '../../../core/model';
+import type { BuiltinNoteType, NoteType } from '../../../core/model';
 import { listDecks } from '../../../data/decks';
 import { listNoteTypes } from '../../../data/noteTypes';
 import { useAtlas, useData } from '../../app/AtlasContext';
@@ -26,8 +26,15 @@ const TYPES: BuiltinNoteType[] = ['basic', 'basic_reversed', 'basic_typein', 'cl
  * button, which doesn't do anything yet. Under those, a row of placeholder text-editing buttons, then a field for each side of the card
  * (Front and Back for Basic) in the left half, and a live preview card in the right. Along the bottom: a tag button on the left (it doesn't do anything yet), and Add (nothing yet) and Close on
  * the right. What's typed is only kept while the card is open: nothing saves a card yet. `deckId` is the deck it was opened for (from a deck's menu), if any.
+ *
+ * With `editing` set (opened from Study's Edit card icon) it is about one existing card: the fields start filled in with that card's text, the preview
+ * shows it, the card type is the card's own, and there is no deck button because the card stays in its deck.
  */
-export function AddCardOverlay({ deckId, onClose }: { deckId?: number; onClose(): void }) {
+export function AddCardOverlay({ deckId, editing, onClose }: {
+  deckId?: number;
+  editing?: { noteType: NoteType; fields: string[]; deckId: number };
+  onClose(): void;
+}) {
   const { deps, settings } = useAtlas();
   const { data } = useData(async () => ({
     decks: await listDecks(deps.db),
@@ -37,11 +44,11 @@ export function AddCardOverlay({ deckId, onClose }: { deckId?: number; onClose()
   const [deckMenu, setDeckMenu] = useState<HTMLElement | null>(null);
   const [chosenDeck, setChosenDeck] = useState<number | null>(null);
   // What's been typed into each field, in the order of the card type's fields.
-  const [fields, setFields] = useState<string[]>([]);
+  const [fields, setFields] = useState<string[]>(editing?.fields ?? []);
   // The type you used last (else Basic). The deck is the one picked here, else the one this was opened for, else the one you used last,
   // else the first deck. Subjects aren't decks, so a subject stands for the first deck inside it.
-  const noteType = data && (data.types.find((t) => t.id === settings.lastNoteTypeId) ?? data.types.find((t) => t.builtin === 'basic') ?? data.types[0]);
-  const deck = data && pickCardDeck(data.decks, [chosenDeck, deckId, settings.lastDeckId]);
+  const noteType = editing?.noteType ?? (data && (data.types.find((t) => t.id === settings.lastNoteTypeId) ?? data.types.find((t) => t.builtin === 'basic') ?? data.types[0]));
+  const deck = data && pickCardDeck(data.decks, [chosenDeck, editing?.deckId ?? deckId, settings.lastDeckId]);
   const card = useRef<HTMLDivElement>(null);
   const isTop = useOverlayLayer();
   useRestoreFocus();
@@ -62,7 +69,7 @@ export function AddCardOverlay({ deckId, onClose }: { deckId?: number; onClose()
         ref={card}
         role="dialog"
         aria-modal="true"
-        aria-label="Add card"
+        aria-label={editing ? 'Edit card' : 'Add card'}
         data-deck-id={deckId}
         tabIndex={-1}
         className={styles.card}
@@ -78,16 +85,18 @@ export function AddCardOverlay({ deckId, onClose }: { deckId?: number; onClose()
         {data && noteType && deck && (
           <div className={styles.selectors}>
             <button type="button" className={styles.selector} aria-label={`Card type: ${noteType.name}`}>{noteType.name}</button>
-            <button
-              type="button"
-              className={styles.selector}
-              aria-label={`Deck: ${fullName(data.decks, deck.id)}`}
-              aria-haspopup="menu"
-              aria-expanded={deckMenu !== null}
-              onClick={(e) => setDeckMenu(deckMenu ? null : e.currentTarget)}
-            >
-              {fullName(data.decks, deck.id)}
-            </button>
+            {!editing && (
+              <button
+                type="button"
+                className={styles.selector}
+                aria-label={`Deck: ${fullName(data.decks, deck.id)}`}
+                aria-haspopup="menu"
+                aria-expanded={deckMenu !== null}
+                onClick={(e) => setDeckMenu(deckMenu ? null : e.currentTarget)}
+              >
+                {fullName(data.decks, deck.id)}
+              </button>
+            )}
           </div>
         )}
         {data && noteType && deck && <AddCardToolbar />}
