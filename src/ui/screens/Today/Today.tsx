@@ -14,7 +14,7 @@ import styles from './Today.module.css';
 
 /**
  * Home screen: the notch, your decks in the central card, and the activity heatmap, all centred in the window.
- * The Settings button sits in the top-right corner and the Decks screen opens from the card's header.
+ * The Settings button sits in the top-right corner.
  * With `addCard` set, the Add card overlay is open on top of it (the 'add' route is Home with that overlay showing).
  */
 export function Today({ addCard }: { addCard?: { deckId?: number } }) {
@@ -40,15 +40,7 @@ export function Today({ addCard }: { addCard?: { deckId?: number } }) {
           <span className={styles.num}>New</span>
           <span className={styles.num}>Learn</span>
           <span className={styles.num}>Due</span>
-          <button
-            type="button"
-            className={`${styles.iconButton} ${styles.manageDecks}`}
-            aria-label="Manage decks"
-            title="Manage decks"
-            onClick={() => navigate({ name: 'decks' })}
-          >
-            <Icon name="decks" />
-          </button>
+          <span />
         </div>
         <div className={styles.decksRule} role="separator" />
         <div className={styles.rows}>

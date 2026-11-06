@@ -46,29 +46,22 @@ test('there is no sidebar: Home fills the window with just the notch, the decks 
 });
 
 test('the Home button in the title row of Settings and of Decks returns to the home screen', async () => {
-  const { user } = await renderApp({ db: await seeded(), route: { name: 'settings' } });
-  await screen.findByRole('heading', { name: 'Settings' });
-  await user.click(screen.getByRole('button', { name: 'Home' }));
-  expect(await screen.findByTestId('today-decks-card')).toBeTruthy();
-  expect(screen.queryByRole('heading', { name: 'Settings' })).toBeNull();
-
-  await user.click(screen.getByRole('button', { name: 'Manage decks' }));
-  await screen.findByRole('heading', { name: 'Decks' });
-  await user.click(screen.getByRole('button', { name: 'Home' }));
-  expect(await screen.findByTestId('today-decks-card')).toBeTruthy();
-  expect(screen.queryByRole('heading', { name: 'Decks' })).toBeNull();
+  for (const [route, heading] of [[{ name: 'settings' }, 'Settings'], [{ name: 'decks' }, 'Decks']] as const) {
+    const { user, unmount } = await renderApp({ db: await seeded(), route });
+    await screen.findByRole('heading', { name: heading });
+    await user.click(screen.getByRole('button', { name: 'Home' }));
+    expect(await screen.findByTestId('today-decks-card')).toBeTruthy();
+    expect(screen.queryByRole('heading', { name: heading })).toBeNull();
+    unmount();
+  }
 });
 
-test('the gear in the corner of Home opens Settings, and the icon in the decks card header opens the Decks screen', async () => {
+test('the gear in the corner of Home opens Settings; the decks card header has no button', async () => {
   const { user } = await renderApp({ db: await seeded() });
-  await screen.findByTestId('today-screen');
+  const card = await screen.findByTestId('today-decks-card');
+  expect(within(card).queryByRole('button', { name: 'Manage decks' })).toBeNull();
   await user.click(screen.getByRole('button', { name: 'Settings' }));
   expect(await screen.findByRole('heading', { name: 'Settings' })).toBeTruthy();
-  await user.click(screen.getByRole('button', { name: 'Home' }));
-
-  const card = await screen.findByTestId('today-decks-card');
-  await user.click(within(card).getByRole('button', { name: 'Manage decks' }));
-  expect(await screen.findByRole('tree', { name: 'All decks' })).toBeTruthy();
 });
 
 test('the blank notch hangs from the top of Today and appears on no other screen', async () => {
