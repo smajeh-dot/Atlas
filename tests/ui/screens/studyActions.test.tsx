@@ -59,11 +59,11 @@ test('- buries and @ suspends, moving on each time', async () => {
   expect((await getCard(db, b)).suspended).toBe(true);
 });
 
-test('the More menu buries too', async () => {
+test('there is no triple-dot menu; burying still works from the keyboard', async () => {
   const a = (await seedNote(seedDeps, deck, 'basic', ['first', 'x'])).cardIds[0]!;
   const { user } = await study();
-  await user.click(screen.getByRole('button', { name: 'More' }));
-  await user.click(screen.getByRole('menuitem', { name: /Bury card/ }));
+  expect(screen.queryByRole('button', { name: 'More' })).toBeNull();
+  await user.keyboard('-');
   await waitFor(async () => expect((await getCard(db, a)).buriedKind).toBe('manual'));
 });
 

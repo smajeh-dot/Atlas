@@ -8,8 +8,8 @@ import { listNoteTypes } from '../../../data/noteTypes';
 import { useAtlas, useData } from '../../app/AtlasContext';
 import { FieldEditor } from '../../editor/FieldEditor';
 import { Button } from '../../components/Button';
+import { Input } from '../../components/Input';
 import { MenuCard } from '../../components/MenuCard';
-import { Tooltip } from '../../components/Tooltip';
 import menuStyles from '../../components/MenuCard.module.css';
 import { Icon } from '../../icons/icons';
 import { trapTab, useOverlayLayer, useRestoreFocus } from '../../components/overlayStack';
@@ -24,7 +24,7 @@ const TYPES: BuiltinNoteType[] = ['basic', 'basic_reversed', 'basic_typein', 'cl
  * The X, Esc or a click outside the card closes it. Along the top: the card type, then the deck it's being added to
  * (the type just shows the current choice for now; the deck opens a dropdown of your decks), and in the corner the triple-dot
  * button, which doesn't do anything yet. Under those, a row of placeholder text-editing buttons, then a field for each side of the card
- * (Front and Back for Basic) in the left half, and a live preview card in the right. Along the bottom: a tag button on the left (it doesn't do anything yet), and Add (nothing yet) and Close on
+ * (Front and Back for Basic) in the left half, and a live preview card in the right. Along the bottom: a tag icon on the left with a field beside it (a plain icon, not a button; the field is left out when editing a card), and Add (nothing yet) and Close on
  * the right. What's typed is only kept while the card is open: nothing saves a card yet. `deckId` is the deck it was opened for (from a deck's menu), if any.
  *
  * With `editing` set (opened from Study's Edit card icon) it is about one existing card: the fields start filled in with that card's text, the preview
@@ -44,6 +44,8 @@ export function AddCardOverlay({ deckId, editing, onClose }: {
   const [deckMenu, setDeckMenu] = useState<HTMLElement | null>(null);
   const [chosenDeck, setChosenDeck] = useState<number | null>(null);
   // What's been typed into each field, in the order of the card type's fields.
+  // What's been typed into the tags field (nothing uses it yet).
+  const [tagText, setTagText] = useState('');
   const [fields, setFields] = useState<string[]>(editing?.fields ?? []);
   // The type you used last (else Basic). The deck is the one picked here, else the one this was opened for, else the one you used last,
   // else the first deck. Subjects aren't decks, so a subject stands for the first deck inside it.
@@ -132,11 +134,16 @@ export function AddCardOverlay({ deckId, editing, onClose }: {
               </div>
             </div>
             <div className={styles.footer} data-testid="add-card-footer">
-              <Tooltip text="Tags">
-                <button type="button" className={styles.iconButton} aria-label="Tags">
+              <div className={styles.tags}>
+                <span className={styles.tagIcon} data-testid="add-card-tag-icon" aria-hidden="true">
                   <Icon name="tag" />
-                </button>
-              </Tooltip>
+                </span>
+                {!editing && (
+                  <div className={styles.tagField}>
+                    <Input label="Tags" hideLabel placeholder="Add tags" value={tagText} onChange={(e) => setTagText(e.target.value)} />
+                  </div>
+                )}
+              </div>
               <div className={styles.actions}>
                 <Button variant="primary" size="sm" className={styles.add}>Add</Button>
                 <Button variant="secondary" size="sm" onClick={onClose}>Close</Button>

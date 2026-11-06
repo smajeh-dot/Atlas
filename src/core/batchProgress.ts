@@ -2,13 +2,18 @@
 export const REVIEW_BATCH = 20;
 
 /**
- * How full the study progress bar is, from 0 to 1. The bar covers one batch of `size` cards at a time:
- * it empties when a batch is finished and more cards remain, and the last batch (which may be shorter) fills
- * by however many cards it actually holds. `answered` and `remaining` count the whole session.
+ * Where the current batch of `size` cards has got to: `done` answered out of `total` in it. `answered` and `remaining` count the
+ * whole session. A batch is finished when `size` answers have been given and more cards remain, and the bar then starts again from empty;
+ * the last batch may be shorter, and holds only the cards it actually has.
  */
-export function batchProgress(answered: number, remaining: number, size = REVIEW_BATCH): number {
+export function batchCounts(answered: number, remaining: number, size = REVIEW_BATCH): { done: number; total: number } {
   // When nothing is left, the batch just finished is shown full rather than as a fresh, empty one.
-  const inBatch = remaining === 0 && answered > 0 ? ((answered - 1) % size) + 1 : answered % size;
-  const total = Math.min(size, inBatch + remaining);
-  return total === 0 ? 0 : inBatch / total;
+  const done = remaining === 0 && answered > 0 ? ((answered - 1) % size) + 1 : answered % size;
+  return { done, total: Math.min(size, done + remaining) };
+}
+
+/** How full the study progress bar is, from 0 to 1. */
+export function batchProgress(answered: number, remaining: number, size = REVIEW_BATCH): number {
+  const { done, total } = batchCounts(answered, remaining, size);
+  return total === 0 ? 0 : done / total;
 }

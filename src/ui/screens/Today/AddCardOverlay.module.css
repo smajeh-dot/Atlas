@@ -169,13 +169,47 @@ div.dropdown {
   padding-top: calc(var(--fs-label) * var(--lh-label) + var(--sp-6));
 }
 
-/* The bottom row: the tag button on the left, Add and Close on the right. */
+/* The bottom row: the tag icon and its field on the left, Add and Close on the right. */
 .footer {
   flex: none;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: var(--sp-12);
+}
+
+/* The tag icon is only a picture, so it has no hover or pointer. The field beside it is kept to a sensible width and a button-sized height. */
+.tags {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-8);
+}
+
+.tagIcon {
+  flex: none;
+  width: var(--control);
+  height: var(--control);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text);
+}
+
+.tagIcon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.tagField {
+  flex: 1;
+  min-width: 0;
+  max-width: 320px;
+}
+
+.tagField input {
+  padding: 6px 10px;
 }
 
 .actions {

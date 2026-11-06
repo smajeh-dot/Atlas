@@ -59,6 +59,7 @@
   outline: none;
 }
 
+.batch,
 .left_,
 .timer {
   flex: none;
@@ -73,7 +74,8 @@
   gap: var(--sp-8);
 }
 
-/* The icons sit straight on the page background, with no card around them. */
+/* The icons (back arrow and card actions) sit straight on the page background, with no card around them. */
+.left button,
 .right button {
   border-color: transparent;
   background: transparent;

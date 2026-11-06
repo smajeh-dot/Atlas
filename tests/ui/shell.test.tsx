@@ -167,9 +167,9 @@ test('Add on the notch opens a large card over Home, which stays put underneath'
   expect(card.getAttribute('aria-modal')).toBe('true');
   // Along the top: the card type, then the deck. In the corner: the triple-dot button, then the close button.
   expect(await within(card).findByRole('button', { name: 'Deck: <b>Bio</b>' })).toBeTruthy();
-  // (then the bottom row: the tag icon, Add and Close).
+  // (then the bottom row: Add and Close; the tag icon is not a button).
   expect(within(card).getAllByRole('button').map((b) => b.getAttribute('aria-label') ?? b.textContent)).toEqual(
-    ['Card type: Basic', 'Deck: <b>Bio</b>', ...FORMAT_BUTTONS, 'Tags', 'Add', 'Close', 'More options', 'Close'],
+    ['Card type: Basic', 'Deck: <b>Bio</b>', ...FORMAT_BUTTONS, 'Add', 'Close', 'More options', 'Close'],
   );
   // Home is still there underneath, the very same elements rather than a reload.
   expect(screen.getByTestId('today-decks-card')).toBe(decksCard);

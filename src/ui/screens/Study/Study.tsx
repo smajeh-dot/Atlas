@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { batchProgress } from '../../../core/batchProgress';
+import { batchCounts, batchProgress } from '../../../core/batchProgress';
 import { formatInterval } from '../../../core/format';
 import type { NoteType, Rating } from '../../../core/model';
 import { cardsOfNote, getCard } from '../../../data/cards';
@@ -39,7 +39,7 @@ const message = (e: unknown) => (e instanceof Error ? e.message : String(e));
 type Editing = { noteType: NoteType; fields: string[]; deckId: number };
 
 type Overlay =
-  | { kind: 'flag' | 'more'; anchor: HTMLElement }
+  | { kind: 'flag'; anchor: HTMLElement }
   | { kind: 'add'; editing: Editing }
   | { kind: 'info'; cardId: number; unknownFilters: string[] }
   | { kind: 'delete'; cards: number }
@@ -206,6 +206,7 @@ export function Study({ deckId }: { deckId: number | null }) {
   const summary = session.summary();
   const left = session.remaining();
   const remaining = left.new + left.learn + left.review;
+  const batch = batchCounts(summary.answers, remaining);
   const crumbs = (current?.deckName ?? deckName).split(' › ').filter(Boolean);
 
   return (
@@ -226,6 +227,7 @@ export function Study({ deckId }: { deckId: number | null }) {
           {settings.showRemainingCount && (current || summary.answers > 0) && (
             <Tooltip block text={`New ${left.new} · Learning ${left.learn} · Review ${left.review}`}>
               <div className={styles.progress} tabIndex={0}>
+                <span className={styles.batch} data-testid="study-batch">{batch.done}/{batch.total}</span>
                 <ProgressBar value={batchProgress(summary.answers, remaining)} label="Progress" />
                 <span className={styles.left_}>{remaining} left</span>
                 {settings.showTimer && current && <Timer since={shownAt.current} clock={deps.clock} />}
@@ -238,7 +240,6 @@ export function Study({ deckId }: { deckId: number | null }) {
             <>
               <IconButton icon="edit" label="Edit card" shortcut="E" onClick={() => setOverlay({ kind: 'add', editing: editingOf(current) })} />
               <IconButton icon="flag" label="Flag" shortcut="Ctrl+1" onClick={(e) => setOverlay({ kind: 'flag', anchor: e.currentTarget })} />
-              <IconButton icon="more" label="More" onClick={(e) => setOverlay({ kind: 'more', anchor: e.currentTarget })} />
             </>
           )}
         </div>
@@ -281,15 +282,6 @@ export function Study({ deckId }: { deckId: number | null }) {
         <Menu anchor={overlay.anchor} label="Flag" onClose={() => setOverlay(null)} items={[
           ...FLAG_NAMES.map((name, i): MenuItem => ({ label: name, swatch: flagColour(i + 1), shortcut: `Ctrl+${i + 1}`, onSelect: () => flag(i + 1) })),
           { label: 'Remove flag', shortcut: 'Ctrl+0', onSelect: () => flag(0) },
-        ]} />
-      )}
-      {overlay?.kind === 'more' && current && (
-        <Menu anchor={overlay.anchor} label="More" onClose={() => setOverlay(null)} items={[
-          { label: 'Bury card', icon: 'bury', shortcut: '-', onSelect: () => change(() => session.buryCurrent(current.card.id), 'Card buried until tomorrow') },
-          { label: 'Suspend card', icon: 'suspend', shortcut: '@', onSelect: () => change(() => session.suspendCurrent(current.card.id), 'Card suspended') },
-          { label: 'Card info', icon: 'info', shortcut: 'I', onSelect: () => setOverlay({ kind: 'info', cardId: current.card.id, unknownFilters: current.unknownFilters }) },
-          'divider',
-          { label: 'Delete note', icon: 'trash', shortcut: 'Ctrl+Delete', danger: true, onSelect: () => void askDelete() },
         ]} />
       )}
       {overlay?.kind === 'add' && <AddCardOverlay editing={overlay.editing} onClose={() => setOverlay(null)} />}

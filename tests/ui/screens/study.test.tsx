@@ -96,11 +96,13 @@ test('the progress bar holds 20 cards and starts again after them', async () => 
   const bar = () => Number(screen.getByRole('progressbar', { name: 'Progress' }).getAttribute('aria-valuenow'));
   await waitFor(() => expect(card().textContent).toContain('q'));
   expect(bar()).toBe(0);
+  expect(screen.getByTestId('study-batch').textContent).toBe('0/20');
   for (let i = 0; i < 10; i++) {
     await user.keyboard(' ');
     await screen.findByRole('button', { name: /^Good/ });
     await user.keyboard('3');
     await waitFor(() => expect(bar()).toBe((i + 1) * 5));
+    expect(screen.getByTestId('study-batch').textContent).toBe(`${i + 1}/20`);
   }
 });
 
