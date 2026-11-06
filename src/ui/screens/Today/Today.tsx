@@ -13,7 +13,8 @@ import { Notch } from './Notch';
 import styles from './Today.module.css';
 
 /**
- * Home screen: the notch, your decks in the central card, and the activity heatmap.
+ * Home screen: the notch, your decks in the central card, and the activity heatmap, all centred in the window.
+ * The Settings button sits in the top-right corner.
  * With `addCard` set, the Add card overlay is open on top of it (the 'add' route is Home with that overlay showing).
  */
 export function Today({ addCard }: { addCard?: { deckId?: number } }) {
@@ -24,6 +25,15 @@ export function Today({ addCard }: { addCard?: { deckId?: number } }) {
   return (
     <div className={styles.page} data-testid="today-screen">
       <Notch />
+      <button
+        type="button"
+        className={`${styles.iconButton} ${styles.settingsButton}`}
+        aria-label="Settings"
+        title="Settings (Ctrl+,)"
+        onClick={() => navigate({ name: 'settings' })}
+      >
+        <Icon name="settings" />
+      </button>
       <section className={styles.decksCard} aria-label="Decks" data-testid="today-decks-card">
         <div className={styles.decksHeader}>
           <span>Deck</span>
@@ -45,8 +55,8 @@ export function Today({ addCard }: { addCard?: { deckId?: number } }) {
 }
 
 /**
- * One deck and, underneath it, its sub-decks. A deck with sub-decks opens and closes when you click it (and stays that way,
- * like in the Decks screen); a deck without any starts a study session.
+ * One deck and, underneath it, its sub-decks. A deck with sub-decks opens and closes when you click it (and stays that way);
+ * a deck without any starts a study session.
  */
 function DeckRow({ node, depth, openId, onMore }: { node: DeckTreeWithCounts; depth: number; openId: number | null; onMore(deck: Deck, anchor: HTMLElement): void }) {
   const { deps, navigate, changed } = useAtlas();

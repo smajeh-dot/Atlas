@@ -10,6 +10,13 @@
   padding: 24px 28px;
 }
 
+/* The way back to Home, then the page title. */
+.titleRow {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-12);
+}
+
 .title {
   font-family: var(--font-display);
   font-weight: var(--weight-display);

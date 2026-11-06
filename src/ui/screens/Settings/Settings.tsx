@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { validateSettingsPatch } from '../../../core/validate';
 import { SettingsError } from '../../../data/settings';
 import { useAtlas } from '../../app/AtlasContext';
+import { BackToHome } from '../../components/BackToHome';
 import { Button } from '../../components/Button';
 import { Input } from '../../components/Input';
 import { Select } from '../../components/Select';
@@ -36,7 +37,10 @@ export function Settings({ section = 'study' }: { section?: Section }) {
   const [current, setCurrent] = useState<Section>(section);
   return (
     <div className={styles.page}>
-      <h1 className={styles.title}>Settings</h1>
+      <div className={styles.titleRow}>
+        <BackToHome />
+        <h1 className={styles.title}>Settings</h1>
+      </div>
       <div className={styles.layout}>
         <nav aria-label="Settings sections" className={styles.nav}>
           {SECTIONS.map((s) => (

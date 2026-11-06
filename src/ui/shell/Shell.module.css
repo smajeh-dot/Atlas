@@ -6,19 +6,6 @@
   background: var(--bg-app);
 }
 
-.side {
-  display: flex;
-  border: var(--panel-border);
-  border-right: var(--sidebar-divider);
-  border-left: var(--sidebar-edge);
-  border-bottom: var(--sidebar-edge);
-  /* Pull the left and bottom edges out over the shell padding so they sit on the window edge. */
-  margin: 0 0 calc(var(--sidebar-bleed) * -1) calc(var(--sidebar-bleed) * -1);
-  border-radius: var(--radius-panel-side);
-  overflow: hidden;
-  background: var(--sidebar-bg);
-}
-
 .main {
   flex: 1;
   min-width: 0;

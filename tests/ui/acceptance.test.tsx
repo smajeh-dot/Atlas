@@ -32,7 +32,7 @@ test('a new user creates a deck, has four kinds of card and studies them by keyb
   expect(await countRows(db, 'notes')).toBe(4);
   expect(await countRows(db, 'cards')).toBe(6);
 
-  // The sidebar and Today screen are being redesigned and have no way to start a session yet, so reopen the app in Study.
+  // The Today screen is being redesigned and has no way to start a session yet, so reopen the app in Study.
   first.unmount();
   ({ user, deps } = await renderApp({ db, route: { name: 'study', deckId: null } }));
   await screen.findByRole('button', { name: 'Leave study' });

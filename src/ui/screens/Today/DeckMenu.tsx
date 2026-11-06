@@ -17,7 +17,7 @@ interface MenuItem {
   onSelect(): void;
 }
 
-/** The menu for a deck, in groups with a divider between them. Colour is only offered on top-level decks, as in the Decks screen. */
+/** The menu for a deck, in groups with a divider between them. Colour is only offered on top-level decks. */
 function deckMenuGroups(deck: Deck, h: DeckHandlers, chooseColour: () => void): MenuItem[][] {
   return [
     [
@@ -28,15 +28,13 @@ function deckMenuGroups(deck: Deck, h: DeckHandlers, chooseColour: () => void): 
       { label: 'Add subdeck', icon: 'newDeck', onSelect: h.addSubdeck },
       { label: 'Rename', icon: 'edit', onSelect: h.rename },
       ...(deck.parentId === null ? [{ label: 'Colour', icon: 'droplet' as const, onSelect: chooseColour }] : []),
-      { label: 'Deck options', icon: 'settings', onSelect: h.options },
     ],
     [{ label: 'Delete', icon: 'trash', danger: true, onSelect: () => void h.remove() }],
   ];
 }
 
 /**
- * The dropdown that opens under a deck's three-dot button, shared by the home screen and the sidebar so a deck
- * has the same menu everywhere. Put `ui` somewhere in the screen; call `toggle` from the three-dot button.
+ * The dropdown that opens under a deck's three-dot button on the home screen. Put `ui` somewhere in the screen; call `toggle` from the three-dot button.
  */
 export function useDeckMenu(): { openId: number | null; toggle(deck: Deck, anchor: HTMLElement): void; ui: React.ReactNode } {
   const { deps, changed } = useAtlas();

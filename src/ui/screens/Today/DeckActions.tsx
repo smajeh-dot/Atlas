@@ -29,11 +29,10 @@ export interface DeckHandlers {
   addCard(): void;
   rename(): void;
   addSubdeck(): void;
-  options(): void;
   remove(): Promise<void>;
 }
 
-/** The deck menu (spec 10.3) and its dialogs, shared by Today and Decks. */
+/** The deck menu (spec 10.3) and its dialogs. */
 export function useDeckActions(): {
   openMenu(deck: Deck, anchor: Anchor): void;
   deckHandlers(deck: Deck): DeckHandlers;
@@ -67,7 +66,6 @@ export function useDeckActions(): {
     addCard: () => navigate({ name: 'add', deckId: deck.id }),
     rename: () => askName('Rename deck', 'Rename', deck.name, (n) => renameDeck(deps.db, deck.id, n)),
     addSubdeck: () => newDeck(deck.id),
-    options: () => navigate({ name: 'decks', deckId: deck.id }),
     remove: async () => {
       try {
         setOpen({ kind: 'delete', deck, text: deletionText(deck.name, await deckDeletionSummary(deps.db, deck.id)) });
@@ -84,7 +82,6 @@ export function useDeckActions(): {
       { label: 'Add card here', onSelect: h.addCard },
       { label: 'Rename', shortcut: 'F2', onSelect: h.rename },
       { label: 'Add subdeck', onSelect: h.addSubdeck },
-      { label: 'Deck options', onSelect: h.options },
       ...(deck.parentId === null ? [{ label: 'Colour', onSelect: () => setOpen({ kind: 'colour', deck, anchor }) }] : []),
       'divider',
       { label: 'Delete', danger: true, onSelect: h.remove },
