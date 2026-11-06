@@ -4,14 +4,15 @@
 
 use std::path::Path;
 use std::sync::Mutex;
-use std::time::{SystemTime, UNIX_EPOCH};
 
 use anki_package::{ImportError, InstallFile, WorkDir};
+use atlas_backup::Kind;
 use rusqlite::{Connection, OpenFlags};
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
 
-use crate::db::{query_rows, DbState, NO_DB};
+use crate::backup::{self, BackupLock};
+use crate::db::query_rows;
 use crate::paths;
 
 /// The import being prepared or run, if any. Only one at a time.
@@ -146,19 +147,11 @@ pub async fn media_remove(names: Vec<String>) -> Result<(), CommandError> {
         .map_err(CommandError::from)
 }
 
-/// Copies atlas.db to backups\pre-import-<ms>.db and returns the path.
+/// Saves a copy of atlas.db to backups\pre-import-<ms>.db and returns the path.
 #[tauri::command]
-pub async fn db_backup(db: tauri::State<'_, DbState>) -> Result<String, CommandError> {
-    let stamp = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map(|d| d.as_millis())
-        .unwrap_or(0)
-        .to_string();
-    let backups = data_dir()?.join("backups");
-    let guard = db.0.lock().map_err(io_error)?;
-    let conn = guard.as_ref().ok_or_else(|| io_error(NO_DB))?;
-    let path = anki_package::backup_database(conn, &backups, &stamp)?;
-    Ok(path.display().to_string())
+pub async fn db_backup(lock: tauri::State<'_, BackupLock>) -> Result<String, CommandError> {
+    let made = backup::make(lock.0.clone(), Kind::PreImport).await.map_err(io_error)?;
+    Ok(data_dir()?.join("backups").join(made.name).display().to_string())
 }
 
 /// Ends the import: closes the staging database and deletes the work folder.

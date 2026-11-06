@@ -46,8 +46,8 @@ jobs:
       - name: Test
         run: npm test
 
-      - name: Test Anki package reader
-        run: cargo test -p anki-package --manifest-path src-tauri/Cargo.toml
+      - name: Test Anki package reader and backups
+        run: cargo test -p anki-package -p atlas-backup --manifest-path src-tauri/Cargo.toml
 
       - name: Import a 50,000-note deck
         run: npm run test:scale

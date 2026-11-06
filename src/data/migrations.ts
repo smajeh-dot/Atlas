@@ -139,6 +139,12 @@ async function currentVersion(db: Db): Promise<number> {
   return row ? Number(row.value) : 0;
 }
 
+/** What an upgrade would do, or null for a brand-new database (nothing to protect) or one already current. */
+export async function pendingUpgrade(db: Db): Promise<{ from: number; to: number } | null> {
+  const from = await currentVersion(db);
+  return from === 0 || from >= SCHEMA_VERSION ? null : { from, to: SCHEMA_VERSION };
+}
+
 /** Brings the database up to SCHEMA_VERSION (or `target`, for tests). Safe to call on every launch. */
 export async function migrate(db: Db, now: number, target: number = MIGRATIONS.length): Promise<void> {
   const from = await currentVersion(db);

@@ -2,8 +2,9 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import type { Settings } from '../../core/model';
 import { studyDay } from '../../core/studyDay';
 import type { Db } from '../../data/db';
-import { updateSettings } from '../../data/settings';
+import { getSettings, updateSettings } from '../../data/settings';
 import type { ImportFlowDeps } from '../../services/importFlow';
+import type { BackupService } from '../../services/backupService';
 import type { MediaPort } from '../../services/mediaService';
 import type { UndoStack } from '../../services/undo';
 import type { AppInfo } from '../../platform/tauriDb';
@@ -18,6 +19,8 @@ export interface AppDeps {
   appInfo: AppInfo;
   /** Anki import. Absent in tests and previews that don't exercise it. */
   importer?: Omit<ImportFlowDeps, 'db' | 'clock'>;
+  /** Automatic backups. Absent in tests and previews, where the backup steps simply don't happen. */
+  backups?: BackupService;
 }
 
 export type Route =
@@ -29,7 +32,7 @@ export type Route =
   | { name: 'session'; target?: string }
   /** Home with the Add card overlay open on top of it. `deckId` is the deck it was opened for, if any. */
   | { name: 'add'; deckId?: number }
-  | { name: 'settings'; section?: 'study' | 'about' }
+  | { name: 'settings'; section?: 'study' | 'backups' | 'about' }
   | { name: 'import' };
 
 interface AtlasValue {
@@ -39,6 +42,8 @@ interface AtlasValue {
   settings: Settings;
   /** Validates and saves; throws SettingsError with a user-facing message. */
   saveSettings(patch: Partial<Settings>): Promise<void>;
+  /** Reads the settings from the database again, after the data underneath was replaced by a restore. */
+  reloadSettings(): Promise<void>;
   /** Bumped after every change so screens reload their data. */
   version: number;
   changed(): void;
@@ -58,6 +63,9 @@ export function AtlasProvider({ deps, initialSettings, initialRoute, children }:
   const changed = useCallback(() => setVersion((v) => v + 1), []);
   const saveSettings = useCallback(async (patch: Partial<Settings>) => {
     setSettings(await updateSettings(deps.db, patch));
+  }, [deps.db]);
+  const reloadSettings = useCallback(async () => {
+    setSettings(await getSettings(deps.db));
   }, [deps.db]);
   const navigate = useCallback((r: Route) => setRoute(r), []);
 
@@ -81,8 +89,8 @@ export function AtlasProvider({ deps, initialSettings, initialRoute, children }:
     };
   }, [deps.clock, settings.dayStartHour, changed]);
   const value = useMemo(
-    () => ({ deps, route, navigate, settings, saveSettings, version, changed }),
-    [deps, route, navigate, settings, saveSettings, version, changed],
+    () => ({ deps, route, navigate, settings, saveSettings, reloadSettings, version, changed }),
+    [deps, route, navigate, settings, saveSettings, reloadSettings, version, changed],
   );
   return <AtlasContext.Provider value={value}>{children}</AtlasContext.Provider>;
 }

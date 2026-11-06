@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { vi } from 'vitest';
 import type { Db } from '../../src/data/db';
 import { getSettings } from '../../src/data/settings';
+import type { BackupService } from '../../src/services/backupService';
 import type { ImportFlowDeps } from '../../src/services/importFlow';
 import type { MediaPort } from '../../src/services/mediaService';
 import { UndoStack } from '../../src/services/undo';
@@ -28,6 +29,7 @@ export async function renderApp(opts: {
   route?: Route;
   fakeTimers?: boolean;
   importer?: Omit<ImportFlowDeps, 'db' | 'clock'>;
+  backups?: BackupService;
   notice?: string;
 } = {}) {
   const db = opts.db ?? (await createMigratedDb());
@@ -42,6 +44,7 @@ export async function renderApp(opts: {
     openUrl: async (url: string) => void opened.push(url),
     appInfo: { dataDir: 'C:\\Users\\sam\\AppData\\Roaming\\Atlas', dbPath: 'C:\\Users\\sam\\AppData\\Roaming\\Atlas\\atlas.db', version: '0.2.0', startupError: null },
     ...(opts.importer ? { importer: opts.importer } : {}),
+    ...(opts.backups ? { backups: opts.backups } : {}),
   };
   const user = userEvent.setup(opts.fakeTimers ? { advanceTimers: (ms) => vi.advanceTimersByTime(ms) } : {});
   const result = render(<AtlasApp deps={deps} initialSettings={await getSettings(db)} initialRoute={opts.route} notice={opts.notice} />);

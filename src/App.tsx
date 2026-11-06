@@ -3,11 +3,13 @@ import type { Settings } from './core/model';
 import { migrate } from './data/migrations';
 import { recoverInterruptedImports } from './import/commit';
 import { getSettings } from './data/settings';
+import { tauriBackupPort } from './platform/backupBridge';
 import { systemClock } from './platform/clock';
 import { tauriMedia } from './platform/media';
 import { openUrl } from './platform/opener';
 import { chooseAnkiFile, finishImport, prepareFile, tauriImportPlatform, tauriStaging } from './platform/importBridge';
 import { getAppInfo, tauriDb } from './platform/tauriDb';
+import { createBackupService } from './services/backupService';
 import { UndoStack } from './services/undo';
 import type { AppDeps } from './ui/app/AtlasContext';
 import { AtlasApp } from './ui/AtlasApp';
@@ -27,6 +29,9 @@ function start() {
   startup ??= (async () => {
     const appInfo = await getAppInfo();
     if (appInfo.startupError) return { error: appInfo.startupError };
+    const backups = createBackupService({ port: tauriBackupPort, db: tauriDb, clock: systemClock });
+    // A copy of the data goes aside before any upgrade of its format. If that fails the upgrade does not run.
+    await backups.beforeUpgrade();
     await migrate(tauriDb, systemClock.now());
     // An import cut off by a crash or power cut is undone before anything else reads the data.
     const recovered = await recoverInterruptedImports(tauriDb, tauriImportPlatform);
@@ -35,7 +40,9 @@ function start() {
     // Nothing renders until the fonts are ready, so text never flashes in a fallback font.
     await loadFonts();
     const importer = { staging: tauriStaging, platform: tauriImportPlatform, chooseFile: chooseAnkiFile, prepare: prepareFile, finish: finishImport };
-    const deps: AppDeps = { db: tauriDb, clock: systemClock, undo: new UndoStack(), media: tauriMedia, openUrl, appInfo, importer };
+    const deps: AppDeps = { db: tauriDb, clock: systemClock, undo: new UndoStack(), media: tauriMedia, openUrl, appInfo, importer, backups };
+    // The first launch of each day makes a backup. It runs on its own connection, so nothing waits for it.
+    void backups.ensureDaily();
     const notice = recovered > 0
       ? "An import didn't finish last time Atlas was open, so Atlas undid it. Your cards are as they were before it."
       : undefined;

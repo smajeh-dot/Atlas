@@ -42,6 +42,8 @@ export interface SessionDeps {
   db: Db;
   clock: { now(): number };
   undo: UndoStack;
+  /** Called before a note is deleted; a rejection stops the delete. */
+  backups?: { beforeDelete(): Promise<void> };
 }
 
 const RATING_NAMES = ['Again', 'Hard', 'Good', 'Easy'] as const;
@@ -336,6 +338,7 @@ export class StudySession {
     if (!card) return;
     this.busy = true;
     try {
+      await this.deps.backups?.beforeDelete();
       const before = this.snapshot();
       const entry = await deleteNote(this.deps, card.noteId);
       entry.cardId = card.id;

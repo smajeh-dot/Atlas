@@ -221,6 +221,7 @@ name = "atlas"
 version = "0.2.0"
 dependencies = [
  "anki-package",
+ "atlas-backup",
  "dirs 6.0.0",
  "rusqlite",
  "serde",
@@ -231,6 +232,14 @@ dependencies = [
  "tauri-plugin-opener",
  "tauri-plugin-single-instance",
  "tauri-plugin-window-state",
+]
+
+[[package]]
+name = "atlas-backup"
+version = "0.1.0"
+dependencies = [
+ "rusqlite",
+ "tempfile",
 ]
 
 [[package]]

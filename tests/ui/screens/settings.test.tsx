@@ -19,10 +19,10 @@ async function open(section?: 'study' | 'about') {
   return r;
 }
 
-test('the sub-nav shows Study and About only; there is no Appearance page', async () => {
+test('the sub-nav shows Study, Backups and About; there is no Appearance page', async () => {
   await open();
   const nav = screen.getByRole('navigation', { name: 'Settings sections' });
-  expect(within(nav).getAllByRole('button').map((b) => b.textContent)).toEqual(['Study', 'About']);
+  expect(within(nav).getAllByRole('button').map((b) => b.textContent)).toEqual(['Study', 'Backups', 'About']);
 });
 
 test('Next day starts at saves the hour', async () => {

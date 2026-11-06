@@ -103,3 +103,13 @@ test('a v1 database full of cards and reviews migrates to v2 without losing anyt
   const [v] = await db.query<{ value: string }>(`SELECT value FROM meta WHERE key = 'schema_version'`);
   expect(v!.value).toBe('2');
 });
+
+test('pendingUpgrade says what an upgrade would do, and is null for new or current databases', async () => {
+  const { pendingUpgrade } = await import('../../src/data/migrations');
+  const fresh = createTestDb();
+  expect(await pendingUpgrade(fresh)).toBeNull();
+  await migrate(fresh, T0, 1);
+  expect(await pendingUpgrade(fresh)).toEqual({ from: 1, to: SCHEMA_VERSION });
+  await migrate(fresh, T0 + 1);
+  expect(await pendingUpgrade(fresh)).toBeNull();
+});

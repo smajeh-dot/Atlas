@@ -145,3 +145,45 @@
 .native {
   font-size: var(--fs-ui);
 }
+
+.backupList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  border: var(--border-w) solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--bg-panel);
+}
+
+.backupRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-12);
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.backupRow:last-child {
+  border-bottom: 0;
+}
+
+.backupWhen {
+  display: block;
+  font-size: var(--fs-ui);
+  font-variant-numeric: tabular-nums;
+}
+
+.meta {
+  display: block;
+  font-size: var(--fs-sm);
+  color: var(--text-muted);
+}
+
+.error {
+  margin: 0;
+  font-size: var(--fs-ui);
+  color: var(--danger);
+}

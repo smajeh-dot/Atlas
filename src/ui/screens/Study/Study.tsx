@@ -18,6 +18,7 @@ import { ProgressBar } from '../../components/ProgressBar';
 import { useToast } from '../../components/Toast';
 import { Tooltip } from '../../components/Tooltip';
 import { FLAG_NAMES, flagColour } from '../../deckColour';
+import { SafetyBackupError } from '../../../services/backupService';
 import { useHotkeys } from '../../keys';
 import { EditCardSheet } from '../Editor/EditCardSheet';
 import { CardInfoDialog } from './CardInfoDialog';
@@ -92,7 +93,7 @@ export function Study({ deckId }: { deckId: number | null }) {
     try {
       await work();
     } catch (e) {
-      toast.show({ message: `${failure}: ${message(e)}` });
+      toast.show({ message: e instanceof SafetyBackupError ? e.message : `${failure}: ${message(e)}` });
     } finally {
       busy.current = false;
     }

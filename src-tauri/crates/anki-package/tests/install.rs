@@ -1,8 +1,7 @@
-//! Installing media into Atlas's folder, removing it on rollback, and backups.
+//! Installing media into Atlas's folder and removing it on rollback.
 
 use anki_package::{
-    backup_database, install_media, remove_media, remove_stale_media_temps, ImportError,
-    InstallFile,
+    install_media, remove_media, remove_stale_media_temps, ImportError, InstallFile,
 };
 use sha1::{Digest, Sha1};
 use std::path::Path;
@@ -160,25 +159,4 @@ fn half_copied_files_from_a_crash_are_cleared() {
     std::fs::write(media.path().join("real.png"), b"x").unwrap();
     assert_eq!(remove_stale_media_temps(media.path()).unwrap(), 1);
     assert_eq!(listing(media.path()), ["real.png"]);
-}
-
-#[test]
-fn a_backup_is_a_complete_copy_of_the_database() {
-    let dir = TempDir::new().unwrap();
-    let db = rusqlite::Connection::open(dir.path().join("atlas.db")).unwrap();
-    db.execute_batch(
-        "PRAGMA journal_mode = WAL; CREATE TABLE t (x); INSERT INTO t VALUES (1), (2), (3);",
-    )
-    .unwrap();
-    let backups = dir.path().join("backups");
-    let path = backup_database(&db, &backups, "20261104-221500-123").unwrap();
-    assert_eq!(path, backups.join("pre-import-20261104-221500-123.db"));
-    let copy = rusqlite::Connection::open(&path).unwrap();
-    let n: i64 = copy
-        .query_row("SELECT SUM(x) FROM t", [], |r| r.get(0))
-        .unwrap();
-    assert_eq!(n, 6);
-    // Never overwrites an earlier backup, and refuses a stamp that could be a path.
-    assert!(backup_database(&db, &backups, "20261104-221500-123").is_err());
-    assert!(backup_database(&db, &backups, "../x").is_err());
 }

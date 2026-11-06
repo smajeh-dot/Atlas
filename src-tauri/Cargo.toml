@@ -8,7 +8,7 @@ edition = "2021"
 # without the system libraries the Tauri app needs. The app stays the root
 # package, so the exe still lands in src-tauri/target/release.
 [workspace]
-members = ["crates/anki-package"]
+members = ["crates/anki-package", "crates/atlas-backup"]
 
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
@@ -24,6 +24,7 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 dirs = "6"
 anki-package = { path = "crates/anki-package" }
+atlas-backup = { path = "crates/atlas-backup" }
 
 [profile.release]
 lto = true
