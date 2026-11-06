@@ -38,7 +38,7 @@
   outline: none;
 }
 
-/* Top right corner: the triple-dot button, then the close button. */
+/* Top right corner: the close button. */
 .corner {
   position: absolute;
   top: var(--inset);
@@ -76,7 +76,7 @@
   position: absolute;
   top: var(--inset);
   left: var(--inset);
-  right: calc(var(--inset) + 2 * var(--control) + var(--sp-4) + var(--sp-12));
+  right: calc(var(--inset) + var(--control) + var(--sp-12));
   display: flex;
   align-items: center;
   gap: var(--sp-8);
@@ -109,6 +109,11 @@ div.dropdown {
   width: 220px;
   max-height: 280px;
   overflow-y: auto;
+}
+
+/* The card type dropdown: the shared MenuCard, raised above this overlay like the deck one. */
+div.typeDropdown {
+  z-index: 80;
 }
 
 /* One deck per row: just its name, cut off with "…" if it is too long (hover shows the full path). The chosen deck is a little bolder. */
@@ -210,6 +215,17 @@ div.dropdown {
 
 .tagField input {
   padding: 6px 10px;
+}
+
+/* Same frame as the Front and Back boxes when clicked into: a solid blue border, no soft halo. */
+.tagField input:focus {
+  border-color: var(--accent);
+  box-shadow: var(--field-focus-shadow);
+}
+
+/* The "Add tags" prompt is smaller than the text you type. */
+.tagField input::placeholder {
+  font-size: var(--fs-sm);
 }
 
 .actions {

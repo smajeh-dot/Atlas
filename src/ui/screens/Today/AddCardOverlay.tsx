@@ -17,13 +17,15 @@ import { AddCardPreview } from './AddCardPreview';
 import { AddCardToolbar } from './AddCardToolbar';
 import styles from './AddCardOverlay.module.css';
 
+/** The rows of the card type dropdown, top to bottom. They don't do anything yet. */
+const TYPE_ROWS = ['Subject', 'Folder', 'Basic', 'Image Occlusion'];
 const TYPES: BuiltinNoteType[] = ['basic', 'basic_reversed', 'basic_typein', 'cloze'];
 
 /**
  * A large card in the middle of the window over the Home screen, with everything around it darkened.
  * The X, Esc or a click outside the card closes it. Along the top: the card type, then the deck it's being added to
- * (the type just shows the current choice for now; the deck opens a dropdown of your decks), and in the corner the triple-dot
- * button, which doesn't do anything yet. Under those, a row of placeholder text-editing buttons, then a field for each side of the card
+ * (the type opens a dropdown of Subject, Folder, Basic and Image Occlusion that doesn't do anything yet; the deck opens a dropdown of your decks),
+ * and in the corner the close button. Under those, a row of placeholder text-editing buttons, then a field for each side of the card
  * (Front and Back for Basic) in the left half, and a live preview card in the right. Along the bottom: a tag icon on the left with a field beside it (a plain icon, not a button; the field is left out when editing a card), and Add (nothing yet) and Close on
  * the right. What's typed is only kept while the card is open: nothing saves a card yet. `deckId` is the deck it was opened for (from a deck's menu), if any.
  *
@@ -42,6 +44,8 @@ export function AddCardOverlay({ deckId, editing, onClose }: {
   }), []);
   // The dropdown under the deck button: the button it hangs from while open, else null. And the deck picked from it, if any.
   const [deckMenu, setDeckMenu] = useState<HTMLElement | null>(null);
+  // The dropdown under the card type button, the same way. It is blank apart from its four rows for now.
+  const [typeMenu, setTypeMenu] = useState<HTMLElement | null>(null);
   const [chosenDeck, setChosenDeck] = useState<number | null>(null);
   // What's been typed into each field, in the order of the card type's fields.
   // What's been typed into the tags field (nothing uses it yet).
@@ -86,7 +90,23 @@ export function AddCardOverlay({ deckId, editing, onClose }: {
       >
         {data && noteType && deck && (
           <div className={styles.selectors}>
-            <button type="button" className={styles.selector} aria-label={`Card type: ${noteType.name}`}>{noteType.name}</button>
+            {editing ? (
+              <button type="button" className={styles.selector} aria-label={`Card type: ${noteType.name}`}>{noteType.name}</button>
+            ) : (
+              <button
+                type="button"
+                className={styles.selector}
+                aria-label={`Card type: ${noteType.name}`}
+                aria-haspopup="menu"
+                aria-expanded={typeMenu !== null}
+                onClick={(e) => {
+                  setDeckMenu(null);
+                  setTypeMenu(typeMenu ? null : e.currentTarget);
+                }}
+              >
+                {noteType.name}
+              </button>
+            )}
             {!editing && (
               <button
                 type="button"
@@ -94,7 +114,10 @@ export function AddCardOverlay({ deckId, editing, onClose }: {
                 aria-label={`Deck: ${fullName(data.decks, deck.id)}`}
                 aria-haspopup="menu"
                 aria-expanded={deckMenu !== null}
-                onClick={(e) => setDeckMenu(deckMenu ? null : e.currentTarget)}
+                onClick={(e) => {
+                  setTypeMenu(null);
+                  setDeckMenu(deckMenu ? null : e.currentTarget);
+                }}
               >
                 {fullName(data.decks, deck.id)}
               </button>
@@ -152,14 +175,29 @@ export function AddCardOverlay({ deckId, editing, onClose }: {
           </div>
         )}
         <div className={styles.corner} data-testid="add-card-corner">
-          <button type="button" className={styles.iconButton} aria-label="More options" aria-haspopup="menu">
-            <Icon name="moreVertical" />
-          </button>
           <button type="button" className={styles.iconButton} aria-label="Close" onClick={onClose}>
             <Icon name="close" />
           </button>
         </div>
       </div>
+      {typeMenu && (
+        <MenuCard anchor={typeMenu} label="Card type" onClose={() => setTypeMenu(null)} className={styles.typeDropdown}>
+          {TYPE_ROWS.map((name) => (
+            <button
+              key={name}
+              type="button"
+              role="menuitem"
+              className={menuStyles.menuItem}
+              onClick={() => {
+                setTypeMenu(null);
+                typeMenu.focus();
+              }}
+            >
+              {name}
+            </button>
+          ))}
+        </MenuCard>
+      )}
       {deckMenu && data && deck && (
         <MenuCard anchor={deckMenu} label="Deck" onClose={() => setDeckMenu(null)} className={styles.dropdown}>
           {cardDecks(data.decks).map((d) => (
