@@ -20,7 +20,7 @@ import { Tooltip } from '../../components/Tooltip';
 import { FLAG_NAMES, flagColour } from '../../deckColour';
 import { SafetyBackupError } from '../../../services/backupService';
 import { useHotkeys } from '../../keys';
-import { EditCardSheet } from '../Editor/EditCardSheet';
+import { AddCardOverlay } from '../Today/AddCardOverlay';
 import { CardInfoDialog } from './CardInfoDialog';
 import styles from './Study.module.css';
 
@@ -36,7 +36,7 @@ const message = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
 type Overlay =
   | { kind: 'flag' | 'more'; anchor: HTMLElement }
-  | { kind: 'edit'; cardId: number }
+  | { kind: 'add' }
   | { kind: 'info'; cardId: number; unknownFilters: string[] }
   | { kind: 'delete'; cards: number }
   | null;
@@ -113,7 +113,7 @@ export function Study({ deckId }: { deckId: number | null }) {
           message: suspended
             ? "This card keeps slipping, so it's been tagged as a leech and suspended."
             : "This card keeps slipping, so it's been tagged as a leech.",
-          action: { label: 'Edit', onClick: () => setOverlay({ kind: 'edit', cardId: id }) },
+          action: { label: 'Edit', onClick: () => setOverlay({ kind: 'add' }) },
         });
       }
     }, "Atlas couldn't save that answer");
@@ -156,7 +156,7 @@ export function Study({ deckId }: { deckId: number | null }) {
       2: () => grade(2),
       3: () => grade(3),
       4: () => grade(4),
-      E: () => setOverlay({ kind: 'edit', cardId: current.card.id }),
+      E: () => setOverlay({ kind: 'add' }),
       I: () => setOverlay({ kind: 'info', cardId: current.card.id, unknownFilters: current.unknownFilters }),
       '-': () => change(() => session!.buryCurrent(current.card.id), 'Card buried until tomorrow'),
       '@': () => change(() => session!.suspendCurrent(current.card.id), 'Card suspended'),
@@ -215,7 +215,7 @@ export function Study({ deckId }: { deckId: number | null }) {
         <div className={styles.right}>
           {current && (
             <>
-              <IconButton icon="edit" label="Edit card" shortcut="E" onClick={() => setOverlay({ kind: 'edit', cardId: current.card.id })} />
+              <IconButton icon="edit" label="Edit card" shortcut="E" onClick={() => setOverlay({ kind: 'add' })} />
               <IconButton icon="flag" label="Flag" shortcut="Ctrl+1" onClick={(e) => setOverlay({ kind: 'flag', anchor: e.currentTarget })} />
               <IconButton icon="more" label="More" onClick={(e) => setOverlay({ kind: 'more', anchor: e.currentTarget })} />
             </>
@@ -271,18 +271,7 @@ export function Study({ deckId }: { deckId: number | null }) {
           { label: 'Delete note', icon: 'trash', shortcut: 'Ctrl+Delete', danger: true, onSelect: () => void askDelete() },
         ]} />
       )}
-      {overlay?.kind === 'edit' && (
-        <EditCardSheet cardId={overlay.cardId} onClose={(saved) => {
-          const id = overlay.cardId;
-          setOverlay(null);
-          if (saved) {
-            void session.refreshCard(id).then(
-              () => setCurrent((c) => (c?.card.id === id ? session.cardView(id) ?? session.current() : c)),
-              () => show(session),
-            );
-          }
-        }} />
-      )}
+      {overlay?.kind === 'add' && <AddCardOverlay onClose={() => setOverlay(null)} />}
       {overlay?.kind === 'info' && <CardInfoDialog cardId={overlay.cardId} unknownFilters={overlay.unknownFilters} onClose={() => setOverlay(null)} />}
       {overlay?.kind === 'delete' && (
         <Dialog title="Delete this note?" confirmLabel="Delete note" confirmVariant="danger" onCancel={() => setOverlay(null)}

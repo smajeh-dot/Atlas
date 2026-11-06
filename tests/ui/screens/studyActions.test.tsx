@@ -67,17 +67,21 @@ test('the More menu buries too', async () => {
   await waitFor(async () => expect((await getCard(db, a)).buriedKind).toBe('manual'));
 });
 
-test('E edits and the card re-renders in place', async () => {
+test('E opens the Add card overlay and Esc closes it without leaving Study', async () => {
   await seedNote(seedDeps, deck, 'basic', ['before', 'x']);
   const { user } = await study();
   await user.keyboard('e');
-  const sheet = await screen.findByRole('dialog', { name: 'Edit card' });
-  const front = await within(sheet).findByLabelText('Front');
-  await user.clear(front);
-  await user.type(front, 'after');
-  await user.keyboard('{Control>}{Enter}{/Control}');
+  expect(await screen.findByRole('dialog', { name: 'Add card' })).toBeTruthy();
+  await user.keyboard('{Escape}');
   await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
-  await waitFor(() => expect(card().textContent).toContain('after'));
+  expect(screen.getByTestId('study-card')).toBeTruthy();
+});
+
+test('the Edit card icon opens the Add card overlay', async () => {
+  await seedNote(seedDeps, deck, 'basic', ['before', 'x']);
+  const { user } = await study();
+  await user.click(screen.getByRole('button', { name: 'Edit card' }));
+  expect(await screen.findByRole('dialog', { name: 'Add card' })).toBeTruthy();
 });
 
 test('Ctrl+Delete deletes after confirming and Ctrl+Z restores', async () => {
@@ -117,5 +121,5 @@ test('a leech toast offers Edit', async () => {
   const toast = await screen.findByText("This card keeps slipping, so it's been tagged as a leech and suspended.");
   expect(toast).toBeTruthy();
   await user.click(within(screen.getByRole('status')).getByRole('button', { name: 'Edit' }));
-  expect(await screen.findByRole('dialog', { name: 'Edit card' })).toBeTruthy();
+  expect(await screen.findByRole('dialog', { name: 'Add card' })).toBeTruthy();
 });
