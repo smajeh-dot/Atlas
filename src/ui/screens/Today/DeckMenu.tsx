@@ -35,8 +35,7 @@ function deckMenuGroups(deck: Deck, h: DeckHandlers, chooseColour: () => void): 
 }
 
 /**
- * The dropdown that opens under a deck's three-dot button, shared by the home screen and the sidebar so a deck
- * has the same menu everywhere. Put `ui` somewhere in the screen; call `toggle` from the three-dot button.
+ * The dropdown that opens under a deck's three-dot button on the home screen. Put `ui` somewhere in the screen; call `toggle` from the three-dot button.
  */
 export function useDeckMenu(): { openId: number | null; toggle(deck: Deck, anchor: HTMLElement): void; ui: React.ReactNode } {
   const { deps, changed } = useAtlas();

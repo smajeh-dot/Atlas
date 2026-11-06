@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { getDeckSummary, getDeckTreeWithCounts } from '../../../services/deckService';
 import { useAtlas, useData } from '../../app/AtlasContext';
+import { BackToHome } from '../../components/BackToHome';
 import { Button } from '../../components/Button';
 import { useDeckActions } from '../Today/DeckActions';
 import { visibleRows } from '../Today/flatten';
@@ -26,7 +27,10 @@ export function Decks({ deckId }: { deckId?: number }) {
     <div className={styles.page}>
       <div className={styles.left}>
         <div className={styles.head}>
-          <h1 className={styles.title}>Decks</h1>
+          <div className={styles.titleRow}>
+            <BackToHome />
+            <h1 className={styles.title}>Decks</h1>
+          </div>
           <Button variant="secondary" icon="newDeck" onClick={() => actions.newDeck(null)}>New deck</Button>
         </div>
         <section className={styles.box}>

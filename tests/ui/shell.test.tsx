@@ -33,15 +33,42 @@ test('A opens the Add card overlay, but not while typing', async () => {
   expect(await screen.findByRole('dialog', { name: 'Add card' })).toBeTruthy();
 });
 
-test('the sidebar Home button returns to the home screen with the decks card', async () => {
+test('there is no sidebar: Home fills the window with just the notch, the decks card and the heatmap', async () => {
+  await renderApp({ db: await seeded() });
+  await screen.findByTestId('today-screen');
+  expect(screen.queryByRole('complementary')).toBeNull();
+  // Nothing is left of the old sidebar's buttons or deck list.
+  for (const name of ['New', 'Decks', 'Home', 'Search']) expect(screen.queryByRole('button', { name })).toBeNull();
+  expect(screen.queryByRole('list', { name: 'Decks' })).toBeNull();
+  expect(screen.queryByTestId('sidebar-user')).toBeNull();
+  // Each deck appears once, in the decks card.
+  expect(await screen.findAllByRole('button', { name: 'Chemistry options' })).toHaveLength(1);
+});
+
+test('the Home button in the title row of Settings and of Decks returns to the home screen', async () => {
   const { user } = await renderApp({ db: await seeded(), route: { name: 'settings' } });
   await screen.findByRole('heading', { name: 'Settings' });
-  const today = screen.getByRole('button', { name: 'Home' });
-  expect(today.getAttribute('aria-current')).toBeNull();
-  await user.click(today);
+  await user.click(screen.getByRole('button', { name: 'Home' }));
   expect(await screen.findByTestId('today-decks-card')).toBeTruthy();
   expect(screen.queryByRole('heading', { name: 'Settings' })).toBeNull();
-  expect(screen.getByRole('button', { name: 'Home' }).getAttribute('aria-current')).toBe('page');
+
+  await user.click(screen.getByRole('button', { name: 'Manage decks' }));
+  await screen.findByRole('heading', { name: 'Decks' });
+  await user.click(screen.getByRole('button', { name: 'Home' }));
+  expect(await screen.findByTestId('today-decks-card')).toBeTruthy();
+  expect(screen.queryByRole('heading', { name: 'Decks' })).toBeNull();
+});
+
+test('the gear in the corner of Home opens Settings, and the icon in the decks card header opens the Decks screen', async () => {
+  const { user } = await renderApp({ db: await seeded() });
+  await screen.findByTestId('today-screen');
+  await user.click(screen.getByRole('button', { name: 'Settings' }));
+  expect(await screen.findByRole('heading', { name: 'Settings' })).toBeTruthy();
+  await user.click(screen.getByRole('button', { name: 'Home' }));
+
+  const card = await screen.findByTestId('today-decks-card');
+  await user.click(within(card).getByRole('button', { name: 'Manage decks' }));
+  expect(await screen.findByRole('tree', { name: 'All decks' })).toBeTruthy();
 });
 
 test('the blank notch hangs from the top of Today and appears on no other screen', async () => {
@@ -80,12 +107,6 @@ test('Today shows a year-long heatmap with month names, below the decks card', a
   expect(within(activity).queryByText('Last year')).toBeNull();
   const decks = screen.getByTestId('today-decks-card');
   expect(decks.compareDocumentPosition(activity) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-});
-
-test('the sidebar has no Search button', async () => {
-  await renderApp({ db: await seeded() });
-  await screen.findByTestId('today-screen');
-  expect(screen.queryByRole('button', { name: 'Search' })).toBeNull();
 });
 
 test('the decks card lists your real decks with their counts, not placeholders', async () => {
@@ -148,42 +169,11 @@ test('a sub-deck\'s menu card has no Colour item', async () => {
   expect(within(menu).queryByRole('menuitem', { name: 'Colour' })).toBeNull();
 });
 
-test('the sidebar list shows your real decks and sub-decks, not placeholders', async () => {
-  const db = await createMigratedDb();
-  const parent = await createDeck(db, { name: 'Parent' }, T0);
-  await createDeck(db, { name: 'Child', parentId: parent }, T0);
-  await createDeck(db, { name: 'Solo' }, T0);
-  await renderApp({ db });
-  const rail = await screen.findByRole('list', { name: 'Decks' });
-  await within(rail).findByRole('button', { name: 'Parent' });
-  expect(within(rail).getByRole('list', { name: 'Parent decks' })).toBeTruthy();
-  expect(within(rail).getByRole('button', { name: 'Child' })).toBeTruthy();
-  expect(within(rail).getByRole('button', { name: 'Solo' })).toBeTruthy();
-  expect(screen.queryByText('Sub-deck one')).toBeNull();
-});
-
-test('in the sidebar, a deck with sub-decks folds shut and a deck without starts studying', async () => {
-  const db = await seeded();
-  const parent = await createDeck(db, { name: 'Parent' }, T0);
-  await createDeck(db, { name: 'Child', parentId: parent }, T0);
-  const { user } = await renderApp({ db });
-  const rail = await screen.findByRole('list', { name: 'Decks' });
-  const folder = await within(rail).findByRole('button', { name: 'Parent' });
-  expect(folder.getAttribute('aria-expanded')).toBe('true');
-  await user.click(folder);
-  expect(within(rail).getByRole('button', { name: 'Parent' }).getAttribute('aria-expanded')).toBe('false');
-  await user.click(within(rail).getByRole('button', { name: '<b>Bio</b>' }));
-  expect(await screen.findByRole('button', { name: 'Leave study' })).toBeTruthy();
-});
-
-test('a sidebar deck\'s three-dot button opens the same menu card as the home screen', async () => {
+test('Deck options in a deck\'s menu card opens the Decks screen', async () => {
   const db = await seeded();
   const { user } = await renderApp({ db });
-  const rail = await screen.findByRole('list', { name: 'Decks' });
-  await user.click(await within(rail).findByRole('button', { name: 'Chemistry options' }));
-  const menu = await screen.findByRole('menu', { name: 'Chemistry options' });
-  expect(within(menu).getAllByRole('menuitem').map((i) => i.textContent)).toEqual(['Study', 'Add card here', 'Add subdeck', 'Rename', 'Colour', 'Deck options', 'Delete']);
-  await user.click(within(menu).getByRole('menuitem', { name: 'Deck options' }));
+  await user.click(await screen.findByRole('button', { name: 'Chemistry options' }));
+  await user.click(await screen.findByRole('menuitem', { name: 'Deck options' }));
   expect(await screen.findByRole('tree', { name: 'All decks' })).toBeTruthy();
 });
 
@@ -200,9 +190,8 @@ test('Add on the notch opens a large card over Home, which stays put underneath'
   expect(within(card).getAllByRole('button').map((b) => b.getAttribute('aria-label') ?? b.textContent)).toEqual(
     ['Card type: Basic', 'Deck: <b>Bio</b>', ...FORMAT_BUTTONS, 'Tags', 'Add', 'Close', 'More options', 'Close'],
   );
-  // Home is still there, the very same elements rather than a reload, and Home is still the current sidebar item.
+  // Home is still there underneath, the very same elements rather than a reload.
   expect(screen.getByTestId('today-decks-card')).toBe(decksCard);
-  expect(screen.getByRole('button', { name: 'Home' }).getAttribute('aria-current')).toBe('page');
   // The overlay holds focus (Home must not take it back).
   expect(card.contains(document.activeElement)).toBe(true);
 });

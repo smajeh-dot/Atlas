@@ -14,7 +14,6 @@ import { Study } from './screens/Study/Study';
 import { Today } from './screens/Today/Today';
 import { Welcome } from './screens/Welcome/Welcome';
 import { Shell } from './shell/Shell';
-import { Sidebar } from './shell/Sidebar';
 import { applyTheme, ThemeProvider } from './theme/ThemeProvider';
 
 export function AtlasApp({ deps, initialSettings, initialRoute, notice }: {
@@ -51,12 +50,12 @@ function Frame({ notice }: { notice?: string }) {
   }, []);
   const { data: tree } = useData(() => getDeckTreeWithCounts(deps.db, deps.clock.now()), []);
   const hasDecks = (tree?.length ?? 0) > 0;
-  // The import screen locks the rest of Atlas: no sidebar, no shortcuts, while it's open.
+  // Studying and the import screen lock the rest of Atlas: no shortcuts while they're open.
   const studying = route.name === 'study' || route.name === 'session' || route.name === 'import';
   const main = useRef<HTMLElement>(null);
 
   // After moving to another screen, keys go to that screen (Space on Today, for example), not to the
-  // sidebar button that was clicked. A field the new screen focused itself keeps its focus.
+  // button that was clicked. A field the new screen focused itself keeps its focus.
   // An overlay that opened with the new screen (Add card) keeps the focus it took.
   useEffect(() => {
     const el = main.current;
@@ -78,13 +77,9 @@ function Frame({ notice }: { notice?: string }) {
     },
   }, { enabled: !studying, allowInInputs: ['Ctrl+,'] });
 
-  if (!tree) return <Shell ref={main} sidebar={null}>{null}</Shell>;
+  if (!tree) return <Shell ref={main}>{null}</Shell>;
   const showWelcome = !hasDecks && route.name !== 'settings' && route.name !== 'import';
-  return (
-    <Shell ref={main} sidebar={studying ? null : <Sidebar decks={tree} />}>
-      {showWelcome ? <Welcome /> : <Screen route={route} />}
-    </Shell>
-  );
+  return <Shell ref={main}>{showWelcome ? <Welcome /> : <Screen route={route} />}</Shell>;
 }
 
 function Screen({ route }: { route: Route }) {

@@ -47,6 +47,47 @@
   color: var(--table-head-ink);
 }
 
+/* Small square icon buttons on Home: rounded-rectangle corners like every other button, never round. */
+.iconButton {
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.iconButton:hover {
+  background: var(--new-btn-hover);
+}
+
+.iconButton svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* Top-right corner of the page, out of the layout, so the notch and the cards stay centred. */
+.settingsButton {
+  position: absolute;
+  top: var(--sp-12);
+  right: var(--sp-12);
+}
+
+/* Last column of the header, directly above the rows' triple-dot buttons; opens the Decks screen. */
+.manageDecks {
+  justify-self: end;
+  align-self: end;
+  width: 24px;
+  height: 24px;
+  /* Lines up with the rows' triple-dot buttons (their right edge is 14px in from the card; the header is padded 16px). */
+  margin: 0 -2px -3px 0;
+}
+
 /* Headings and numbers are both centred in their column, so each number sits under its word. */
 .num {
   text-align: center;
@@ -142,7 +183,7 @@
   opacity: 1;
 }
 
-/* Collapsing sub-decks: same height-and-fade animation as the sidebar. */
+/* Collapsing sub-decks: the row height eases between 1fr and 0fr while the list fades. */
 .subWrap {
   display: grid;
   grid-template-rows: 1fr;
@@ -165,7 +206,7 @@
 }
 
 /* One continuous 1px grey line down the left of a subject's sub-decks, lined up with the start of the subject's name
-   (same line as in the sidebar, inset 5px from the top and bottom). */
+   (inset 5px from the top and bottom). */
 .subInner::before {
   content: '';
   position: absolute;
