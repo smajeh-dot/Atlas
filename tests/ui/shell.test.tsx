@@ -209,8 +209,30 @@ test('the Add card overlay shows the card type, then the deck; the type button o
   await user.click(type);
   await user.click(within(await screen.findByRole('menu', { name: 'Card type' })).getByRole('menuitem', { name: 'Folder' }));
   expect(screen.queryByRole('menu')).toBeNull();
-  expect(type.textContent).toBe('Basic');
+  expect(type.textContent).toBe('Folder');
   expect(screen.getByRole('dialog', { name: 'Add card' })).toBeTruthy();
+});
+
+test.each(['Subject', 'Folder', 'Image Occlusion'])('%s opens a blank card: only the type and deck buttons, Add, Close and the X; Basic brings the full card back', async (row) => {
+  const { user } = await renderApp({ db: await seeded() });
+  await user.click(within(await screen.findByTestId('today-notch')).getByRole('button', { name: 'Add' }));
+  const card = await screen.findByRole('dialog', { name: 'Add card' });
+  await within(card).findByRole('textbox', { name: 'Front' });
+  await user.click(within(card).getByRole('button', { name: /^Card type: / }));
+  await user.click(within(await screen.findByRole('menu', { name: 'Card type' })).getByRole('menuitem', { name: row }));
+  const type = within(card).getByRole('button', { name: `Card type: ${row}` });
+  expect(type.textContent).toBe(row);
+  expect(within(card).getAllByRole('button').map((b) => b.getAttribute('aria-label') ?? b.textContent)).toEqual([`Card type: ${row}`, 'Deck: <b>Bio</b>', 'Add', 'Close', 'Close']);
+  expect(within(card).queryAllByRole('textbox')).toEqual([]);
+  expect(within(card).queryByRole('toolbar')).toBeNull();
+  expect(card.querySelector('[data-testid="add-card-tag-icon"], [data-testid="add-card-preview"]')).toBeNull();
+  expect(within(card).getByTestId('add-card-blank').children).toHaveLength(0);
+  // Back to Basic: the full card.
+  await user.click(type);
+  await user.click(within(await screen.findByRole('menu', { name: 'Card type' })).getByRole('menuitem', { name: 'Basic' }));
+  expect(await within(card).findByRole('textbox', { name: 'Front' })).toBeTruthy();
+  expect(within(card).getByRole('toolbar', { name: 'Formatting' })).toBeTruthy();
+  expect(within(card).getByRole('button', { name: 'Card type: Basic' })).toBeTruthy();
 });
 
 test('the Add card overlay starts on the deck it was opened for, with its full path, and on your last card type', async () => {
