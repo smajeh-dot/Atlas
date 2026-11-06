@@ -7,12 +7,14 @@ import { Button } from '../../components/Button';
 import { Input } from '../../components/Input';
 import { Select } from '../../components/Select';
 import { Toggle } from '../../components/Toggle';
+import { BackupSettings } from './BackupSettings';
 import { useToast } from '../../components/Toast';
 import styles from './Settings.module.css';
 
-type Section = 'study' | 'about';
+type Section = 'study' | 'backups' | 'about';
 const SECTIONS: { id: Section; label: string }[] = [
   { id: 'study', label: 'Study' },
+  { id: 'backups', label: 'Backups' },
   { id: 'about', label: 'About' },
 ];
 const RELEASES = 'https://github.com/smajeh-dot/atlas/releases/latest';
@@ -45,6 +47,7 @@ export function Settings({ section = 'study' }: { section?: Section }) {
         </nav>
         <div className={styles.content}>
           {current === 'study' && <StudySettings />}
+          {current === 'backups' && <BackupSettings />}
           {current === 'about' && <About />}
         </div>
       </div>
