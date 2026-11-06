@@ -56,7 +56,7 @@ export function Today({ addCard }: { addCard?: { deckId?: number } }) {
 
 /**
  * One deck and, underneath it, its sub-decks. A deck with sub-decks opens and closes when you click it (and stays that way,
- * like in the Decks screen); a deck without any starts a study session.
+ * and stays that way); a deck without any starts a study session.
  */
 function DeckRow({ node, depth, openId, onMore }: { node: DeckTreeWithCounts; depth: number; openId: number | null; onMore(deck: Deck, anchor: HTMLElement): void }) {
   const { deps, navigate, changed } = useAtlas();

@@ -17,7 +17,7 @@ interface MenuItem {
   onSelect(): void;
 }
 
-/** The menu for a deck, in groups with a divider between them. Colour is only offered on top-level decks, as in the Decks screen. */
+/** The menu for a deck, in groups with a divider between them. Colour is only offered on top-level decks. */
 function deckMenuGroups(deck: Deck, h: DeckHandlers, chooseColour: () => void): MenuItem[][] {
   return [
     [
@@ -28,7 +28,6 @@ function deckMenuGroups(deck: Deck, h: DeckHandlers, chooseColour: () => void): 
       { label: 'Add subdeck', icon: 'newDeck', onSelect: h.addSubdeck },
       { label: 'Rename', icon: 'edit', onSelect: h.rename },
       ...(deck.parentId === null ? [{ label: 'Colour', icon: 'droplet' as const, onSelect: chooseColour }] : []),
-      { label: 'Deck options', icon: 'settings', onSelect: h.options },
     ],
     [{ label: 'Delete', icon: 'trash', danger: true, onSelect: () => void h.remove() }],
   ];

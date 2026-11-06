@@ -45,21 +45,17 @@ test('there is no sidebar: Home fills the window with just the notch, the decks 
   expect(await screen.findAllByRole('button', { name: 'Chemistry options' })).toHaveLength(1);
 });
 
-test('the Home button in the title row of Settings and of Decks returns to the home screen', async () => {
-  for (const [route, heading] of [[{ name: 'settings' }, 'Settings'], [{ name: 'decks' }, 'Decks']] as const) {
-    const { user, unmount } = await renderApp({ db: await seeded(), route });
-    await screen.findByRole('heading', { name: heading });
-    await user.click(screen.getByRole('button', { name: 'Home' }));
-    expect(await screen.findByTestId('today-decks-card')).toBeTruthy();
-    expect(screen.queryByRole('heading', { name: heading })).toBeNull();
-    unmount();
-  }
+test('the Home button in the title row of Settings returns to the home screen', async () => {
+  const { user } = await renderApp({ db: await seeded(), route: { name: 'settings' } });
+  await screen.findByRole('heading', { name: 'Settings' });
+  await user.click(screen.getByRole('button', { name: 'Home' }));
+  expect(await screen.findByTestId('today-decks-card')).toBeTruthy();
+  expect(screen.queryByRole('heading', { name: 'Settings' })).toBeNull();
 });
 
-test('the gear in the corner of Home opens Settings; the decks card header has no button', async () => {
+test('the gear in the corner of Home opens Settings', async () => {
   const { user } = await renderApp({ db: await seeded() });
-  const card = await screen.findByTestId('today-decks-card');
-  expect(within(card).queryByRole('button', { name: 'Manage decks' })).toBeNull();
+  await screen.findByTestId('today-decks-card');
   await user.click(screen.getByRole('button', { name: 'Settings' }));
   expect(await screen.findByRole('heading', { name: 'Settings' })).toBeTruthy();
 });
@@ -136,7 +132,7 @@ test('a deck\'s three-dot button opens the menu card, whose items do real things
   const { user } = await renderApp({ db });
   await user.click(await screen.findByRole('button', { name: 'Chemistry options' }));
   const menu = await screen.findByRole('menu', { name: 'Chemistry options' });
-  expect(within(menu).getAllByRole('menuitem').map((i) => i.textContent)).toEqual(['Study', 'Add card here', 'Add subdeck', 'Rename', 'Colour', 'Deck options', 'Delete']);
+  expect(within(menu).getAllByRole('menuitem').map((i) => i.textContent)).toEqual(['Study', 'Add card here', 'Add subdeck', 'Rename', 'Colour', 'Delete']);
   await user.click(within(menu).getByRole('menuitem', { name: 'Rename' }));
   await user.type(await screen.findByLabelText('Deck name'), '{Control>}a{/Control}Chem{Enter}');
   await waitFor(async () => expect((await listDecks(db)).map((d) => d.name).sort()).toEqual(['<b>Bio</b>', 'Chem']));
@@ -160,14 +156,6 @@ test('a sub-deck\'s menu card has no Colour item', async () => {
   await user.click(await screen.findByRole('button', { name: 'Child options' }));
   const menu = await screen.findByRole('menu', { name: 'Child options' });
   expect(within(menu).queryByRole('menuitem', { name: 'Colour' })).toBeNull();
-});
-
-test('Deck options in a deck\'s menu card opens the Decks screen', async () => {
-  const db = await seeded();
-  const { user } = await renderApp({ db });
-  await user.click(await screen.findByRole('button', { name: 'Chemistry options' }));
-  await user.click(await screen.findByRole('menuitem', { name: 'Deck options' }));
-  expect(await screen.findByRole('tree', { name: 'All decks' })).toBeTruthy();
 });
 
 test('Add on the notch opens a large card over Home, which stays put underneath', async () => {

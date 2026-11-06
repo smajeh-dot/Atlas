@@ -6,7 +6,6 @@ import { AtlasProvider, useAtlas, useData, type AppDeps, type Route } from './ap
 import { anyOverlayOpen } from './components/overlayStack';
 import { ToastProvider, useToast } from './components/Toast';
 import { useHotkeys } from './keys';
-import { Decks } from './screens/Decks/Decks';
 import { ImportScreen } from './screens/Import/ImportScreen';
 import { Session } from './screens/Session/Session';
 import { Settings } from './screens/Settings/Settings';
@@ -91,8 +90,6 @@ function Screen({ route }: { route: Route }) {
     case 'add':
       // Same element as 'today', so Home stays put (no reload) while the Add card overlay opens over it.
       return <Today addCard={{ deckId: route.deckId }} />;
-    case 'decks':
-      return <Decks deckId={route.deckId} />;
     case 'study':
       return <Study key={String(route.deckId)} deckId={route.deckId} />;
     case 'session':
@@ -116,7 +113,7 @@ function Import() {
       deps={flowDeps}
       onClose={() => {
         changed();
-        navigate({ name: 'decks' });
+        navigate({ name: 'today' });
       }}
     />
   );
