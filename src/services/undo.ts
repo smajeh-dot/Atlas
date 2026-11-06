@@ -26,6 +26,11 @@ export class UndoStack {
     return this.entries[this.entries.length - 1];
   }
 
+  /** Forgets every action, for when the data underneath was replaced and none of them apply any more. */
+  clear(): void {
+    this.entries = [];
+  }
+
   get size(): number {
     return this.entries.length;
   }
