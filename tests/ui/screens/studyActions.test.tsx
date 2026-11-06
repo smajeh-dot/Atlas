@@ -22,7 +22,7 @@ beforeEach(async () => {
 
 async function study() {
   const r = await renderApp({ db, route: { name: 'study', deckId: deck } });
-  await screen.findByRole('button', { name: 'Show answer' });
+  await screen.findByTestId('study-card');
   return r;
 }
 const card = () => document.querySelector('[data-testid="study-card"] [data-cardview]')!.shadowRoot!;

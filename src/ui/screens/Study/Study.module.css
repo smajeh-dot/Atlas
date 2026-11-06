@@ -73,6 +73,12 @@
   gap: var(--sp-8);
 }
 
+/* The icons sit straight on the page background, with no card around them. */
+.right button {
+  border-color: transparent;
+  background: transparent;
+}
+
 .stage {
   flex: 1;
   min-height: 0;
@@ -96,7 +102,8 @@
   flex-direction: column;
   gap: var(--sp-16);
   padding: 34px 44px;
-  border-radius: var(--radius-card);
+  /* All four corners rounded: the theme's card token squares off the bottom-left. */
+  border-radius: 14px;
   overflow-y: auto;
 }
 
@@ -129,13 +136,6 @@
   display: flex;
   flex-direction: column;
   gap: var(--sp-10);
-}
-
-.show {
-  width: 100%;
-  min-height: 56px;
-  border-radius: var(--radius-btn-lg);
-  font-size: 15px;
 }
 
 .grades {
@@ -198,13 +198,6 @@
   opacity: 0.8;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
-}
-
-.hint {
-  margin: 0;
-  text-align: center;
-  font-size: var(--fs-sm);
-  color: var(--text-faint);
 }
 
 .complete {

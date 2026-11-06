@@ -37,7 +37,7 @@ test('Space reveals, buttons show the intervals the session will give, 3 grades 
   const { user, deps } = await study();
   const probe = await StudySession.start({ ...deps, undo: new UndoStack() }, deck);
   const expected = probe.current()!.previews;
-  expect(await screen.findByRole('button', { name: 'Show answer' })).toBeTruthy();
+  expect(await screen.findByTestId('study-card')).toBeTruthy();
   await waitFor(() => expect(card().textContent).toContain('What is a mole?'));
   await user.keyboard(' ');
   await waitFor(() => expect(card().querySelector('.atlas-divider')).not.toBeNull());
@@ -52,7 +52,7 @@ test('Space reveals, buttons show the intervals the session will give, 3 grades 
   expect(log).toEqual({ card_id: probe.current()!.card.id, rating: 3 });
 });
 
-test('shows the breadcrumb, chips, progress and hint line', async () => {
+test('shows the breadcrumb, chips and progress, with no hint line or Show answer button', async () => {
   const org = await seedDeck(db, 'Organic Mechanisms', deck);
   await seedNote(seedDeps, org, 'basic', ['q1', 'a'], ['paper-1', 'organic', 'third']);
   await seedNote(seedDeps, org, 'basic', ['q2', 'a']);
@@ -62,21 +62,22 @@ test('shows the breadcrumb, chips, progress and hint line', async () => {
   const chips = within(screen.getByTestId('study-chips')).getAllByText(/./).map((c) => c.textContent);
   expect(chips).toEqual(['paper-1', 'organic']);
   expect(screen.getByText('2 left')).toBeTruthy();
-  expect(screen.getByText('Space = Good · Ctrl+Z undoes the last answer · E edits this card')).toBeTruthy();
+  expect(screen.queryByText(/Space = Good/)).toBeNull();
+  expect(screen.queryByRole('button', { name: 'Show answer' })).toBeNull();
 });
 
 test('grade keys do nothing before the answer is shown; a fast double press grades once', async () => {
   await seedNote(seedDeps, deck, 'basic', ['a', 'x']);
   await seedNote(seedDeps, deck, 'basic', ['b', 'x']);
   const { user } = await study();
-  await screen.findByRole('button', { name: 'Show answer' });
+  await screen.findByTestId('study-card');
   await user.keyboard('3');
   expect(await countRows(db, 'revlog')).toBe(0);
   await user.keyboard(' ');
   await screen.findByRole('button', { name: /^Good/ });
   await user.keyboard('33');
   await waitFor(async () => expect(await countRows(db, 'revlog')).toBe(1));
-  expect(await screen.findByRole('button', { name: 'Show answer' })).toBeTruthy();
+  expect(await screen.findByTestId('study-card')).toBeTruthy();
 });
 
 test('Ctrl+Z undoes the answer and shows the same card again', async () => {
@@ -92,7 +93,7 @@ test('Ctrl+Z undoes the answer and shows the same card again', async () => {
   await waitFor(() => expect(screen.getByRole('status').textContent).toContain('Undid: answer Good'));
   await waitFor(() => expect(card().textContent).toContain('first'));
   expect(await countRows(db, 'revlog')).toBe(0);
-  expect(screen.getByRole('button', { name: 'Show answer' })).toBeTruthy();
+  expect(screen.getByTestId('study-card')).toBeTruthy();
 });
 
 test('type the answer compares character by character', async () => {
@@ -114,7 +115,7 @@ test('intervals hidden when the setting is off; remaining count hidden too', asy
   await updateSettings(db, { showIntervalsOnButtons: false, showRemainingCount: false });
   await seedNote(seedDeps, deck, 'basic', ['a', 'x']);
   const { user } = await study();
-  await screen.findByRole('button', { name: 'Show answer' });
+  await screen.findByTestId('study-card');
   expect(screen.queryByText('1 left')).toBeNull();
   await user.keyboard(' ');
   expect((await screen.findByRole('button', { name: /^Good/ })).textContent).toBe('3Good');
@@ -132,7 +133,7 @@ test('studying a deck with nothing due shows the empty state with Add card', asy
 test('session complete shows stats and Enter goes back to Today', async () => {
   await seedNote(seedDeps, deck, 'basic', ['a', 'x']);
   const { user, clock } = await study();
-  await screen.findByRole('button', { name: 'Show answer' });
+  await screen.findByTestId('study-card');
   await user.keyboard(' ');
   await screen.findByRole('button', { name: /^Easy/ });
   clock.advance(5000);
@@ -149,14 +150,14 @@ test('learning cards come back while you wait', async () => {
   await seedNote(seedDeps, deck, 'basic', ['returning', 'x']);
   const clock = fixedClock(T0);
   const { user } = await study({ clock, fakeTimers: true });
-  await screen.findByRole('button', { name: 'Show answer' });
+  await screen.findByTestId('study-card');
   await user.keyboard(' ');
   await screen.findByRole('button', { name: /^Good/ });
   await user.keyboard('3');
   expect(await screen.findByText('1 card comes back in 10 minutes. Atlas will bring them up if you stay here.')).toBeTruthy();
   clock.advance(10 * MIN);
   await act(async () => vi.advanceTimersByTime(10 * MIN));
-  expect(await screen.findByRole('button', { name: 'Show answer' })).toBeTruthy();
+  expect(await screen.findByTestId('study-card')).toBeTruthy();
   await waitFor(() => expect(card().textContent).toContain('returning'));
 });
 
@@ -164,7 +165,7 @@ test('a session started before the rollover still grades after it', async () => 
   const late = fixedClock(Date.UTC(2026, 10, 1, 3, 50));
   await seedNote({ ...seedDeps, clock: late }, deck, 'basic', ['a', 'x']);
   const { user } = await study({ clock: late });
-  await screen.findByRole('button', { name: 'Show answer' });
+  await screen.findByTestId('study-card');
   late.advance(20 * MIN);
   await user.keyboard(' ');
   await screen.findByRole('button', { name: /^Good/ });
@@ -176,7 +177,7 @@ test('a session started before the rollover still grades after it', async () => 
 test('a failed answer keeps the card and says why', async () => {
   await seedNote(seedDeps, deck, 'basic', ['a', 'x']);
   const { user, deps } = await study();
-  await screen.findByRole('button', { name: 'Show answer' });
+  await screen.findByTestId('study-card');
   await user.keyboard(' ');
   await screen.findByRole('button', { name: /^Good/ });
   const batch = deps.db.batch.bind(deps.db);
@@ -190,7 +191,7 @@ test('a failed answer keeps the card and says why', async () => {
 test('Esc leaves Study', async () => {
   await seedNote(seedDeps, deck, 'basic', ['a', 'x']);
   const { user } = await study();
-  await screen.findByRole('button', { name: 'Show answer' });
+  await screen.findByTestId('study-card');
   await user.keyboard('{Escape}');
   expect(await screen.findByTestId('today-screen')).toBeTruthy();
 });

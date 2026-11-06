@@ -242,22 +242,17 @@ export function Study({ deckId }: { deckId: number | null }) {
         )}
       </div>
 
-      {current && (
+      {current && phase === 'answer' && (
         <div className={styles.actions}>
-          {phase === 'question' ? (
-            <Button variant="primary" className={styles.show} kbd="Space" onClick={reveal}>Show answer</Button>
-          ) : (
-            <div className={styles.grades}>
-              {GRADES.map((g) => (
-                <button key={g.rating} type="button" className={`${styles.grade} ${styles[g.cls]}`} aria-keyshortcuts={String(g.rating)} onClick={() => grade(g.rating)}>
-                  <span className={styles.key} aria-hidden="true">{g.rating}</span>
-                  <span className={styles.word}>{g.word}</span>
-                  {settings.showIntervalsOnButtons && <span className={styles.interval}>{formatInterval(current.previews[g.rating])}</span>}
-                </button>
-              ))}
-            </div>
-          )}
-          <p className={styles.hint}>Space = Good · Ctrl+Z undoes the last answer · E edits this card</p>
+          <div className={styles.grades}>
+            {GRADES.map((g) => (
+              <button key={g.rating} type="button" className={`${styles.grade} ${styles[g.cls]}`} aria-keyshortcuts={String(g.rating)} onClick={() => grade(g.rating)}>
+                <span className={styles.key} aria-hidden="true">{g.rating}</span>
+                <span className={styles.word}>{g.word}</span>
+                {settings.showIntervalsOnButtons && <span className={styles.interval}>{formatInterval(current.previews[g.rating])}</span>}
+              </button>
+            ))}
+          </div>
         </div>
       )}
 
