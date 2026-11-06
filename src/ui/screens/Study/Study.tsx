@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { batchProgress } from '../../../core/batchProgress';
 import { formatInterval } from '../../../core/format';
 import type { NoteType, Rating } from '../../../core/model';
 import { cardsOfNote, getCard } from '../../../data/cards';
@@ -138,6 +139,11 @@ export function Study({ deckId }: { deckId: number | null }) {
     if (phase === 'question' && current) setPhase('answer');
   };
 
+  // Turns the card over, and back again.
+  const flip = () => {
+    if (current) setPhase((p) => (p === 'question' ? 'answer' : 'question'));
+  };
+
   const change = (work: () => Promise<void>, done?: string) =>
     void run(async () => {
       await work();
@@ -165,7 +171,7 @@ export function Study({ deckId }: { deckId: number | null }) {
   };
   if (current) {
     Object.assign(keys, {
-      Space: () => (phase === 'question' ? reveal() : grade(3)),
+      Space: flip,
       Enter: () => (phase === 'question' ? reveal() : grade(3)),
       1: () => grade(1),
       2: () => grade(2),
@@ -220,7 +226,7 @@ export function Study({ deckId }: { deckId: number | null }) {
           {settings.showRemainingCount && (current || summary.answers > 0) && (
             <Tooltip block text={`New ${left.new} · Learning ${left.learn} · Review ${left.review}`}>
               <div className={styles.progress} tabIndex={0}>
-                <ProgressBar value={summary.answers / Math.max(1, summary.answers + remaining)} label="Progress" />
+                <ProgressBar value={batchProgress(summary.answers, remaining)} label="Progress" />
                 <span className={styles.left_}>{remaining} left</span>
                 {settings.showTimer && current && <Timer since={shownAt.current} clock={deps.clock} />}
               </div>
@@ -240,7 +246,7 @@ export function Study({ deckId }: { deckId: number | null }) {
 
       <div className={styles.stage}>
         {current ? (
-          <StudyCard card={current} phase={phase} typed={typed} onTyped={setTyped} onReveal={reveal} mediaUrl={deps.media.url} />
+          <StudyCard card={current} phase={phase} typed={typed} onTyped={setTyped} onReveal={reveal} onFlip={flip} mediaUrl={deps.media.url} />
         ) : summary.answers === 0 ? (
           <div className={styles.box}>
             <EmptyState
@@ -302,12 +308,13 @@ export function Study({ deckId }: { deckId: number | null }) {
   );
 }
 
-function StudyCard({ card, phase, typed, onTyped, onReveal, mediaUrl }: {
+function StudyCard({ card, phase, typed, onTyped, onReveal, onFlip, mediaUrl }: {
   card: SessionCard;
   phase: 'question' | 'answer';
   typed: string;
   onTyped(v: string): void;
   onReveal(): void;
+  onFlip(): void;
   mediaUrl(n: string): string;
 }) {
   const q = questionView(card.question);
@@ -315,7 +322,15 @@ function StudyCard({ card, phase, typed, onTyped, onReveal, mediaUrl }: {
   card.noteType.fields.forEach((f, i) => (fields[f.name] = card.note.fields[i] ?? ''));
   const a = phase === 'answer' ? answerView(card.answer, q.typeIn ? { text: typed, fields } : undefined) : null;
   return (
-    <div className={styles.card} data-testid="study-card">
+    <div
+      className={styles.card}
+      data-testid="study-card"
+      onClick={(e) => {
+        // Clicking the type-in box, a link or a hint is not a flip, and neither is finishing a text selection.
+        const onControl = e.nativeEvent.composedPath().some((el) => el instanceof HTMLElement && el.matches('input, button, a, summary'));
+        if (!onControl && window.getSelection()?.isCollapsed !== false) onFlip();
+      }}
+    >
       <div key={card.card.id} className={styles.cardBody}>
         {!a ? (
           <>

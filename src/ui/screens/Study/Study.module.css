@@ -105,6 +105,7 @@
   /* All four corners rounded: the theme's card token squares off the bottom-left. */
   border-radius: 14px;
   overflow-y: auto;
+  cursor: pointer;
 }
 
 .box {

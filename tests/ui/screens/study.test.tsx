@@ -66,6 +66,44 @@ test('shows the breadcrumb and progress, with no tag chips, hint line or Show an
   expect(screen.queryByRole('button', { name: 'Show answer' })).toBeNull();
 });
 
+test('Space again turns the card back over without grading it', async () => {
+  await seedNote(seedDeps, deck, 'basic', ['What is a mole?', '6.02 × 10²³ particles']);
+  const { user } = await study();
+  await waitFor(() => expect(card().textContent).toContain('What is a mole?'));
+  await user.keyboard(' ');
+  await waitFor(() => expect(card().querySelector('.atlas-divider')).not.toBeNull());
+  await user.keyboard(' ');
+  await waitFor(() => expect(card().querySelector('.atlas-divider')).toBeNull());
+  expect(screen.queryByRole('button', { name: /^Good/ })).toBeNull();
+  expect(await countRows(db, 'revlog')).toBe(0);
+});
+
+test('clicking the card flips it, and clicking again flips it back', async () => {
+  await seedNote(seedDeps, deck, 'basic', ['What is a mole?', '6.02 × 10²³ particles']);
+  const { user } = await study();
+  await waitFor(() => expect(card().textContent).toContain('What is a mole?'));
+  await user.click(screen.getByTestId('study-card'));
+  await waitFor(() => expect(card().querySelector('.atlas-divider')).not.toBeNull());
+  expect(screen.getByRole('button', { name: /^Good/ })).toBeTruthy();
+  await user.click(screen.getByTestId('study-card'));
+  await waitFor(() => expect(card().querySelector('.atlas-divider')).toBeNull());
+  expect(await countRows(db, 'revlog')).toBe(0);
+});
+
+test('the progress bar holds 20 cards and starts again after them', async () => {
+  for (let i = 0; i < 21; i++) await seedNote(seedDeps, deck, 'basic', [`q${i}`, 'x']);
+  const { user } = await study();
+  const bar = () => Number(screen.getByRole('progressbar', { name: 'Progress' }).getAttribute('aria-valuenow'));
+  await waitFor(() => expect(card().textContent).toContain('q'));
+  expect(bar()).toBe(0);
+  for (let i = 0; i < 10; i++) {
+    await user.keyboard(' ');
+    await screen.findByRole('button', { name: /^Good/ });
+    await user.keyboard('3');
+    await waitFor(() => expect(bar()).toBe((i + 1) * 5));
+  }
+});
+
 test('grade keys do nothing before the answer is shown; a fast double press grades once', async () => {
   await seedNote(seedDeps, deck, 'basic', ['a', 'x']);
   await seedNote(seedDeps, deck, 'basic', ['b', 'x']);
@@ -87,7 +125,7 @@ test('Ctrl+Z undoes the answer and shows the same card again', async () => {
   await waitFor(() => expect(card().textContent).toContain('first'));
   await user.keyboard(' ');
   await screen.findByRole('button', { name: /^Good/ });
-  await user.keyboard(' ');
+  await user.keyboard('3');
   await waitFor(() => expect(card().textContent).toContain('second'));
   await user.keyboard('{Control>}z{/Control}');
   await waitFor(() => expect(screen.getByRole('status').textContent).toContain('Undid: answer Good'));
