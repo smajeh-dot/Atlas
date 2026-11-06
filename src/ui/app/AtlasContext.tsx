@@ -4,6 +4,7 @@ import { studyDay } from '../../core/studyDay';
 import type { Db } from '../../data/db';
 import { updateSettings } from '../../data/settings';
 import type { ImportFlowDeps } from '../../services/importFlow';
+import type { BackupService } from '../../services/backupService';
 import type { MediaPort } from '../../services/mediaService';
 import type { UndoStack } from '../../services/undo';
 import type { AppInfo } from '../../platform/tauriDb';
@@ -18,6 +19,8 @@ export interface AppDeps {
   appInfo: AppInfo;
   /** Anki import. Absent in tests and previews that don't exercise it. */
   importer?: Omit<ImportFlowDeps, 'db' | 'clock'>;
+  /** Automatic backups. Absent in tests and previews, where the backup steps simply don't happen. */
+  backups?: BackupService;
 }
 
 export type Route =

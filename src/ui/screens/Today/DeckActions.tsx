@@ -4,6 +4,7 @@ import { createDeck, deckDeletionSummary, DeckNameError, deleteDeck, renameDeck,
 import { useAtlas } from '../../app/AtlasContext';
 import { Dialog } from '../../components/Dialog';
 import { Input } from '../../components/Input';
+import { SafetyBackupError } from '../../../services/backupService';
 import { Menu, type MenuItem } from '../../components/Menu';
 import { useToast } from '../../components/Toast';
 import { DECK_COLOUR_NAMES, deckColour } from '../../deckColour';
@@ -56,7 +57,9 @@ export function useDeckActions(): {
       await createDeck(deps.db, { name: n, parentId }, deps.clock.now());
     });
 
-  const failed = (e: unknown) => toast.show({ message: `Atlas couldn't change the deck: ${e instanceof Error ? e.message : String(e)}` });
+  const failed = (e: unknown) => toast.show({
+    message: e instanceof SafetyBackupError ? e.message : `Atlas couldn't change the deck: ${e instanceof Error ? e.message : String(e)}`,
+  });
 
   /** What each deck-menu item does, so a screen can show these in its own style of menu. Colour is left to the screen. */
   const deckHandlers = (deck: Deck): DeckHandlers => ({
@@ -140,6 +143,7 @@ export function useDeckActions(): {
         onConfirm={async () => {
           setOpen(null);
           try {
+            await deps.backups?.beforeDelete();
             await deleteDeck(deps.db, deck.id);
             toast.show({ message: `Deleted ${deck.name}` });
           } catch (e) {
