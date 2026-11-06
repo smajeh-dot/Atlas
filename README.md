@@ -18,12 +18,31 @@ Everything Atlas stores lives in `%APPDATA%\Atlas` (paste that into File Explore
 
 - `atlas.db`: your decks, cards and review history
 - `media\`: pictures and sounds used on your cards
-- `backups\`: a copy of `atlas.db` that Atlas saves just before each import, named `pre-import-<number>.db`
+- `backups\`: copies of `atlas.db` that Atlas makes by itself (see below)
 - `tmp\`: working space while an import runs; Atlas empties it itself
 
-Replacing or moving `Atlas.exe` never touches this folder. To back up your cards or move to a new laptop, close Atlas and copy the whole `Atlas` folder (into `%APPDATA%` on the new laptop).
+Replacing or moving `Atlas.exe` never touches this folder. To move to a new laptop, close Atlas and copy the whole `Atlas` folder (into `%APPDATA%` on the new laptop).
 
-To put a pre-import backup back: close Atlas, then in File Explorer rename `atlas.db` to something else (for example `atlas-before-restore.db`), copy the backup from `backups\` into the `Atlas` folder, and rename the copy to `atlas.db`.
+### Backups
+
+Atlas backs up `atlas.db` for you. It makes a copy:
+
+- once a day, the first time you open Atlas that day (the newest 7 are kept)
+- just before you delete a deck or a note (at most one every 10 minutes)
+- just before an Anki import, and just before you restore a backup (these two and the one above share the newest 10 safety copies)
+- just before Atlas upgrades how it stores your cards after an update (the newest 3 are kept)
+- whenever you press **Back up now** in **Settings → Backups** (the newest 10 are kept)
+
+The **Automatic backups** switch in **Settings → Backups** turns off the daily copy and the copy before a delete. The copies before an import, an upgrade or a restore, and **Back up now**, always work. If Atlas can't make the copy that has to come first (for example, the disk is full), it doesn't go ahead with the delete or the upgrade and tells you why. Settings also shows the date of your last backup.
+
+To go back to one, open **Settings → Backups**, find the backup in the list and click **Restore**. Atlas first saves a copy of your cards as they are now, so you can undo the restore, then puts the backup in place. Nothing needs restarting. Everything you did after that backup is undone. A backup made by a newer version of Atlas can't be restored in an older one.
+
+Good to know:
+
+- Backups hold your cards and review history, not the `media\` folder.
+- Backups are files in the same folder on the same computer. They protect you from mistakes and bugs, but not from a failed drive or a lost laptop. Every so often, copy the `Atlas` folder somewhere else, such as a USB stick or a cloud folder.
+- A deck you deleted stays in older backups until newer ones replace them.
+- Each backup is a file called `daily-<number>.db`, `manual-<number>.db` and so on. If Atlas won't start at all, you can restore by hand: close Atlas, rename `atlas.db` to something else, delete `atlas.db-wal` and `atlas.db-shm` if they are there, copy a backup into the `Atlas` folder, and rename the copy to `atlas.db`.
 
 ## Coming from Anki
 
