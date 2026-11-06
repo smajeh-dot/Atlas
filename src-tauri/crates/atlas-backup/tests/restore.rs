@@ -1,6 +1,6 @@
 //! Checking a backup and staging a restore, against real files.
 
-use atlas_backup::{create, finish_restore, inspect, stage_restore, Error, Kind};
+use atlas_backup::{create, finish_restore, inspect, list, restore, stage_restore, Error, Kind};
 use rusqlite::Connection;
 use std::path::{Path, PathBuf};
 use tempfile::TempDir;
@@ -103,4 +103,40 @@ fn finish_restore_replaces_the_database_and_removes_stale_wal_and_shm() {
     assert_eq!(marker(&live), 50);
     assert!(!staged.exists());
     assert!(!Path::new(&wal).exists() && !Path::new(&shm).exists());
+}
+
+fn open_wal(path: &Path) -> rusqlite::Result<Connection> {
+    let conn = Connection::open(path)?;
+    conn.execute_batch("PRAGMA journal_mode = WAL;")?;
+    Ok(conn)
+}
+
+#[test]
+fn restore_swaps_in_the_backup_reopens_it_and_keeps_a_copy_of_the_old_data() {
+    let (_d, backups, live, name) = setup(2);
+    let mut slot = Some(open_wal(&live).unwrap());
+    restore(&mut slot, &live, &backups, &name, 2, 9_000, open_wal).unwrap();
+    let sum: i64 = slot.as_ref().unwrap().query_row("SELECT SUM(x) FROM notes", [], |r| r.get(0)).unwrap();
+    assert_eq!(sum, 50);
+    assert_eq!(marker(&live), 50);
+    let saved = list(&backups).unwrap().into_iter().find(|b| b.kind == Kind::PreRestore).expect("a pre-restore copy");
+    assert_eq!(marker(&backups.join(saved.name)), 1);
+}
+
+#[test]
+fn a_refused_restore_changes_nothing_and_keeps_the_connection() {
+    let (_d, backups, live, name) = setup(5);
+    let mut slot = Some(open_wal(&live).unwrap());
+    refused(restore(&mut slot, &live, &backups, &name, 2, 9_000, open_wal));
+    assert!(slot.is_some());
+    assert_eq!(marker(&live), 1);
+    assert!(list(&backups).unwrap().iter().all(|b| b.kind != Kind::PreRestore));
+}
+
+#[test]
+fn restore_without_an_open_database_is_an_error_not_a_panic() {
+    let (_d, backups, live, name) = setup(2);
+    let mut slot: Option<Connection> = None;
+    assert!(restore(&mut slot, &live, &backups, &name, 2, 9_000, open_wal).is_err());
+    assert_eq!(marker(&live), 1);
 }

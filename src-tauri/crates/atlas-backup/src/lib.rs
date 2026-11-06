@@ -298,3 +298,52 @@ pub fn finish_restore(staged: &Path, db_path: &Path) -> Result<(), Error> {
     std::fs::rename(staged, db_path)?;
     Ok(())
 }
+
+/// The whole restore: check the backup, save a copy of the current data, close the database,
+/// swap the backup in, and open it again.
+///
+/// `slot` is the app's one open connection. It is left open and unchanged if the restore is
+/// refused or fails before the swap. `reopen` opens the database the way the app normally does.
+/// After a successful restore the caller still has to bring an older data format up to date.
+pub fn restore(
+    slot: &mut Option<Connection>,
+    db_path: &Path,
+    backups_dir: &Path,
+    name: &str,
+    max_version: u32,
+    now_ms: u64,
+    reopen: impl Fn(&Path) -> rusqlite::Result<Connection>,
+) -> Result<(), Error> {
+    if slot.is_none() {
+        return Err(Error::Io("Atlas couldn't open its database.".into()));
+    }
+    let staged = stage_restore(backups_dir, name, db_path, max_version)?;
+    if let Err(e) = create(db_path, backups_dir, Kind::PreRestore, now_ms) {
+        let _ = std::fs::remove_file(&staged);
+        return Err(Error::Io(format!(
+            "Atlas couldn't save a copy of your current cards first, so nothing was changed. ({e})"
+        )));
+    }
+    let Some(conn) = slot.take() else {
+        let _ = std::fs::remove_file(&staged);
+        return Err(Error::Io("Atlas couldn't open its database.".into()));
+    };
+    if let Err((conn, e)) = conn.close() {
+        *slot = Some(conn);
+        let _ = std::fs::remove_file(&staged);
+        return Err(e.into());
+    }
+    let swapped = finish_restore(&staged, db_path);
+    if swapped.is_err() {
+        let _ = std::fs::remove_file(&staged);
+    }
+    match reopen(db_path) {
+        Ok(conn) => {
+            *slot = Some(conn);
+            swapped
+        }
+        Err(e) => Err(Error::Io(format!(
+            "Atlas couldn't reopen its database ({e}). Close Atlas and open it again."
+        ))),
+    }
+}

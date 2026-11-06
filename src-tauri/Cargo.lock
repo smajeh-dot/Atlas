@@ -221,6 +221,7 @@ name = "atlas"
 version = "0.2.0"
 dependencies = [
  "anki-package",
+ "atlas-backup",
  "dirs 6.0.0",
  "rusqlite",
  "serde",

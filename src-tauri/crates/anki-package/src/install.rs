@@ -13,7 +13,6 @@ use std::io::{BufWriter, Read, Write};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
 
-use rusqlite::Connection;
 use sha1::{Digest, Sha1};
 
 use crate::error::{ImportError, Result};
@@ -164,27 +163,4 @@ pub fn remove_stale_media_temps(media_dir: &Path) -> Result<usize> {
         }
     }
     Ok(removed)
-}
-
-/// Writes a consistent copy of the open database to
-/// `<backups_dir>/pre-import-<stamp>.db` with `VACUUM INTO`, which works while
-/// the database is in use.
-pub fn backup_database(conn: &Connection, backups_dir: &Path, stamp: &str) -> Result<PathBuf> {
-    if !stamp
-        .bytes()
-        .all(|b| b.is_ascii_alphanumeric() || b == b'-')
-    {
-        return Err(refuse(format!("bad backup stamp {stamp:?}")));
-    }
-    std::fs::create_dir_all(backups_dir)?;
-    let dest = backups_dir.join(format!("pre-import-{stamp}.db"));
-    if dest.exists() {
-        return Err(refuse(format!("{} already exists", dest.display())));
-    }
-    let text = dest
-        .to_str()
-        .ok_or_else(|| refuse("backup path is not valid text".into()))?;
-    conn.execute("VACUUM INTO ?1", [text])
-        .map_err(|e| ImportError::Io(format!("backup: {e}")))?;
-    Ok(dest)
 }

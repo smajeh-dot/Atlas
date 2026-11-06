@@ -1,6 +1,7 @@
 // Release builds must not open a console window next to the app.
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+mod backup;
 mod db;
 mod files;
 mod import;
@@ -53,6 +54,7 @@ fn main() {
         .setup(|app| {
             let opened = paths::ensure_dirs().and_then(|dir| {
                 import::clean_up_after_crash(&dir);
+                backup::clean_up_after_crash(&dir);
                 db::open(&dir.join("atlas.db"))
                     .map_err(|e| format!("Atlas couldn't open {}: {e}", dir.join("atlas.db").display()))
             });
@@ -63,6 +65,7 @@ fn main() {
             app.manage(db::DbState(Mutex::new(conn)));
             app.manage(StartupError(error));
             app.manage(import::ImportState(Mutex::new(None)));
+            app.manage(backup::BackupLock::new());
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -76,7 +79,10 @@ fn main() {
             import::media_install,
             import::media_remove,
             import::db_backup,
-            import::import_cleanup
+            import::import_cleanup,
+            backup::backup_create,
+            backup::backup_list,
+            backup::backup_restore
         ])
         .run(tauri::generate_context!())
         .expect("error while running Atlas");
