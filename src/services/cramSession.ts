@@ -1,4 +1,4 @@
-import { answerCram, isComplete, startRound, type CramState, type Rng } from '../core/cram';
+import { answerCram, isComplete, pruneState, startRound, type CramState, type Rng } from '../core/cram';
 import { descendantIds, fullName } from '../core/deckTree';
 import type { Card, Deck, Note, NoteType } from '../core/model';
 import { hash32, mulberry32 } from '../core/random';
@@ -28,6 +28,31 @@ export interface SaveResult {
   saved: boolean;
 }
 
+/** The `meta` row that holds the saved round of a deck. */
+export const cramKey = (deckId: number): string => `cram:${deckId}`;
+
+const isIds = (v: unknown): v is number[] => Array.isArray(v) && v.every((x) => Number.isInteger(x));
+const isCount = (v: unknown, min: number): v is number => Number.isInteger(v) && (v as number) >= min;
+
+/** The saved round, or null if the text is not exactly what `persist` writes. */
+function parseSaved(raw: string): CramState | null {
+  let v: unknown;
+  try {
+    v = JSON.parse(raw);
+  } catch {
+    return null;
+  }
+  if (typeof v !== 'object' || v === null || Array.isArray(v)) return null;
+  const o = v as Record<string, unknown>;
+  if (o.version !== 1 || !isCount(o.round, 1) || !isCount(o.right, 0) || !isCount(o.wrong, 0)) return null;
+  if (!isIds(o.pool) || !isIds(o.queue)) return null;
+  const pool = new Set(o.pool);
+  const queue = new Set(o.queue);
+  if (pool.size !== o.pool.length || queue.size !== o.queue.length) return null;
+  if (!o.queue.every((id) => pool.has(id))) return null;
+  return { round: o.round, pool: o.pool, queue: o.queue, right: o.right, wrong: o.wrong };
+}
+
 /**
  * A Right/Wrong round over a deck, kept apart from the schedule: it reads cards but never writes
  * `cards`, `notes` or `revlog`.
@@ -50,10 +75,22 @@ export class CramSession {
     const rng = deps.rng ?? mulberry32(hash32(deps.clock.now(), deckId));
     const decks = await listDecks(deps.db);
     const pool = await CramSession.readPool(deps.db, decks, deckId);
-    const state = startRound(pool, 1, rng);
+    const state = await CramSession.resumeOrStart(deps.db, deckId, pool, rng);
     const session = new CramSession(deps, deckId, rng, decks, state);
     session.front = await session.loadFront(state, decks);
     return session;
+  }
+
+  /**
+   * Continues the saved round, limited to the cards that are still eligible (new cards are not added
+   * mid-round). Nothing usable saved starts round 1; a saved round with no cards left starts the next one.
+   */
+  private static async resumeOrStart(db: Db, deckId: number, pool: number[], rng: Rng): Promise<CramState> {
+    const [row] = await db.query<{ value: string }>(`SELECT value FROM meta WHERE key = ?`, [cramKey(deckId)]);
+    const savedState = row ? parseSaved(String(row.value)) : null;
+    if (!savedState) return startRound(pool, 1, rng);
+    const kept = pruneState(savedState, new Set(pool));
+    return kept.queue.length > 0 ? kept : startRound(pool, savedState.round + 1, rng);
   }
 
   /** Every card of the deck and its subdecks that is not suspended, whatever its schedule says. */
@@ -167,8 +204,21 @@ export class CramSession {
     return { card, note, noteType, question: rendered.question, answer: rendered.answer };
   }
 
-  /** Task 3 saves the state; until then nothing is stored. */
+  /** Saves the round, or removes the saved row once it is complete. False if the write failed. */
   private async persist(): Promise<boolean> {
-    return true;
+    const { db } = this.deps;
+    const key = cramKey(this.deckId);
+    try {
+      if (isComplete(this.cram)) {
+        await db.execute(`DELETE FROM meta WHERE key = ?`, [key]);
+      } else {
+        const { round, pool, queue, right, wrong } = this.cram;
+        const value = JSON.stringify({ version: 1, round, pool, queue, right, wrong });
+        await db.execute(`INSERT OR REPLACE INTO meta (key, value) VALUES (?, ?)`, [key, value]);
+      }
+      return true;
+    } catch {
+      return false;
+    }
   }
 }

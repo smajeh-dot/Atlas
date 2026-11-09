@@ -1,6 +1,6 @@
 import { beforeEach, expect, test } from 'vitest';
 import { mulberry32 } from '../../src/core/random';
-import { CramSession, type CramDeps } from '../../src/services/cramSession';
+import { CramSession, cramKey, type CramDeps } from '../../src/services/cramSession';
 import { UndoStack } from '../../src/services/undo';
 import { createMigratedDb } from '../helpers/testDb';
 import { makeReview, seedDeck, seedNote } from '../helpers/seed';
@@ -173,6 +173,8 @@ test('schedule safety: cards, notes and revlog are untouched by a whole session'
     cards: await deps.db.query('SELECT * FROM cards ORDER BY id'),
     notes: await deps.db.query('SELECT * FROM notes ORDER BY id'),
     revlog: await deps.db.query('SELECT * FROM revlog ORDER BY id'),
+    decks: await deps.db.query('SELECT * FROM decks ORDER BY id'),
+    otherMeta: await deps.db.query(`SELECT * FROM meta WHERE key NOT LIKE 'cram:%' ORDER BY key`),
   });
   const before = await snap();
 
@@ -187,6 +189,8 @@ test('schedule safety: cards, notes and revlog are untouched by a whole session'
   await s.restart();
 
   expect(await snap()).toEqual(before);
+  // the only thing the session wrote is its own meta row
+  expect(await savedRow(deck)).not.toBeNull();
 });
 
 /** A Db whose next read of `notes` rejects once after `failNext()`; everything else passes through. */
@@ -265,4 +269,228 @@ test('a failed read during goAgain leaves the session as it was and keeps the hi
   expect(s.state().round).toBe(2);
   expect(s.canUndo()).toBe(false);
   expect(await s.answer(true, s.current()!.card.id)).toEqual({ saved: true });
+});
+
+async function savedRow(deckId: number): Promise<string | null> {
+  const [row] = await deps.db.query<{ value: string }>(`SELECT value FROM meta WHERE key = ?`, [cramKey(deckId)]);
+  return row ? row.value : null;
+}
+
+async function saved(deckId: number): Promise<unknown> {
+  const raw = await savedRow(deckId);
+  return raw === null ? null : JSON.parse(raw);
+}
+
+const asSaved = (st: ReturnType<CramSession['state']>) => ({ version: 1, ...st });
+
+async function addMany(deckId: number, n: number): Promise<number[]> {
+  const ids: number[] = [];
+  for (let i = 0; i < n; i++) ids.push(await addBasic(deckId, `q${i}`));
+  return ids;
+}
+
+test('cramKey names the meta row of a deck', () => {
+  expect(cramKey(7)).toBe('cram:7');
+});
+
+test('nothing is saved on open; each answer and undo saves the current state', async () => {
+  await addMany(deck, 4);
+  const s = await CramSession.open(deps, deck);
+  expect(await savedRow(deck)).toBeNull();
+
+  expect(await s.answer(false)).toEqual({ saved: true });
+  expect(await saved(deck)).toEqual(asSaved(s.state()));
+  const afterOne = structuredClone(s.state());
+
+  expect(await s.answer(true)).toEqual({ saved: true });
+  expect(await saved(deck)).toEqual(asSaved(s.state()));
+
+  expect(await s.undo()).toEqual({ saved: true });
+  expect(s.state()).toEqual(afterOne);
+  expect(await saved(deck)).toEqual(asSaved(afterOne));
+});
+
+test('a second open resumes the same round without reshuffling, whatever the rng', async () => {
+  await addMany(deck, 6);
+  const first = await CramSession.open(deps, deck);
+  await first.goAgain();
+  await first.answer(false);
+  await first.answer(true);
+  await first.answer(false);
+
+  const second = await CramSession.open({ ...deps, rng: mulberry32(999) }, deck);
+  expect(second.state()).toEqual(first.state());
+  expect(second.current()!.card.id).toBe(first.current()!.card.id);
+  expect(second.canUndo()).toBe(false);
+});
+
+test('a round that completes deletes the saved row and the next open starts round 1', async () => {
+  const ids = await addMany(deck, 3);
+  const s = await CramSession.open(deps, deck);
+  while (!s.isComplete()) await s.answer(true);
+  expect(await savedRow(deck)).toBeNull();
+
+  const again = await CramSession.open(deps, deck);
+  expect(again.state().round).toBe(1);
+  expect(again.state().right).toBe(0);
+  expect(sorted(again.state().queue)).toEqual(sorted(ids));
+});
+
+test('resume drops deleted, suspended and moved cards, keeps order, and ignores new cards', async () => {
+  const other = await seedDeck(deps.db, 'Physics');
+  await addMany(deck, 6);
+  const s = await CramSession.open(deps, deck);
+  await s.answer(true);
+  const before = structuredClone(s.state());
+  const [deleted, suspended, moved] = [before.queue[0]!, before.queue[1]!, before.queue[3]!];
+
+  await deps.db.execute(`DELETE FROM cards WHERE id = ?`, [deleted]);
+  await deps.db.execute(`UPDATE cards SET suspended = 1 WHERE id = ?`, [suspended]);
+  await deps.db.execute(`UPDATE cards SET deck_id = ? WHERE id = ?`, [other, moved]);
+  const added = await addBasic(deck, 'new');
+
+  const r = await CramSession.open(deps, deck);
+  const gone = new Set([deleted, suspended, moved]);
+  expect(r.state().queue).toEqual(before.queue.filter((id) => !gone.has(id)));
+  expect(r.state().pool).toEqual(before.pool.filter((id) => !gone.has(id)));
+  expect(r.state().queue).not.toContain(added);
+  expect(r.state().pool).not.toContain(added);
+  expect(r.state().round).toBe(before.round);
+  expect(r.state().right).toBe(1);
+  expect(r.current()!.card.id).toBe(r.state().queue[0]);
+});
+
+test('if every saved card is gone, open starts a fresh round over the current cards', async () => {
+  const old = await addMany(deck, 3);
+  const s = await CramSession.open(deps, deck);
+  await s.goAgain();
+  await s.goAgain();
+  await s.answer(false);
+  for (const id of old) await deps.db.execute(`UPDATE cards SET suspended = 1 WHERE id = ?`, [id]);
+  const fresh = [await addBasic(deck, 'x'), await addBasic(deck, 'y')];
+
+  const r = await CramSession.open(deps, deck);
+  expect(sorted(r.state().queue)).toEqual(sorted(fresh));
+  expect(sorted(r.state().pool)).toEqual(sorted(fresh));
+  expect(r.state().round).toBe(4);
+  expect(r.state().right).toBe(0);
+  expect(r.state().wrong).toBe(0);
+});
+
+test('bad saved values start a fresh round and do not throw', async () => {
+  const ids = await addMany(deck, 3);
+  const [a, b, c] = ids as [number, number, number];
+  const good = { version: 1, round: 5, pool: [a, b, c], queue: [a, b], right: 1, wrong: 1 };
+  const bad: Record<string, string> = {
+    'not json': 'not json{',
+    'a bare number': '7',
+    'null': 'null',
+    'an array': '[]',
+    'empty object': '{}',
+    'version 2': JSON.stringify({ ...good, version: 2 }),
+    'queue id not in pool': JSON.stringify({ ...good, queue: [a, 999] }),
+    'duplicate queue ids': JSON.stringify({ ...good, queue: [a, a] }),
+    'duplicate pool ids': JSON.stringify({ ...good, pool: [a, a, b, c] }),
+    'negative right': JSON.stringify({ ...good, right: -1 }),
+    'negative wrong': JSON.stringify({ ...good, wrong: -1 }),
+    'fractional count': JSON.stringify({ ...good, right: 1.5 }),
+    'round 0': JSON.stringify({ ...good, round: 0 }),
+    'non-integer pool id': JSON.stringify({ ...good, pool: [a, b, c + 0.5], queue: [a] }),
+    'string id': JSON.stringify({ ...good, pool: [a, b, String(c)], queue: [a] }),
+    'queue not an array': JSON.stringify({ ...good, queue: 'ab' }),
+    'missing wrong': JSON.stringify({ version: 1, round: 5, pool: [a, b, c], queue: [a], right: 0 }),
+  };
+  // the good one does resume, so the table above is really testing the validator
+  await deps.db.execute(`INSERT OR REPLACE INTO meta (key, value) VALUES (?, ?)`, [cramKey(deck), JSON.stringify(good)]);
+  const resumed = await CramSession.open(deps, deck);
+  expect(resumed.state()).toEqual({ round: 5, pool: [a, b, c], queue: [a, b], right: 1, wrong: 1 });
+
+  for (const [name, raw] of Object.entries(bad)) {
+    await deps.db.execute(`INSERT OR REPLACE INTO meta (key, value) VALUES (?, ?)`, [cramKey(deck), raw]);
+    const s = await CramSession.open(deps, deck);
+    expect(s.state().round, name).toBe(1);
+    expect(s.state().right, name).toBe(0);
+    expect(s.state().wrong, name).toBe(0);
+    expect(sorted(s.state().queue), name).toEqual(sorted(ids));
+    expect(sorted(s.state().pool), name).toEqual(sorted(ids));
+  }
+});
+
+test('two decks keep separate saved rounds', async () => {
+  const other = await seedDeck(deps.db, 'Physics');
+  await addMany(deck, 3);
+  await addMany(other, 4);
+  const a = await CramSession.open(deps, deck);
+  const b = await CramSession.open(deps, other);
+  await a.answer(true);
+  await b.goAgain();
+  await b.answer(false);
+
+  const a2 = await CramSession.open(deps, deck);
+  const b2 = await CramSession.open(deps, other);
+  expect(a2.state()).toEqual(a.state());
+  expect(b2.state()).toEqual(b.state());
+  expect(a2.state().round).toBe(1);
+  expect(b2.state().round).toBe(2);
+});
+
+test('restart replaces the saved row with a fresh round 1; goAgain saves round + 1', async () => {
+  await addMany(deck, 3);
+  const s = await CramSession.open(deps, deck);
+  await s.answer(true);
+  await s.answer(false);
+
+  expect(await s.goAgain()).toEqual({ saved: true });
+  expect(await saved(deck)).toEqual({ ...asSaved(s.state()), round: 2 });
+
+  await s.answer(true);
+  expect(await s.restart()).toEqual({ saved: true });
+  expect(s.state().round).toBe(1);
+  expect(await saved(deck)).toEqual(asSaved(s.state()));
+  expect(s.state().right).toBe(0);
+});
+
+/** A Db whose writes to `meta` reject, so the round cannot be saved; everything else passes through. */
+function metaWriteFails(db: CramDeps['db']): CramDeps['db'] {
+  return {
+    query: (sql, params) => db.query(sql, params),
+    execute: (sql, params) =>
+      /\bmeta\b/.test(sql) ? Promise.reject(new Error('disk full')) : db.execute(sql, params),
+    batch: (statements) => db.batch(statements),
+  };
+}
+
+test('when the meta write fails, the round still advances in memory and saved is false', async () => {
+  await addMany(deck, 4);
+  const s = await CramSession.open({ ...deps, db: metaWriteFails(deps.db) }, deck);
+  const start = structuredClone(s.state());
+
+  expect(await s.answer(false)).toEqual({ saved: false });
+  expect(s.state().wrong).toBe(1);
+  expect(s.state().queue).toHaveLength(4);
+  expect(s.current()!.card.id).toBe(s.state().queue[0]);
+  expect(await s.answer(true)).toEqual({ saved: false });
+  expect(s.state().right).toBe(1);
+
+  expect(await s.undo()).toEqual({ saved: false });
+  expect(s.state().right).toBe(0);
+  expect(await s.undo()).toEqual({ saved: false });
+  expect(s.state()).toEqual(start);
+
+  expect(await s.goAgain()).toEqual({ saved: false });
+  expect(s.state().round).toBe(2);
+  expect(await s.restart()).toEqual({ saved: false });
+  expect(s.state().round).toBe(1);
+  expect(await savedRow(deck)).toBeNull();
+});
+
+test('a failed delete of the saved row when the round completes also reports saved: false', async () => {
+  await addMany(deck, 1);
+  const s = await CramSession.open(deps, deck);
+  await s.answer(false);
+  expect(await savedRow(deck)).not.toBeNull();
+
+  const s2 = await CramSession.open({ ...deps, db: metaWriteFails(deps.db) }, deck);
+  expect(await s2.answer(true)).toEqual({ saved: false });
+  expect(s2.isComplete()).toBe(true);
 });
