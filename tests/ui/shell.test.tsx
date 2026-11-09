@@ -133,6 +133,10 @@ test('a deck\'s three-dot button opens the menu card, whose items do real things
   await user.click(await screen.findByRole('button', { name: 'Chemistry options' }));
   const menu = await screen.findByRole('menu', { name: 'Chemistry options' });
   expect(within(menu).getAllByRole('menuitem').map((i) => i.textContent)).toEqual(['Study', 'Cram', 'Add card here', 'Add subdeck', 'Rename', 'Colour', 'Delete']);
+  // Cram carries the clock icon, drawn for real (not the dashed placeholder).
+  const cramItem = within(menu).getByRole('menuitem', { name: 'Cram' });
+  expect(cramItem.querySelector('svg[data-icon="clock"] path')).not.toBeNull();
+  expect(cramItem.querySelector('[data-placeholder="true"]')).toBeNull();
   await user.click(within(menu).getByRole('menuitem', { name: 'Rename' }));
   await user.type(await screen.findByLabelText('Deck name'), '{Control>}a{/Control}Chem{Enter}');
   await waitFor(async () => expect((await listDecks(db)).map((d) => d.name).sort()).toEqual(['<b>Bio</b>', 'Chem']));

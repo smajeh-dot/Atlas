@@ -237,6 +237,16 @@ test('Esc leaves to Today', async () => {
   await waitFor(() => expect(screen.queryByTestId('cram-card')).toBeNull());
 });
 
+test('the strip buttons draw real icons (back, undo, restart), not the dashed placeholder', async () => {
+  await seedNote(seedDeps, deck, 'basic', ['one', 'x']);
+  await cram();
+  for (const [name, icon] of [['Leave cram', 'back'], ['Undo', 'undo'], ['Restart', 'reset']] as const) {
+    const button = screen.getByRole('button', { name });
+    expect(button.querySelector(`svg[data-icon="${icon}"] path`), name).not.toBeNull();
+    expect(button.querySelector('[data-placeholder="true"]'), name).toBeNull();
+  }
+});
+
 test('the strip has a restart control, and no Edit, Flag or Bury buttons', async () => {
   await seedNote(seedDeps, deck, 'basic', ['one', 'x']);
   await cram();

@@ -38,9 +38,12 @@
   gap: var(--sp-8);
 }
 
+/* The strip icons sit bare on the page: no box around them (hover and press still tint the background). */
 .stripButton {
   width: 28px;
   height: 28px;
+  border-color: transparent;
+  background: transparent;
 }
 
 .stat {

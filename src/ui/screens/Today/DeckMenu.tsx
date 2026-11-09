@@ -22,7 +22,7 @@ function deckMenuGroups(deck: Deck, h: DeckHandlers, chooseColour: () => void): 
   return [
     [
       { label: 'Study', onSelect: h.study },
-      { label: 'Cram', onSelect: h.cram },
+      { label: 'Cram', icon: 'clock', onSelect: h.cram },
       { label: 'Add card here', onSelect: h.addCard },
     ],
     [
