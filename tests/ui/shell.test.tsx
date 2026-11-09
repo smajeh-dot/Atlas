@@ -132,10 +132,31 @@ test('a deck\'s three-dot button opens the menu card, whose items do real things
   const { user } = await renderApp({ db });
   await user.click(await screen.findByRole('button', { name: 'Chemistry options' }));
   const menu = await screen.findByRole('menu', { name: 'Chemistry options' });
-  expect(within(menu).getAllByRole('menuitem').map((i) => i.textContent)).toEqual(['Study', 'Add card here', 'Add subdeck', 'Rename', 'Colour', 'Delete']);
+  expect(within(menu).getAllByRole('menuitem').map((i) => i.textContent)).toEqual(['Study', 'Cram', 'Add card here', 'Add subdeck', 'Rename', 'Colour', 'Delete']);
   await user.click(within(menu).getByRole('menuitem', { name: 'Rename' }));
   await user.type(await screen.findByLabelText('Deck name'), '{Control>}a{/Control}Chem{Enter}');
   await waitFor(async () => expect((await listDecks(db)).map((d) => d.name).sort()).toEqual(['<b>Bio</b>', 'Chem']));
+});
+
+test('Cram in a parent deck\'s menu card opens the cram screen with a card from its subdeck', async () => {
+  const db = await createMigratedDb();
+  const deps = { db, clock: fixedClock(T0), undo: new UndoStack() };
+  const parent = await createDeck(db, { name: 'Parent' }, T0);
+  const child = await createDeck(db, { name: 'Child', parentId: parent }, T0);
+  await seedNote(deps, child, 'basic', ['What is a mole?', 'An amount of substance']);
+  const { user } = await renderApp({ db });
+  await user.click(await screen.findByRole('button', { name: 'Parent options' }));
+  await user.click(await screen.findByRole('menuitem', { name: 'Cram' }));
+  await screen.findByTestId('cram-card');
+  await waitFor(() => expect(document.querySelector('[data-testid="cram-card"] [data-cardview]')!.shadowRoot!.querySelector('.atlas-question')?.textContent).toContain('What is a mole?'));
+  expect(screen.queryByRole('button', { name: 'Leave study' })).toBeNull();
+});
+
+test('clicking a leaf deck row still opens Study, not Cram', async () => {
+  const { user } = await renderApp({ db: await seeded() });
+  await user.click(await screen.findByRole('button', { name: /^<b>Bio<\/b>\d/ }));
+  expect(await screen.findByRole('button', { name: 'Leave study' })).toBeTruthy();
+  expect(screen.queryByTestId('cram-screen')).toBeNull();
 });
 
 test('Colour in a deck\'s menu card opens a colour card and saves the choice', async () => {

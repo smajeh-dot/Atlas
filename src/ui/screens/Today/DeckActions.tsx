@@ -26,6 +26,7 @@ export function deletionText(name: string, s: { subdecks: number; cards: number 
 
 export interface DeckHandlers {
   study(): void;
+  cram(): void;
   addCard(): void;
   rename(): void;
   addSubdeck(): void;
@@ -63,6 +64,7 @@ export function useDeckActions(): {
   /** What each deck-menu item does, so a screen can show these in its own style of menu. Colour is left to the screen. */
   const deckHandlers = (deck: Deck): DeckHandlers => ({
     study: () => navigate({ name: 'study', deckId: deck.id }),
+    cram: () => navigate({ name: 'cram', deckId: deck.id }),
     addCard: () => navigate({ name: 'add', deckId: deck.id }),
     rename: () => askName('Rename deck', 'Rename', deck.name, (n) => renameDeck(deps.db, deck.id, n)),
     addSubdeck: () => newDeck(deck.id),
