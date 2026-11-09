@@ -1,3 +1,4 @@
+import type { Editor } from '@tiptap/react';
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { cardDecks, pickCardDeck } from '../../../core/deckChoices';
@@ -5,10 +6,12 @@ import { fullName } from '../../../core/deckTree';
 import type { BuiltinNoteType } from '../../../core/model';
 import { listDecks } from '../../../data/decks';
 import { listNoteTypes } from '../../../data/noteTypes';
+import { addNote, NoCardsError } from '../../../services/noteService';
 import { useAtlas, useData } from '../../app/AtlasContext';
 import { FieldEditor } from '../../editor/FieldEditor';
 import { Button } from '../../components/Button';
 import { MenuCard } from '../../components/MenuCard';
+import { useToast } from '../../components/Toast';
 import { Tooltip } from '../../components/Tooltip';
 import menuStyles from '../../components/MenuCard.module.css';
 import { Icon } from '../../icons/icons';
@@ -24,11 +27,14 @@ const TYPES: BuiltinNoteType[] = ['basic', 'basic_reversed', 'basic_typein', 'cl
  * The X, Esc or a click outside the card closes it. Along the top: the card type, then the deck it's being added to
  * (the type just shows the current choice for now; the deck opens a dropdown of your decks), and in the corner the triple-dot
  * button, which doesn't do anything yet. Under those, a row of placeholder text-editing buttons, then a field for each side of the card
- * (Front and Back for Basic) in the left half, and a live preview card in the right. Along the bottom: a tag button on the left (it doesn't do anything yet), and Add (nothing yet) and Close on
- * the right. What's typed is only kept while the card is open: nothing saves a card yet. `deckId` is the deck it was opened for (from a deck's menu), if any.
+ * (Front and Back for Basic) in the left half, and a live preview card in the right. Along the bottom: a tag button on the left (it doesn't do anything yet), and Add and Close on
+ * the right. Add saves the card in the chosen deck, empties the fields, puts the cursor back on the first one and leaves the card open for the next;
+ * if the card would be empty it says why and keeps what was typed. The deck and card type used are remembered for next time.
+ * `deckId` is the deck it was opened for (from a deck's menu), if any.
  */
 export function AddCardOverlay({ deckId, onClose }: { deckId?: number; onClose(): void }) {
-  const { deps, settings } = useAtlas();
+  const { deps, settings, saveSettings, changed } = useAtlas();
+  const toast = useToast();
   const { data } = useData(async () => ({
     decks: await listDecks(deps.db),
     types: (await listNoteTypes(deps.db)).filter((t) => t.builtin && TYPES.includes(t.builtin)),
@@ -48,6 +54,33 @@ export function AddCardOverlay({ deckId, onClose }: { deckId?: number; onClose()
   useEffect(() => {
     if (!card.current?.contains(document.activeElement)) card.current?.focus();
   }, []);
+
+  // The first field's editor, to put the cursor back on it after a card is added. And a flag (not state, which lags a click behind)
+  // so a double click on Add saves one card.
+  const firstField = useRef<Editor | null>(null);
+  const adding = useRef(false);
+  const add = async () => {
+    if (adding.current || !noteType || !deck) return;
+    adding.current = true;
+    try {
+      await addNote(deps, {
+        noteTypeId: noteType.id,
+        deckId: deck.id,
+        fields: noteType.fields.map((_, i) => fields[i] ?? ''),
+        tags: [],
+      });
+    } catch (e) {
+      toast.show({ message: e instanceof NoCardsError ? e.message : `Atlas couldn't add that card: ${e instanceof Error ? e.message : String(e)}` });
+      return;
+    } finally {
+      adding.current = false;
+    }
+    changed();
+    setFields([]);
+    firstField.current?.commands.focus('end');
+    // Remembering the deck and type is a convenience; the card is already saved, so a failure here isn't worth interrupting for.
+    saveSettings({ lastDeckId: deck.id, lastNoteTypeId: noteType.id }).catch(() => {});
+  };
 
   return createPortal(
     <div
@@ -103,6 +136,9 @@ export function AddCardOverlay({ deckId, onClose }: { deckId?: number; onClose()
                     autoFocus={i === 0}
                     mediaUrl={deps.media.url}
                     getAllText={() => fields.join('\n')}
+                    editorRef={(e) => {
+                      if (i === 0) firstField.current = e;
+                    }}
                     // Pictures would be saved to your media folder for a card that can't be saved yet, so they wait.
                     onImage={async () => {
                       throw new Error("Pictures can't be added to a card here yet.");
@@ -129,7 +165,7 @@ export function AddCardOverlay({ deckId, onClose }: { deckId?: number; onClose()
                 </button>
               </Tooltip>
               <div className={styles.actions}>
-                <Button variant="primary" size="sm" className={styles.add}>Add</Button>
+                <Button variant="primary" size="sm" className={styles.add} onClick={() => void add()}>Add</Button>
                 <Button variant="secondary" size="sm" onClick={onClose}>Close</Button>
               </div>
             </div>

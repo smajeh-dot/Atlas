@@ -1,11 +1,12 @@
 // @vitest-environment jsdom
-import { screen, within } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import { expect, test, vi } from 'vitest';
 import { createDeck } from '../../../src/data/decks';
 import { getBuiltinNoteType } from '../../../src/data/noteTypes';
-import { updateSettings } from '../../../src/data/settings';
+import { getSettings, updateSettings } from '../../../src/data/settings';
 import { T0 } from '../../helpers/fixtures';
 import { renderApp } from '../../helpers/renderApp';
+import { countRows } from '../../helpers/seed';
 import { createMigratedDb } from '../../helpers/testDb';
 
 // ProseMirror can't be typed into under jsdom, so the field editor is a plain textarea here.
@@ -77,17 +78,97 @@ test('Add and Close sit at the bottom right, in that order, after the tag icon',
   expect(within(footer).getAllByRole('button').map((b) => b.getAttribute('aria-label') ?? b.textContent)).toEqual(['Tags', 'Add', 'Close']);
 });
 
-test('Close at the bottom closes the card; Add and the tag icon do nothing yet', async () => {
+test('Close at the bottom closes the card; the tag icon does nothing yet', async () => {
   const { user, card } = await openAddCard();
   const footer = await within(card).findByTestId('add-card-footer');
   await user.keyboard('A question');
   await user.click(within(footer).getByRole('button', { name: 'Tags' }));
-  await user.click(within(footer).getByRole('button', { name: 'Add' }));
   expect(screen.getByRole('dialog', { name: 'Add card' })).toBeTruthy();
   expect((within(card).getByRole('textbox', { name: 'Front' }) as HTMLTextAreaElement).value).toBe('A question');
   await user.click(within(footer).getByRole('button', { name: 'Close' }));
   expect(screen.queryByRole('dialog', { name: 'Add card' })).toBeNull();
   expect(screen.getByTestId('today-decks-card')).toBeTruthy();
+});
+
+const textOf = (el: HTMLElement) => (el as HTMLTextAreaElement).value;
+const addButton = (card: HTMLElement) => within(within(card).getByTestId('add-card-footer')).getByRole('button', { name: 'Add' });
+
+test('Add saves the card in the chosen deck, empties the fields, puts the cursor back on the Front, and keeps the card open', async () => {
+  const { user, card, db } = await openAddCard();
+  const front = await within(card).findByRole('textbox', { name: 'Front' });
+  await user.keyboard('What is 2 + 2?');
+  await user.click(within(card).getByRole('textbox', { name: 'Back' }));
+  await user.keyboard('Four');
+  await user.click(addButton(card));
+
+  await waitFor(() => expect(textOf(front)).toBe(''));
+  expect(textOf(within(card).getByRole('textbox', { name: 'Back' }))).toBe('');
+  expect(document.activeElement).toBe(front);
+  expect(screen.getByRole('dialog', { name: 'Add card' })).toBeTruthy();
+
+  const notes = await db.query<{ fields: string; deck_id: number }>(
+    `SELECT n.fields, c.deck_id FROM notes n JOIN cards c ON c.note_id = n.id`,
+  );
+  expect(notes).toHaveLength(1);
+  expect(JSON.parse(notes[0]!.fields)).toEqual(['What is 2 + 2?', 'Four']);
+  const [physics] = await db.query<{ id: number }>(`SELECT id FROM decks WHERE name = 'Physics'`);
+  expect(notes[0]!.deck_id).toBe(physics!.id);
+});
+
+test('Home behind the card counts the new card straight away', async () => {
+  const { user, card } = await openAddCard();
+  await within(card).findByRole('textbox', { name: 'Front' });
+  const newCount = () => within(screen.getByTestId('today-decks-card')).getByText((_, el) => el?.getAttribute('data-count') === 'new').textContent;
+  expect(newCount()).toBe('0');
+  await user.keyboard('A question');
+  await user.click(addButton(card));
+  await waitFor(() => expect(newCount()).toBe('1'));
+});
+
+test('Add with nothing in the Front saves nothing, says why, and keeps what was typed', async () => {
+  const { user, card, db } = await openAddCard();
+  await user.click(await within(card).findByRole('textbox', { name: 'Back' }));
+  await user.keyboard('Only a back');
+  await user.click(addButton(card));
+
+  expect(await screen.findByText(/would not make any cards/)).toBeTruthy();
+  expect(textOf(within(card).getByRole('textbox', { name: 'Back' }))).toBe('Only a back');
+  expect(await countRows(db, 'notes')).toBe(0);
+  expect(await countRows(db, 'cards')).toBe(0);
+});
+
+test('a double click on Add saves one card, not two', async () => {
+  const { user, card, db } = await openAddCard();
+  await within(card).findByRole('textbox', { name: 'Front' });
+  await user.keyboard('Once only');
+  await user.dblClick(addButton(card));
+  await waitFor(async () => expect(await countRows(db, 'cards')).toBeGreaterThan(0));
+  await waitFor(() => expect(textOf(within(card).getByRole('textbox', { name: 'Front' }))).toBe(''));
+  expect(await countRows(db, 'cards')).toBe(1);
+});
+
+test('the deck and card type you added with are remembered for next time', async () => {
+  const db = await createMigratedDb();
+  await createDeck(db, { name: 'Physics' }, T0);
+  const chemistry = await createDeck(db, { name: 'Chemistry' }, T0);
+  const r = await renderApp({ db });
+  await r.user.click(within(await screen.findByTestId('today-notch')).getByRole('button', { name: 'Add' }));
+  const card = await screen.findByRole('dialog', { name: 'Add card' });
+  await within(card).findByRole('toolbar', { name: 'Formatting' });
+
+  await r.user.click(within(card).getByRole('button', { name: /^Deck:/ }));
+  await r.user.click(await screen.findByRole('menuitemradio', { name: 'Chemistry' }));
+  await r.user.click(await within(card).findByRole('textbox', { name: 'Front' }));
+  await r.user.keyboard('Symbol for gold?');
+  await r.user.click(addButton(card));
+
+  const basic = await getBuiltinNoteType(db, 'basic');
+  await waitFor(async () => {
+    const s = await getSettings(db);
+    expect(s.lastDeckId).toBe(chemistry);
+    expect(s.lastNoteTypeId).toBe(basic.id);
+  });
+  expect(within(card).getByRole('button', { name: 'Deck: Chemistry' })).toBeTruthy();
 });
 
 test('the card is split into two halves: Front and Back in the left one, the live preview in the right, and the bottom row under both', async () => {
