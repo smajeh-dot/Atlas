@@ -107,6 +107,11 @@
   color: var(--text-muted);
 }
 
+.plain {
+  margin: 0;
+  color: var(--text-muted);
+}
+
 .row {
   display: flex;
   gap: var(--sp-16);

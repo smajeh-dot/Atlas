@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { revealTypeIn } from '../../../core/typein';
-import { CramSession } from '../../../services/cramSession';
+import { CramSession, type SaveResult } from '../../../services/cramSession';
 import { useAtlas } from '../../app/AtlasContext';
 import { answerView, questionView } from '../../card/display';
 import { Button } from '../../components/Button';
 import { CardView } from '../../components/CardView';
+import { Dialog } from '../../components/Dialog';
+import { EmptyState } from '../../components/EmptyState';
 import { IconButton } from '../../components/IconButton';
 import { useToast } from '../../components/Toast';
 import { useHotkeys } from '../../keys';
@@ -21,6 +23,7 @@ export function Cram({ deckId }: { deckId: number }) {
   const toast = useToast();
   const [session, setSession] = useState<CramSession | null>(null);
   const [flipped, setFlipped] = useState(false);
+  const [restarting, setRestarting] = useState(false);
   // The session is a plain object, so this makes the screen read it again after it changes.
   const [, refresh] = useState(0);
   const busy = useRef(false);
@@ -38,14 +41,19 @@ export function Cram({ deckId }: { deckId: number }) {
 
   const leave = () => navigate({ name: 'today' });
 
-  /** Runs one change to the session, one at a time, then shows the card it leaves on screen. */
-  const run = async (work: (s: CramSession) => Promise<unknown>, showAnswer = false) => {
+  /**
+   * Runs one change to the session, one at a time, then shows the card it leaves on screen. The session
+   * does not turn away a second restart or Go again, so this is the guard against a double click or press.
+   */
+  const run = async (work: (s: CramSession) => Promise<SaveResult | null>, showAnswer = false) => {
     if (busy.current || !session) return;
     busy.current = true;
     try {
-      await work(session);
+      const result = await work(session);
       setFlipped(showAnswer);
       refresh((n) => n + 1);
+      // The round carries on in memory; only its saved copy is behind.
+      if (result?.saved === false) toast.show({ message: "Atlas couldn't save your cram round, but you can keep going" });
     } catch (e) {
       toast.show({ message: `Atlas couldn't update this round: ${message(e)}` });
     } finally {
@@ -79,7 +87,18 @@ export function Cram({ deckId }: { deckId: number }) {
     'Ctrl+Z': undo,
   });
 
-  if (!session || session.isEmpty()) return <div className={styles.page} />;
+  if (!session) return <div className={styles.page} />;
+  if (session.isEmpty()) {
+    return (
+      <div className={styles.page}>
+        <EmptyState
+          title="No cards to cram in this deck"
+          text="Add some cards, or unsuspend the ones you have, to cram this deck."
+          action={{ label: 'Back to Home', onClick: leave }}
+        />
+      </div>
+    );
+  }
 
   const { pool, queue, right, wrong } = session.state();
   const finished = pool.length - queue.length;
@@ -92,7 +111,7 @@ export function Cram({ deckId }: { deckId: number }) {
             <div className={styles.stripGroup}>
               <IconButton icon="back" label="Leave cram" shortcut="Esc" className={styles.stripButton} onClick={leave} />
               <IconButton icon="undo" label="Undo" shortcut="Ctrl+Z" className={styles.stripButton} disabled={!session.canUndo()} onClick={undo} />
-              <IconButton icon="reset" label="Restart" className={styles.stripButton} onClick={() => {}} />
+              <IconButton icon="reset" label="Restart" className={styles.stripButton} onClick={() => setRestarting(true)} />
             </div>
             <span className={styles.stat} data-testid="cram-left">
               {queue.length} left
@@ -146,6 +165,20 @@ export function Cram({ deckId }: { deckId: number }) {
           </div>
         )}
       </div>
+      {restarting && (
+        <Dialog
+          title="Restart this round?"
+          confirmLabel="Restart round"
+          cancelLabel="Keep going"
+          onCancel={() => setRestarting(false)}
+          onConfirm={() => {
+            setRestarting(false);
+            void run((s) => s.restart());
+          }}
+        >
+          <p className={styles.plain}>You will start again from round 1 with every card in the deck. Your review schedule is not affected.</p>
+        </Dialog>
+      )}
     </div>
   );
 }
