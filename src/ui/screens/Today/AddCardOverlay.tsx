@@ -1,15 +1,19 @@
+import type { Editor } from '@tiptap/react';
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { cardOrdsForNote } from '../../../core/cards';
 import { cardDecks, pickCardDeck } from '../../../core/deckChoices';
 import { fullName } from '../../../core/deckTree';
 import type { BuiltinNoteType, NoteType } from '../../../core/model';
 import { listDecks } from '../../../data/decks';
 import { listNoteTypes } from '../../../data/noteTypes';
+import { addNote, NO_CARDS_MESSAGE, NoCardsError, updateNote } from '../../../services/noteService';
 import { useAtlas, useData } from '../../app/AtlasContext';
 import { FieldEditor } from '../../editor/FieldEditor';
 import { Button } from '../../components/Button';
 import { Input } from '../../components/Input';
 import { MenuCard } from '../../components/MenuCard';
+import { useToast } from '../../components/Toast';
 import menuStyles from '../../components/MenuCard.module.css';
 import { Icon } from '../../icons/icons';
 import { trapTab, useOverlayLayer, useRestoreFocus } from '../../components/overlayStack';
@@ -23,23 +27,40 @@ const TYPE_ROWS = ['Subject', 'Folder', 'Basic', 'Image Occlusion'];
 const BLANK_VIEWS = ['Subject', 'Folder', 'Image Occlusion'];
 const TYPES: BuiltinNoteType[] = ['basic', 'basic_reversed', 'basic_typein', 'cloze'];
 
+/** The existing card the overlay is editing: Study passes this in when its Edit card icon is used. */
+export interface EditingCard {
+  noteType: NoteType;
+  fields: string[];
+  deckId: number;
+  noteId: number;
+  /** Kept as they are: the edit view has no tags field, and saving replaces a note's tags with the ones given. */
+  tags: string[];
+}
+
 /**
  * A large card in the middle of the window over the Home screen, with everything around it darkened.
  * The X, Esc or a click outside the card closes it. Along the top: the card type, then the deck it's being added to
  * (the type opens a dropdown of Subject, Folder, Basic and Image Occlusion, and each row opens its own version of this card: Basic is the one described below, the others are blank for now, with only these two buttons, Add, Close and the X; the deck opens a dropdown of your decks),
  * and in the corner the close button. Under those, a row of placeholder text-editing buttons, then a field for each side of the card
- * (Front and Back for Basic) in the left half, and a live preview card in the right. Along the bottom: a tag icon on the left with a field beside it (a plain icon, not a button; the field is left out when editing a card), and Add (nothing yet) and Close on
- * the right. What's typed is only kept while the card is open: nothing saves a card yet. `deckId` is the deck it was opened for (from a deck's menu), if any.
+ * (Front and Back for Basic) in the left half, and a live preview card in the right. Along the bottom: a tag icon on the left with a field beside it (a plain icon, not a button; the field is left out when editing a card), and Add and Close on
+ * the right. Add saves the card in the chosen deck, empties the fields, puts the cursor back on the first one and leaves the card open for the next;
+ * if the card would be empty it says why and keeps what was typed. The deck and card type used are remembered for next time.
+ * The tags field isn't saved yet, so a card is added without tags. Add does nothing on the blank views.
+ * `deckId` is the deck it was opened for (from a deck's menu), if any.
  *
  * With `editing` set (opened from Study's Edit card icon) it is about one existing card: the fields start filled in with that card's text, the preview
- * shows it, the card type is the card's own, and there is no deck button because the card stays in its deck.
+ * shows it, the card type is the card's own, and there is no deck button because the card stays in its deck. Add then saves the changes to that
+ * card's note (keeping its tags and its review schedule), calls `onSaved` and leaves the overlay to the caller to close; emptying the first field says why and saves nothing.
  */
-export function AddCardOverlay({ deckId, editing, onClose }: {
+export function AddCardOverlay({ deckId, editing, onSaved, onClose }: {
   deckId?: number;
-  editing?: { noteType: NoteType; fields: string[]; deckId: number };
+  editing?: EditingCard;
+  /** The edit was saved; the caller reloads the card and closes the overlay. */
+  onSaved?(): void;
   onClose(): void;
 }) {
-  const { deps, settings } = useAtlas();
+  const { deps, settings, saveSettings, changed } = useAtlas();
+  const toast = useToast();
   const { data } = useData(async () => ({
     decks: await listDecks(deps.db),
     types: (await listNoteTypes(deps.db)).filter((t) => t.builtin && TYPES.includes(t.builtin)),
@@ -69,6 +90,39 @@ export function AddCardOverlay({ deckId, editing, onClose }: {
   useEffect(() => {
     if (!card.current?.contains(document.activeElement)) card.current?.focus();
   }, []);
+
+  // The first field's editor, to put the cursor back on it after a card is added. And a flag (not state, which lags a click behind)
+  // so a double click on Add saves once.
+  const firstField = useRef<Editor | null>(null);
+  const adding = useRef(false);
+  const add = async () => {
+    // A blank view hides fields that still hold what was typed, so it saves nothing.
+    if (adding.current || blank || !noteType || !deck) return;
+    const values = noteType.fields.map((_, i) => fields[i] ?? '');
+    adding.current = true;
+    try {
+      if (editing) {
+        if (!cardOrdsForNote(noteType, values).length) throw new NoCardsError(NO_CARDS_MESSAGE);
+        await updateNote(deps, editing.noteId, { fields: values, tags: editing.tags });
+      } else {
+        await addNote(deps, { noteTypeId: noteType.id, deckId: deck.id, fields: values, tags: [] });
+      }
+    } catch (e) {
+      toast.show({ message: e instanceof NoCardsError ? e.message : `Atlas couldn't ${editing ? 'save' : 'add'} that card: ${e instanceof Error ? e.message : String(e)}` });
+      return;
+    } finally {
+      adding.current = false;
+    }
+    changed();
+    if (editing) {
+      onSaved?.();
+      return;
+    }
+    setFields([]);
+    firstField.current?.commands.focus('end');
+    // Remembering the deck and type is a convenience; the card is already saved, so a failure here isn't worth interrupting for.
+    saveSettings({ lastDeckId: deck.id, lastNoteTypeId: noteType.id }).catch(() => {});
+  };
 
   return createPortal(
     <div
@@ -148,6 +202,9 @@ export function AddCardOverlay({ deckId, editing, onClose }: {
                       autoFocus={i === 0}
                       mediaUrl={deps.media.url}
                       getAllText={() => fields.join('\n')}
+                      editorRef={(e) => {
+                        if (i === 0) firstField.current = e;
+                      }}
                       // Pictures would be saved to your media folder for a card that can't be saved yet, so they wait.
                       onImage={async () => {
                         throw new Error("Pictures can't be added to a card here yet.");
@@ -182,7 +239,7 @@ export function AddCardOverlay({ deckId, editing, onClose }: {
                 </div>
               )}
               <div className={styles.actions}>
-                <Button variant="primary" size="sm" className={styles.add}>Add</Button>
+                <Button variant="primary" size="sm" className={styles.add} onClick={() => void add()}>Add</Button>
                 <Button variant="secondary" size="sm" onClick={onClose}>Close</Button>
               </div>
             </div>

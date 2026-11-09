@@ -11,6 +11,7 @@ import type { UndoEntry, UndoStack } from './undo';
 export { normaliseTags } from '../data/notes';
 
 export class NoCardsError extends Error {}
+export const NO_CARDS_MESSAGE = 'This note would not make any cards. Fill in the first field, or add a cloze.';
 
 export interface NoteServiceDeps {
   db: Db;
@@ -39,7 +40,7 @@ export async function addNote(
   const now = deps.clock.now();
   const noteType = await getNoteType(db, input.noteTypeId);
   const ords = cardOrdsForNote(noteType, input.fields);
-  if (!ords.length) throw new NoCardsError('This note would not make any cards. Fill in the first field, or add a cloze.');
+  if (!ords.length) throw new NoCardsError(NO_CARDS_MESSAGE);
   const noteId = await nextId(db, 'notes');
   const firstCardId = await nextId(db, 'cards');
   const [pos] = await db.query<{ m: number | null }>(`SELECT MAX(new_position) AS m FROM cards`);

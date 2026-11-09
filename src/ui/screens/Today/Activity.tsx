@@ -1,14 +1,18 @@
 import { studyDay, studyDayDate } from '../../../core/studyDay';
-import { useAtlas } from '../../app/AtlasContext';
+import { buildHeatmap, getHeatmap, HEATMAP_WEEKS } from '../../../services/todayService';
+import { useAtlas, useData } from '../../app/AtlasContext';
 import { Heatmap, HeatLegend } from '../../components/Heatmap';
-import { mockHeatmap } from '../../mockHeatmap';
 import styles from './Activity.module.css';
 
-/** Heatmap of the last year of studying, with month names and the current year bottom left. The numbers are made up for now. */
+/**
+ * Heatmap of the last year of studying, with month names and the current year bottom left. It shows your real answers (counted per study day),
+ * and refreshes when you finish studying. Until they load it shows an empty grid of the same size.
+ */
 export function Activity() {
   const { deps, settings } = useAtlas();
+  const { data } = useData(() => getHeatmap(deps.db, deps.clock.now()), []);
   const today = studyDay(deps.clock.now(), settings.dayStartHour);
-  const grid = mockHeatmap(today);
+  const grid = data ?? buildHeatmap(new Map(), today, settings.dayStartHour, HEATMAP_WEEKS);
   return (
     <section className={styles.root} aria-label="Activity" data-testid="today-activity">
       <Heatmap grid={grid} months label="Reviews per day over the last year" />

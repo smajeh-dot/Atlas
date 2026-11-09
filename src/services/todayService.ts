@@ -32,6 +32,50 @@ const weekdayShort = fmt({ weekday: 'short' });
 const cellDate = fmt({ weekday: 'short', day: 'numeric', month: 'short' });
 const longDate = fmt({ weekday: 'long', day: 'numeric', month: 'long' });
 
+/**
+ * Answers per study day, from `from` up to (not including) `to`. Only real answers count: manual schedule
+ * entries are logged with rating 0 and are left out.
+ */
+async function reviewsPerDay(db: Db, dayStartHour: number, to: number, from = 0): Promise<Map<number, number>> {
+  const perDay = new Map<number, number>();
+  const buckets = await db.query<{ b: number; n: number }>(
+    `SELECT id / ${BUCKET_MS} AS b, COUNT(*) AS n FROM revlog WHERE rating > 0 AND id >= ? AND id < ? GROUP BY b`, [from, to]);
+  for (const { b, n } of buckets) {
+    const d = studyDay(Number(b) * BUCKET_MS, dayStartHour);
+    perDay.set(d, (perDay.get(d) ?? 0) + Number(n));
+  }
+  return perDay;
+}
+
+/** The heatmap grid for `weeks` weeks ending with the week of `today` (the 12-week default is the grid's own), shaded by how busy each day was. */
+export function buildHeatmap(perDay: Map<number, number>, today: number, dayStartHour: number, weeks?: number): HeatCell[][] {
+  const dayStart = (d: number) => startOfStudyDay(d, dayStartHour);
+  const weekday = (new Date(dayStart(today)).getDay() + 6) % 7;
+  const grid = heatmapGrid(today, weekday, weeks);
+  const visible = grid.flat().filter((d): d is number => d !== null);
+  const visibleLevels = heatLevels(visible.map((d) => perDay.get(d) ?? 0));
+  const levels = new Map(visible.map((d, i) => [d, visibleLevels[i]!]));
+  return grid.map((col) =>
+    col.map((day) => {
+      if (day === null) return null;
+      const count = perDay.get(day) ?? 0;
+      return { day, count, level: levels.get(day) ?? 0, label: `${cellDate.format(dayStart(day)).replace(',', '')} · ${count} ${count === 1 ? 'review' : 'reviews'}` };
+    }),
+  );
+}
+
+/** Weeks shown by the Home heatmap: a year. */
+export const HEATMAP_WEEKS = 53;
+
+/** Your real study history as a heatmap grid: columns are weeks (oldest first), rows Monday to Sunday, the last column being this week. */
+export async function getHeatmap(db: Db, now: number, weeks = HEATMAP_WEEKS): Promise<HeatCell[][]> {
+  const { dayStartHour } = await getSettings(db);
+  const today = studyDay(now, dayStartHour);
+  // Starting a little before the first column is harmless: days outside the grid are never read.
+  const perDay = await reviewsPerDay(db, dayStartHour, startOfStudyDay(today + 1, dayStartHour), startOfStudyDay(today - weeks * 7, dayStartHour));
+  return buildHeatmap(perDay, today, dayStartHour, weeks);
+}
+
 export async function getTodaySummary(db: Db, now: number): Promise<TodaySummary> {
   const { dayStartHour } = await getSettings(db);
   const today = studyDay(now, dayStartHour);
@@ -49,26 +93,8 @@ export async function getTodaySummary(db: Db, now: number): Promise<TodaySummary
     `SELECT COUNT(*) AS n, SUM(rating > 1) AS kept FROM revlog WHERE rating > 0 AND state_before = 2 AND id >= ? AND id < ?`,
     [windowStart, rollover]);
 
-  const perDay = new Map<number, number>();
-  const buckets = await db.query<{ b: number; n: number }>(
-    `SELECT id / ${BUCKET_MS} AS b, COUNT(*) AS n FROM revlog WHERE rating > 0 AND id < ? GROUP BY b`, [rollover]);
-  for (const { b, n } of buckets) {
-    const d = studyDay(Number(b) * BUCKET_MS, dayStartHour);
-    perDay.set(d, (perDay.get(d) ?? 0) + Number(n));
-  }
-
-  const weekday = (new Date(dayStart(today)).getDay() + 6) % 7;
-  const grid = heatmapGrid(today, weekday);
-  const visible = grid.flat().filter((d): d is number => d !== null);
-  const visibleLevels = heatLevels(visible.map((d) => perDay.get(d) ?? 0));
-  const levels = new Map(visible.map((d, i) => [d, visibleLevels[i]!]));
-  const heatmap: HeatCell[][] = grid.map((col) =>
-    col.map((day) => {
-      if (day === null) return null;
-      const count = perDay.get(day) ?? 0;
-      return { day, count, level: levels.get(day) ?? 0, label: `${cellDate.format(dayStart(day)).replace(',', '')} · ${count} ${count === 1 ? 'review' : 'reviews'}` };
-    }),
-  );
+  const perDay = await reviewsPerDay(db, dayStartHour, rollover);
+  const heatmap = buildHeatmap(perDay, today, dayStartHour);
 
   const upcoming = await db.query<{ due_at: number }>(
     `SELECT due_at FROM cards WHERE suspended = 0 AND state IN (1, 2, 3) AND due_at >= ? AND due_at < ?`,

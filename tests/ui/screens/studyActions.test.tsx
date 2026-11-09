@@ -3,6 +3,7 @@ import { screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, expect, test, vi } from 'vitest';
 import type { Db } from '../../../src/data/db';
 import { getCard } from '../../../src/data/cards';
+import { getNote } from '../../../src/data/notes';
 import { UndoStack } from '../../../src/services/undo';
 import { createMigratedDb } from '../../helpers/testDb';
 import { DAY, fixedClock, T0 } from '../../helpers/fixtures';
@@ -91,6 +92,61 @@ test('the Edit card icon opens the overlay filled in with this card, with no dec
   expect(within(dialog).queryByRole('button', { name: /^Deck/ })).toBeNull();
 });
 
+async function openEdit(user: Awaited<ReturnType<typeof study>>['user']) {
+  await user.click(screen.getByRole('button', { name: 'Edit card' }));
+  const dialog = await screen.findByRole('dialog', { name: 'Edit card' });
+  const front = (await within(dialog).findByLabelText('Front')) as HTMLTextAreaElement;
+  return { dialog, front };
+}
+const addIn = (dialog: HTMLElement) => within(dialog).getByRole('button', { name: 'Add' });
+
+test('saving an edit changes the note, keeps its tags and its place in the deck, closes the overlay, and shows the new text', async () => {
+  const { noteId, cardIds } = await seedNote(seedDeps, deck, 'basic', ['before', 'after'], ['paper-1']);
+  const { user } = await study();
+  const { dialog, front } = await openEdit(user);
+  await user.clear(front);
+  await user.type(front, 'fixed');
+  await user.click(addIn(dialog));
+
+  await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+  await waitFor(() => expect(card().textContent).toContain('fixed'));
+  expect(card().textContent).not.toContain('before');
+  const note = await getNote(db, noteId);
+  expect(note.fields).toEqual(['fixed', 'after']);
+  expect(note.tags).toEqual(['paper-1']);
+  expect(await countRows(db, 'notes')).toBe(1);
+  expect(await countRows(db, 'cards')).toBe(1);
+  expect((await getCard(db, cardIds[0]!)).deckId).toBe(deck);
+});
+
+test('editing a card you have already reviewed leaves its schedule alone', async () => {
+  const { cardIds } = await seedNote(seedDeps, deck, 'basic', ['before', 'after']);
+  await makeReview(db, cardIds[0]!, { dueAt: T0 - DAY, scheduledDays: 12, lapses: 1 });
+  const was = await getCard(db, cardIds[0]!);
+  const { user } = await study();
+  const { dialog, front } = await openEdit(user);
+  await user.type(front, ' (edited)');
+  await user.click(addIn(dialog));
+  await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+
+  const now = await getCard(db, cardIds[0]!);
+  expect({ state: now.state, dueAt: now.dueAt, stability: now.stability, difficulty: now.difficulty, reps: now.reps, lapses: now.lapses })
+    .toEqual({ state: was.state, dueAt: was.dueAt, stability: was.stability, difficulty: was.difficulty, reps: was.reps, lapses: was.lapses });
+  expect(await countRows(db, 'revlog')).toBe(0);
+});
+
+test('emptying the Front and pressing Add saves nothing, says why, and keeps the overlay open', async () => {
+  const { noteId } = await seedNote(seedDeps, deck, 'basic', ['before', 'after']);
+  const { user } = await study();
+  const { dialog, front } = await openEdit(user);
+  await user.clear(front);
+  await user.click(addIn(dialog));
+
+  expect(await screen.findByText(/would not make any cards/)).toBeTruthy();
+  expect(screen.getByRole('dialog', { name: 'Edit card' })).toBeTruthy();
+  expect((await getNote(db, noteId)).fields).toEqual(['before', 'after']);
+});
+
 test('Ctrl+Delete deletes after confirming and Ctrl+Z restores', async () => {
   await seedNote(seedDeps, deck, 'basic_reversed', ['dog', 'chien']);
   const { user } = await study();
@@ -129,4 +185,28 @@ test('a leech toast offers Edit', async () => {
   expect(toast).toBeTruthy();
   await user.click(within(screen.getByRole('status')).getByRole('button', { name: 'Edit' }));
   expect(await screen.findByRole('dialog', { name: 'Edit card' })).toBeTruthy();
+});
+
+test('saving from the leech toast keeps the leech tag and the answer that was just given', async () => {
+  const { noteId, cardIds } = await seedNote(seedDeps, deck, 'basic', ['slippery', 'x']);
+  await makeReview(db, cardIds[0]!, { dueAt: T0 - DAY, lapses: 7 });
+  const { user } = await study();
+  await user.keyboard(' ');
+  await screen.findByRole('button', { name: /^Again/ });
+  await user.keyboard('1');
+  await screen.findByText("This card keeps slipping, so it's been tagged as a leech and suspended.");
+  const after = await getCard(db, cardIds[0]!);
+  await user.click(within(screen.getByRole('status')).getByRole('button', { name: 'Edit' }));
+  const dialog = await screen.findByRole('dialog', { name: 'Edit card' });
+  const front = (await within(dialog).findByLabelText('Front')) as HTMLTextAreaElement;
+  await user.type(front, ' (fixed)');
+  await user.click(addIn(dialog));
+  await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+
+  const note = await getNote(db, noteId);
+  expect(note.fields[0]).toBe('slippery (fixed)');
+  expect(note.tags).toContain('leech');
+  const now = await getCard(db, cardIds[0]!);
+  expect({ suspended: now.suspended, dueAt: now.dueAt, lapses: now.lapses, reps: now.reps })
+    .toEqual({ suspended: after.suspended, dueAt: after.dueAt, lapses: after.lapses, reps: after.reps });
 });

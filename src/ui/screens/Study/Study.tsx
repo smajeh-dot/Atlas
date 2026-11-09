@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { batchCounts, batchProgress } from '../../../core/batchProgress';
 import { formatInterval } from '../../../core/format';
-import type { NoteType, Rating } from '../../../core/model';
+import type { Rating } from '../../../core/model';
 import { cardsOfNote, getCard } from '../../../data/cards';
 import { listDecks } from '../../../data/decks';
 import { getNoteType } from '../../../data/noteTypes';
@@ -22,7 +22,7 @@ import { Tooltip } from '../../components/Tooltip';
 import { FLAG_NAMES, flagColour } from '../../deckColour';
 import { SafetyBackupError } from '../../../services/backupService';
 import { useHotkeys } from '../../keys';
-import { AddCardOverlay } from '../Today/AddCardOverlay';
+import { AddCardOverlay, type EditingCard } from '../Today/AddCardOverlay';
 import { CardInfoDialog } from './CardInfoDialog';
 import styles from './Study.module.css';
 
@@ -36,11 +36,10 @@ const GRADES: { rating: Rating; word: string; cls: string }[] = [
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
 const message = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
-type Editing = { noteType: NoteType; fields: string[]; deckId: number };
-
 type Overlay =
   | { kind: 'flag'; anchor: HTMLElement }
-  | { kind: 'add'; editing: Editing }
+  /** The overlay opened on an existing card; `cardId` is the card to reload on screen after it's saved. */
+  | { kind: 'add'; editing: EditingCard; cardId: number }
   | { kind: 'info'; cardId: number; unknownFilters: string[] }
   | { kind: 'delete'; cards: number }
   | null;
@@ -103,13 +102,13 @@ export function Study({ deckId }: { deckId: number | null }) {
     }
   };
 
-  const editingOf = (c: SessionCard): Editing => ({ noteType: c.noteType, fields: c.note.fields, deckId: c.card.deckId });
+  const editingOf = (c: SessionCard): EditingCard => ({ noteType: c.noteType, fields: c.note.fields, deckId: c.card.deckId, noteId: c.note.id, tags: c.note.tags });
   // The leech toast outlives the card on screen, so this card is read back from the database.
   const editCardById = async (cardId: number) => {
     try {
       const card = await getCard(deps.db, cardId);
       const note = await getNote(deps.db, card.noteId);
-      setOverlay({ kind: 'add', editing: { noteType: await getNoteType(deps.db, note.noteTypeId), fields: note.fields, deckId: card.deckId } });
+      setOverlay({ kind: 'add', editing: { noteType: await getNoteType(deps.db, note.noteTypeId), fields: note.fields, deckId: card.deckId, noteId: note.id, tags: note.tags }, cardId });
     } catch (e) {
       toast.show({ message: `Atlas couldn't open that card: ${message(e)}` });
     }
@@ -177,7 +176,7 @@ export function Study({ deckId }: { deckId: number | null }) {
       2: () => grade(2),
       3: () => grade(3),
       4: () => grade(4),
-      E: () => setOverlay({ kind: 'add', editing: editingOf(current) }),
+      E: () => setOverlay({ kind: 'add', editing: editingOf(current), cardId: current.card.id }),
       I: () => setOverlay({ kind: 'info', cardId: current.card.id, unknownFilters: current.unknownFilters }),
       '-': () => change(() => session!.buryCurrent(current.card.id), 'Card buried until tomorrow'),
       '@': () => change(() => session!.suspendCurrent(current.card.id), 'Card suspended'),
@@ -238,7 +237,7 @@ export function Study({ deckId }: { deckId: number | null }) {
         <div className={styles.right}>
           {current && (
             <>
-              <IconButton icon="edit" label="Edit card" shortcut="E" onClick={() => setOverlay({ kind: 'add', editing: editingOf(current) })} />
+              <IconButton icon="edit" label="Edit card" shortcut="E" onClick={() => setOverlay({ kind: 'add', editing: editingOf(current), cardId: current.card.id })} />
               <IconButton icon="flag" label="Flag" shortcut="Ctrl+1" onClick={(e) => setOverlay({ kind: 'flag', anchor: e.currentTarget })} />
             </>
           )}
@@ -284,7 +283,21 @@ export function Study({ deckId }: { deckId: number | null }) {
           { label: 'Remove flag', shortcut: 'Ctrl+0', onSelect: () => flag(0) },
         ]} />
       )}
-      {overlay?.kind === 'add' && <AddCardOverlay editing={overlay.editing} onClose={() => setOverlay(null)} />}
+      {overlay?.kind === 'add' && (
+        <AddCardOverlay
+          editing={overlay.editing}
+          onClose={() => setOverlay(null)}
+          onSaved={() => {
+            const id = overlay.cardId;
+            setOverlay(null);
+            // Show the edited text on the card on screen; a card that has left the queue (the leech toast) just reloads in the background.
+            void session.refreshCard(id).then(
+              () => setCurrent((c) => (c?.card.id === id ? session.cardView(id) ?? session.current() : c)),
+              () => show(session),
+            );
+          }}
+        />
+      )}
       {overlay?.kind === 'info' && <CardInfoDialog cardId={overlay.cardId} unknownFilters={overlay.unknownFilters} onClose={() => setOverlay(null)} />}
       {overlay?.kind === 'delete' && (
         <Dialog title="Delete this note?" confirmLabel="Delete note" confirmVariant="danger" onCancel={() => setOverlay(null)}
