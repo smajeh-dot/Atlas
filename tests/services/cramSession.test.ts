@@ -188,3 +188,81 @@ test('schedule safety: cards, notes and revlog are untouched by a whole session'
 
   expect(await snap()).toEqual(before);
 });
+
+/** A Db whose next read of `notes` rejects once after `failNext()`; everything else passes through. */
+function flaky(db: CramDeps['db']) {
+  let armed = false;
+  const wrapped: CramDeps['db'] = {
+    query: (sql, params) => {
+      if (armed && /FROM notes/.test(sql)) {
+        armed = false;
+        return Promise.reject(new Error('read failed'));
+      }
+      return db.query(sql, params);
+    },
+    execute: (sql, params) => db.execute(sql, params),
+    batch: (statements) => db.batch(statements),
+  };
+  return { db: wrapped, failNext: () => void (armed = true) };
+}
+
+async function flakySession() {
+  for (const q of ['a', 'b', 'c', 'd']) await addBasic(deck, q);
+  const f = flaky(deps.db);
+  const s = await CramSession.open({ ...deps, db: f.db }, deck);
+  return { s, failNext: f.failNext };
+}
+
+test('a failed read during answer leaves the session as it was and releases busy', async () => {
+  const { s, failNext } = await flakySession();
+  await s.answer(false);
+  const state = structuredClone(s.state());
+  const front = s.current();
+
+  failNext();
+  await expect(s.answer(true)).rejects.toThrow('read failed');
+  expect(s.state()).toEqual(state);
+  expect(s.current()).toBe(front);
+  expect(s.canUndo()).toBe(true);
+
+  expect(await s.answer(true, front!.card.id)).toEqual({ saved: true });
+  expect(s.state().right).toBe(1);
+  expect(s.current()!.card.id).toBe(s.state().queue[0]);
+});
+
+test('a failed read during undo leaves the session as it was and keeps the history', async () => {
+  const { s, failNext } = await flakySession();
+  await s.answer(true);
+  await s.answer(true);
+  const state = structuredClone(s.state());
+  const front = s.current();
+
+  failNext();
+  await expect(s.undo()).rejects.toThrow('read failed');
+  expect(s.state()).toEqual(state);
+  expect(s.current()).toBe(front);
+  expect(s.canUndo()).toBe(true);
+
+  expect(await s.undo()).toEqual({ saved: true });
+  expect(await s.undo()).toEqual({ saved: true });
+  expect(s.canUndo()).toBe(false);
+  expect(s.current()!.card.id).toBe(s.state().queue[0]);
+});
+
+test('a failed read during goAgain leaves the session as it was and keeps the history', async () => {
+  const { s, failNext } = await flakySession();
+  await s.answer(true);
+  const state = structuredClone(s.state());
+  const front = s.current();
+
+  failNext();
+  await expect(s.goAgain()).rejects.toThrow('read failed');
+  expect(s.state()).toEqual(state);
+  expect(s.current()).toBe(front);
+  expect(s.canUndo()).toBe(true);
+
+  expect(await s.goAgain()).toEqual({ saved: true });
+  expect(s.state().round).toBe(2);
+  expect(s.canUndo()).toBe(false);
+  expect(await s.answer(true, s.current()!.card.id)).toEqual({ saved: true });
+});

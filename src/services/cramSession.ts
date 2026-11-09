@@ -50,8 +50,9 @@ export class CramSession {
     const rng = deps.rng ?? mulberry32(hash32(deps.clock.now(), deckId));
     const decks = await listDecks(deps.db);
     const pool = await CramSession.readPool(deps.db, decks, deckId);
-    const session = new CramSession(deps, deckId, rng, decks, startRound(pool, 1, rng));
-    await session.loadFront();
+    const state = startRound(pool, 1, rng);
+    const session = new CramSession(deps, deckId, rng, decks, state);
+    session.front = await session.loadFront(state, decks);
     return session;
   }
 
@@ -96,9 +97,11 @@ export class CramSession {
     if (expectedCardId !== undefined && expectedCardId !== frontId) return null;
     this.busy = true;
     try {
+      const next = answerCram(this.cram, right, this.rng);
+      const front = await this.loadFront(next, this.decks);
       this.history.push(this.cram);
-      this.cram = answerCram(this.cram, right, this.rng);
-      await this.loadFront();
+      this.cram = next;
+      this.front = front;
       return { saved: await this.persist() };
     } finally {
       this.busy = false;
@@ -108,12 +111,14 @@ export class CramSession {
   /** Takes back the last answer. Returns null if there is nothing to take back. */
   async undo(): Promise<SaveResult | null> {
     if (this.busy) return null;
-    const previous = this.history.pop();
+    const previous = this.history[this.history.length - 1];
     if (!previous) return null;
     this.busy = true;
     try {
+      const front = await this.loadFront(previous, this.decks);
+      this.history.pop();
       this.cram = previous;
-      await this.loadFront();
+      this.front = front;
       return { saved: await this.persist() };
     } finally {
       this.busy = false;
@@ -133,30 +138,33 @@ export class CramSession {
   private async newRound(round: number): Promise<SaveResult> {
     this.busy = true;
     try {
-      this.decks = await listDecks(this.deps.db);
-      const pool = await CramSession.readPool(this.deps.db, this.decks, this.deckId);
-      this.cram = startRound(pool, round, this.rng);
+      const decks = await listDecks(this.deps.db);
+      const pool = await CramSession.readPool(this.deps.db, decks, this.deckId);
+      const next = startRound(pool, round, this.rng);
+      const front = await this.loadFront(next, decks);
+      this.decks = decks;
+      this.cram = next;
+      this.front = front;
       this.history = [];
-      await this.loadFront();
       return { saved: await this.persist() };
     } finally {
       this.busy = false;
     }
   }
 
-  /** Loads the front card with its note and note type, so current() can answer synchronously. */
-  private async loadFront(): Promise<void> {
-    const id = this.cram.queue[0];
-    if (id === undefined) {
-      this.front = null;
-      return;
-    }
+  /**
+   * Loads the front card of `state` with its note and note type, so current() can answer
+   * synchronously. It changes nothing, so a failed read leaves the session as it was.
+   */
+  private async loadFront(state: CramState, decks: Deck[]): Promise<CramCard | null> {
+    const id = state.queue[0];
+    if (id === undefined) return null;
     const { db } = this.deps;
     const card = await getCard(db, id);
     const note = await getNote(db, card.noteId);
     const noteType = await getNoteType(db, note.noteTypeId);
-    const rendered = renderCard(noteType, note, card.ord, fullName(this.decks, card.deckId, '::'));
-    this.front = { card, note, noteType, question: rendered.question, answer: rendered.answer };
+    const rendered = renderCard(noteType, note, card.ord, fullName(decks, card.deckId, '::'));
+    return { card, note, noteType, question: rendered.question, answer: rendered.answer };
   }
 
   /** Task 3 saves the state; until then nothing is stored. */
