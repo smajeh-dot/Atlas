@@ -9,7 +9,7 @@ export function hash32(a: number, b: number): number {
   return h >>> 0;
 }
 
-function mulberry32(seed: number): () => number {
+export function mulberry32(seed: number): () => number {
   let s = seed >>> 0;
   return () => {
     s = (s + 0x6d2b79f5) >>> 0;
@@ -20,13 +20,17 @@ function mulberry32(seed: number): () => number {
   };
 }
 
-/** Same seed, same order: shuffles stay stable for a whole study day. */
-export function seededShuffle<T>(items: T[], seed: number): T[] {
+/** Fisher-Yates over a copy of `items`, drawing from `rng`. */
+export function shuffle<T>(items: T[], rng: () => number): T[] {
   const out = items.slice();
-  const rand = mulberry32(seed);
   for (let i = out.length - 1; i > 0; i--) {
-    const j = Math.floor(rand() * (i + 1));
+    const j = Math.floor(rng() * (i + 1));
     [out[i], out[j]] = [out[j]!, out[i]!];
   }
   return out;
+}
+
+/** Same seed, same order: shuffles stay stable for a whole study day. */
+export function seededShuffle<T>(items: T[], seed: number): T[] {
+  return shuffle(items, mulberry32(seed));
 }
