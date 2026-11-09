@@ -67,7 +67,7 @@ test('if the safety backup fails the deck is not deleted and the reason is shown
 });
 
 async function deleteNoteWhileStudying(user: User) {
-  await screen.findByRole('button', { name: 'Show answer' });
+  await screen.findByTestId('study-card');
   await user.keyboard('{Control>}{Delete}{/Control}');
   const dialog = await screen.findByRole('dialog', { name: 'Delete this note?' });
   await user.click(within(dialog).getByRole('button', { name: 'Delete note' }));

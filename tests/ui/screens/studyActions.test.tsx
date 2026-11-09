@@ -22,7 +22,7 @@ beforeEach(async () => {
 
 async function study() {
   const r = await renderApp({ db, route: { name: 'study', deckId: deck } });
-  await screen.findByRole('button', { name: 'Show answer' });
+  await screen.findByTestId('study-card');
   return r;
 }
 const card = () => document.querySelector('[data-testid="study-card"] [data-cardview]')!.shadowRoot!;
@@ -59,25 +59,48 @@ test('- buries and @ suspends, moving on each time', async () => {
   expect((await getCard(db, b)).suspended).toBe(true);
 });
 
-test('the More menu buries too', async () => {
+test('there is no triple-dot menu; burying still works from the keyboard', async () => {
   const a = (await seedNote(seedDeps, deck, 'basic', ['first', 'x'])).cardIds[0]!;
   const { user } = await study();
-  await user.click(screen.getByRole('button', { name: 'More' }));
-  await user.click(screen.getByRole('menuitem', { name: /Bury card/ }));
+  expect(screen.queryByRole('button', { name: 'More' })).toBeNull();
+  await user.keyboard('-');
   await waitFor(async () => expect((await getCard(db, a)).buriedKind).toBe('manual'));
 });
 
-test('E edits and the card re-renders in place', async () => {
+test('E opens the overlay and Esc closes it without leaving Study', async () => {
   await seedNote(seedDeps, deck, 'basic', ['before', 'x']);
   const { user } = await study();
   await user.keyboard('e');
-  const sheet = await screen.findByRole('dialog', { name: 'Edit card' });
-  const front = await within(sheet).findByLabelText('Front');
-  await user.clear(front);
-  await user.type(front, 'after');
-  await user.keyboard('{Control>}{Enter}{/Control}');
+  expect(await screen.findByRole('dialog', { name: 'Edit card' })).toBeTruthy();
+  await user.keyboard('{Escape}');
   await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
-  await waitFor(() => expect(card().textContent).toContain('after'));
+  expect(screen.getByTestId('study-card')).toBeTruthy();
+});
+
+test('the Edit card icon opens the overlay filled in with this card, with no deck button', async () => {
+  await seedNote(seedDeps, deck, 'basic', ['before', 'after'], ['paper-1']);
+  const { user } = await study();
+  await user.click(screen.getByRole('button', { name: 'Edit card' }));
+  const dialog = await screen.findByRole('dialog', { name: 'Edit card' });
+  expect(await within(dialog).findByLabelText('Front')).toHaveProperty('value', 'before');
+  expect(within(dialog).getByLabelText('Back')).toHaveProperty('value', 'after');
+  const preview = await within(dialog).findByTestId('add-card-preview');
+  await waitFor(() => expect(preview.querySelector('[data-cardview]')!.shadowRoot!.textContent).toContain('before'));
+  expect(preview.querySelector('[data-cardview]')!.shadowRoot!.textContent).toContain('after');
+  expect(within(dialog).getByRole('button', { name: 'Card type: Basic' })).toBeTruthy();
+  expect(within(dialog).queryByRole('button', { name: /^Deck/ })).toBeNull();
+});
+
+test('Add in the edit overlay does not add a copy of the card', async () => {
+  await seedNote(seedDeps, deck, 'basic', ['before', 'after']);
+  const { user } = await study();
+  await user.click(screen.getByRole('button', { name: 'Edit card' }));
+  const dialog = await screen.findByRole('dialog', { name: 'Edit card' });
+  await within(dialog).findByLabelText('Front');
+  await user.click(within(dialog).getByRole('button', { name: 'Add' }));
+  expect(await countRows(db, 'cards')).toBe(1);
+  expect(await countRows(db, 'notes')).toBe(1);
+  expect(screen.getByRole('dialog', { name: 'Edit card' })).toBeTruthy();
 });
 
 test('Ctrl+Delete deletes after confirming and Ctrl+Z restores', async () => {

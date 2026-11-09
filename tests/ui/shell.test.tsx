@@ -165,11 +165,11 @@ test('Add on the notch opens a large card over Home, which stays put underneath'
   await user.click(add);
   const card = await screen.findByRole('dialog', { name: 'Add card' });
   expect(card.getAttribute('aria-modal')).toBe('true');
-  // Along the top: the card type, then the deck. In the corner: the triple-dot button, then the close button.
+  // Along the top: the card type, then the deck. In the corner: just the close button.
   expect(await within(card).findByRole('button', { name: 'Deck: <b>Bio</b>' })).toBeTruthy();
-  // (then the bottom row: the tag icon, Add and Close).
+  // (then the bottom row: Add and Close; the tag icon is not a button).
   expect(within(card).getAllByRole('button').map((b) => b.getAttribute('aria-label') ?? b.textContent)).toEqual(
-    ['Card type: Basic', 'Deck: <b>Bio</b>', ...FORMAT_BUTTONS, 'Tags', 'Add', 'Close', 'More options', 'Close'],
+    ['Card type: Basic', 'Deck: <b>Bio</b>', ...FORMAT_BUTTONS, 'Add', 'Close', 'Close'],
   );
   // Home is still there underneath, the very same elements rather than a reload.
   expect(screen.getByTestId('today-decks-card')).toBe(decksCard);
@@ -188,7 +188,7 @@ test('Esc closes the Add card overlay and focus returns to the Add button', asyn
   expect(add).toBe(document.activeElement);
 });
 
-test('the Add card overlay shows the card type, then the deck; the type button does nothing yet', async () => {
+test('the Add card overlay shows the card type, then the deck; the type button opens a dropdown of four rows', async () => {
   const { user } = await renderApp({ db: await seeded() });
   await user.click(within(await screen.findByTestId('today-notch')).getByRole('button', { name: 'Add' }));
   const card = await screen.findByRole('dialog', { name: 'Add card' });
@@ -199,9 +199,40 @@ test('the Add card overlay shows the card type, then the deck; the type button d
   expect(deck.textContent).toBe('<b>Bio</b>');
   // The type comes first.
   expect(type.compareDocumentPosition(deck) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-  await user.click(type);
   expect(screen.queryByRole('menu')).toBeNull();
+  await user.click(type);
+  const menu = await screen.findByRole('menu', { name: 'Card type' });
+  expect(within(menu).getAllByRole('menuitem').map((r) => r.textContent)).toEqual(['Subject', 'Folder', 'Basic', 'Image Occlusion']);
+  // Opening the deck dropdown swaps it for that one; picking a row just closes the menu.
+  await user.click(deck);
+  expect(screen.queryByRole('menu', { name: 'Card type' })).toBeNull();
+  await user.click(type);
+  await user.click(within(await screen.findByRole('menu', { name: 'Card type' })).getByRole('menuitem', { name: 'Folder' }));
+  expect(screen.queryByRole('menu')).toBeNull();
+  expect(type.textContent).toBe('Folder');
   expect(screen.getByRole('dialog', { name: 'Add card' })).toBeTruthy();
+});
+
+test.each(['Subject', 'Folder', 'Image Occlusion'])('%s opens a blank card: only the type and deck buttons, Add, Close and the X; Basic brings the full card back', async (row) => {
+  const { user } = await renderApp({ db: await seeded() });
+  await user.click(within(await screen.findByTestId('today-notch')).getByRole('button', { name: 'Add' }));
+  const card = await screen.findByRole('dialog', { name: 'Add card' });
+  await within(card).findByRole('textbox', { name: 'Front' });
+  await user.click(within(card).getByRole('button', { name: /^Card type: / }));
+  await user.click(within(await screen.findByRole('menu', { name: 'Card type' })).getByRole('menuitem', { name: row }));
+  const type = within(card).getByRole('button', { name: `Card type: ${row}` });
+  expect(type.textContent).toBe(row);
+  expect(within(card).getAllByRole('button').map((b) => b.getAttribute('aria-label') ?? b.textContent)).toEqual([`Card type: ${row}`, 'Deck: <b>Bio</b>', 'Add', 'Close', 'Close']);
+  expect(within(card).queryAllByRole('textbox')).toEqual([]);
+  expect(within(card).queryByRole('toolbar')).toBeNull();
+  expect(card.querySelector('[data-testid="add-card-tag-icon"], [data-testid="add-card-preview"]')).toBeNull();
+  expect(within(card).getByTestId('add-card-blank').children).toHaveLength(0);
+  // Back to Basic: the full card.
+  await user.click(type);
+  await user.click(within(await screen.findByRole('menu', { name: 'Card type' })).getByRole('menuitem', { name: 'Basic' }));
+  expect(await within(card).findByRole('textbox', { name: 'Front' })).toBeTruthy();
+  expect(within(card).getByRole('toolbar', { name: 'Formatting' })).toBeTruthy();
+  expect(within(card).getByRole('button', { name: 'Card type: Basic' })).toBeTruthy();
 });
 
 test('the Add card overlay starts on the deck it was opened for, with its full path, and on your last card type', async () => {
@@ -338,14 +369,13 @@ test('under the type and deck buttons: bold to colour, the two lists, four align
   expect(screen.queryByRole('menu')).toBeNull();
 });
 
-test('the X in the Add card overlay closes it and returns focus; the triple-dot button does nothing yet', async () => {
+test('the X in the Add card overlay closes it and returns focus; there is no triple-dot button', async () => {
   const { user } = await renderApp({ db: await seeded() });
   const add = within(await screen.findByTestId('today-notch')).getByRole('button', { name: 'Add' });
   await user.click(add);
   const card = await screen.findByRole('dialog', { name: 'Add card' });
   const corner = within(screen.getByTestId('add-card-corner'));
-  await user.click(corner.getByRole('button', { name: 'More options' }));
-  expect(screen.getByRole('dialog', { name: 'Add card' })).toBeTruthy();
+  expect(corner.queryByRole('button', { name: 'More options' })).toBeNull();
   await user.click(corner.getByRole('button', { name: 'Close' }));
   await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Add card' })).toBeNull());
   expect(screen.getByTestId('today-decks-card')).toBeTruthy();

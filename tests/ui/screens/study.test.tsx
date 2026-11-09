@@ -37,7 +37,7 @@ test('Space reveals, buttons show the intervals the session will give, 3 grades 
   const { user, deps } = await study();
   const probe = await StudySession.start({ ...deps, undo: new UndoStack() }, deck);
   const expected = probe.current()!.previews;
-  expect(await screen.findByRole('button', { name: 'Show answer' })).toBeTruthy();
+  expect(await screen.findByTestId('study-card')).toBeTruthy();
   await waitFor(() => expect(card().textContent).toContain('What is a mole?'));
   await user.keyboard(' ');
   await waitFor(() => expect(card().querySelector('.atlas-divider')).not.toBeNull());
@@ -52,31 +52,72 @@ test('Space reveals, buttons show the intervals the session will give, 3 grades 
   expect(log).toEqual({ card_id: probe.current()!.card.id, rating: 3 });
 });
 
-test('shows the breadcrumb, chips, progress and hint line', async () => {
+test('shows the breadcrumb and progress, with no tag chips, hint line or Show answer button', async () => {
   const org = await seedDeck(db, 'Organic Mechanisms', deck);
   await seedNote(seedDeps, org, 'basic', ['q1', 'a'], ['paper-1', 'organic', 'third']);
   await seedNote(seedDeps, org, 'basic', ['q2', 'a']);
   await study();
   const top = await screen.findByRole('navigation', { name: 'Breadcrumb' });
   expect(top.textContent).toBe('Chemistry›Organic Mechanisms');
-  const chips = within(screen.getByTestId('study-chips')).getAllByText(/./).map((c) => c.textContent);
-  expect(chips).toEqual(['paper-1', 'organic']);
+  expect(screen.queryByTestId('study-chips')).toBeNull();
+  expect(screen.queryByText('paper-1')).toBeNull();
   expect(screen.getByText('2 left')).toBeTruthy();
-  expect(screen.getByText('Space = Good · Ctrl+Z undoes the last answer · E edits this card')).toBeTruthy();
+  expect(screen.queryByText(/Space = Good/)).toBeNull();
+  expect(screen.queryByRole('button', { name: 'Show answer' })).toBeNull();
+});
+
+test('Space again turns the card back over without grading it', async () => {
+  await seedNote(seedDeps, deck, 'basic', ['What is a mole?', '6.02 × 10²³ particles']);
+  const { user } = await study();
+  await waitFor(() => expect(card().textContent).toContain('What is a mole?'));
+  await user.keyboard(' ');
+  await waitFor(() => expect(card().querySelector('.atlas-divider')).not.toBeNull());
+  await user.keyboard(' ');
+  await waitFor(() => expect(card().querySelector('.atlas-divider')).toBeNull());
+  expect(screen.queryByRole('button', { name: /^Good/ })).toBeNull();
+  expect(await countRows(db, 'revlog')).toBe(0);
+});
+
+test('clicking the card flips it, and clicking again flips it back', async () => {
+  await seedNote(seedDeps, deck, 'basic', ['What is a mole?', '6.02 × 10²³ particles']);
+  const { user } = await study();
+  await waitFor(() => expect(card().textContent).toContain('What is a mole?'));
+  await user.click(screen.getByTestId('study-card'));
+  await waitFor(() => expect(card().querySelector('.atlas-divider')).not.toBeNull());
+  expect(screen.getByRole('button', { name: /^Good/ })).toBeTruthy();
+  await user.click(screen.getByTestId('study-card'));
+  await waitFor(() => expect(card().querySelector('.atlas-divider')).toBeNull());
+  expect(await countRows(db, 'revlog')).toBe(0);
+});
+
+test('the progress bar holds 20 cards and starts again after them', async () => {
+  for (let i = 0; i < 21; i++) await seedNote(seedDeps, deck, 'basic', [`q${i}`, 'x']);
+  const { user } = await study();
+  const bar = () => Number(screen.getByRole('progressbar', { name: 'Progress' }).getAttribute('aria-valuenow'));
+  await waitFor(() => expect(card().textContent).toContain('q'));
+  expect(bar()).toBe(0);
+  expect(screen.getByTestId('study-batch').textContent).toBe('0/20');
+  for (let i = 0; i < 10; i++) {
+    await user.keyboard(' ');
+    await screen.findByRole('button', { name: /^Good/ });
+    await user.keyboard('3');
+    await waitFor(() => expect(bar()).toBe((i + 1) * 5));
+    expect(screen.getByTestId('study-batch').textContent).toBe(`${i + 1}/20`);
+  }
 });
 
 test('grade keys do nothing before the answer is shown; a fast double press grades once', async () => {
   await seedNote(seedDeps, deck, 'basic', ['a', 'x']);
   await seedNote(seedDeps, deck, 'basic', ['b', 'x']);
   const { user } = await study();
-  await screen.findByRole('button', { name: 'Show answer' });
+  await screen.findByTestId('study-card');
   await user.keyboard('3');
   expect(await countRows(db, 'revlog')).toBe(0);
   await user.keyboard(' ');
   await screen.findByRole('button', { name: /^Good/ });
   await user.keyboard('33');
   await waitFor(async () => expect(await countRows(db, 'revlog')).toBe(1));
-  expect(await screen.findByRole('button', { name: 'Show answer' })).toBeTruthy();
+  expect(await screen.findByTestId('study-card')).toBeTruthy();
 });
 
 test('Ctrl+Z undoes the answer and shows the same card again', async () => {
@@ -86,13 +127,13 @@ test('Ctrl+Z undoes the answer and shows the same card again', async () => {
   await waitFor(() => expect(card().textContent).toContain('first'));
   await user.keyboard(' ');
   await screen.findByRole('button', { name: /^Good/ });
-  await user.keyboard(' ');
+  await user.keyboard('3');
   await waitFor(() => expect(card().textContent).toContain('second'));
   await user.keyboard('{Control>}z{/Control}');
   await waitFor(() => expect(screen.getByRole('status').textContent).toContain('Undid: answer Good'));
   await waitFor(() => expect(card().textContent).toContain('first'));
   expect(await countRows(db, 'revlog')).toBe(0);
-  expect(screen.getByRole('button', { name: 'Show answer' })).toBeTruthy();
+  expect(screen.getByTestId('study-card')).toBeTruthy();
 });
 
 test('type the answer compares character by character', async () => {
@@ -114,7 +155,7 @@ test('intervals hidden when the setting is off; remaining count hidden too', asy
   await updateSettings(db, { showIntervalsOnButtons: false, showRemainingCount: false });
   await seedNote(seedDeps, deck, 'basic', ['a', 'x']);
   const { user } = await study();
-  await screen.findByRole('button', { name: 'Show answer' });
+  await screen.findByTestId('study-card');
   expect(screen.queryByText('1 left')).toBeNull();
   await user.keyboard(' ');
   expect((await screen.findByRole('button', { name: /^Good/ })).textContent).toBe('3Good');
@@ -132,7 +173,7 @@ test('studying a deck with nothing due shows the empty state with Add card', asy
 test('session complete shows stats and Enter goes back to Today', async () => {
   await seedNote(seedDeps, deck, 'basic', ['a', 'x']);
   const { user, clock } = await study();
-  await screen.findByRole('button', { name: 'Show answer' });
+  await screen.findByTestId('study-card');
   await user.keyboard(' ');
   await screen.findByRole('button', { name: /^Easy/ });
   clock.advance(5000);
@@ -149,14 +190,14 @@ test('learning cards come back while you wait', async () => {
   await seedNote(seedDeps, deck, 'basic', ['returning', 'x']);
   const clock = fixedClock(T0);
   const { user } = await study({ clock, fakeTimers: true });
-  await screen.findByRole('button', { name: 'Show answer' });
+  await screen.findByTestId('study-card');
   await user.keyboard(' ');
   await screen.findByRole('button', { name: /^Good/ });
   await user.keyboard('3');
   expect(await screen.findByText('1 card comes back in 10 minutes. Atlas will bring them up if you stay here.')).toBeTruthy();
   clock.advance(10 * MIN);
   await act(async () => vi.advanceTimersByTime(10 * MIN));
-  expect(await screen.findByRole('button', { name: 'Show answer' })).toBeTruthy();
+  expect(await screen.findByTestId('study-card')).toBeTruthy();
   await waitFor(() => expect(card().textContent).toContain('returning'));
 });
 
@@ -164,7 +205,7 @@ test('a session started before the rollover still grades after it', async () => 
   const late = fixedClock(Date.UTC(2026, 10, 1, 3, 50));
   await seedNote({ ...seedDeps, clock: late }, deck, 'basic', ['a', 'x']);
   const { user } = await study({ clock: late });
-  await screen.findByRole('button', { name: 'Show answer' });
+  await screen.findByTestId('study-card');
   late.advance(20 * MIN);
   await user.keyboard(' ');
   await screen.findByRole('button', { name: /^Good/ });
@@ -176,7 +217,7 @@ test('a session started before the rollover still grades after it', async () => 
 test('a failed answer keeps the card and says why', async () => {
   await seedNote(seedDeps, deck, 'basic', ['a', 'x']);
   const { user, deps } = await study();
-  await screen.findByRole('button', { name: 'Show answer' });
+  await screen.findByTestId('study-card');
   await user.keyboard(' ');
   await screen.findByRole('button', { name: /^Good/ });
   const batch = deps.db.batch.bind(deps.db);
@@ -190,7 +231,7 @@ test('a failed answer keeps the card and says why', async () => {
 test('Esc leaves Study', async () => {
   await seedNote(seedDeps, deck, 'basic', ['a', 'x']);
   const { user } = await study();
-  await screen.findByRole('button', { name: 'Show answer' });
+  await screen.findByTestId('study-card');
   await user.keyboard('{Escape}');
   expect(await screen.findByTestId('today-screen')).toBeTruthy();
 });

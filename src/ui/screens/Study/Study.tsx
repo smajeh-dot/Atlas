@@ -1,14 +1,16 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { batchCounts, batchProgress } from '../../../core/batchProgress';
 import { formatInterval } from '../../../core/format';
-import type { Rating } from '../../../core/model';
+import type { NoteType, Rating } from '../../../core/model';
 import { cardsOfNote, getCard } from '../../../data/cards';
 import { listDecks } from '../../../data/decks';
+import { getNoteType } from '../../../data/noteTypes';
+import { getNote } from '../../../data/notes';
 import { StudySession, type SessionCard } from '../../../services/studySession';
 import { useAtlas } from '../../app/AtlasContext';
 import { answerView, questionView } from '../../card/display';
 import { Button } from '../../components/Button';
 import { CardView } from '../../components/CardView';
-import { Chip } from '../../components/Chip';
 import { Dialog } from '../../components/Dialog';
 import { EmptyState } from '../../components/EmptyState';
 import { IconButton } from '../../components/IconButton';
@@ -20,7 +22,7 @@ import { Tooltip } from '../../components/Tooltip';
 import { FLAG_NAMES, flagColour } from '../../deckColour';
 import { SafetyBackupError } from '../../../services/backupService';
 import { useHotkeys } from '../../keys';
-import { EditCardSheet } from '../Editor/EditCardSheet';
+import { AddCardOverlay } from '../Today/AddCardOverlay';
 import { CardInfoDialog } from './CardInfoDialog';
 import styles from './Study.module.css';
 
@@ -34,9 +36,11 @@ const GRADES: { rating: Rating; word: string; cls: string }[] = [
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
 const message = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
+type Editing = { noteType: NoteType; fields: string[]; deckId: number };
+
 type Overlay =
-  | { kind: 'flag' | 'more'; anchor: HTMLElement }
-  | { kind: 'edit'; cardId: number }
+  | { kind: 'flag'; anchor: HTMLElement }
+  | { kind: 'add'; editing: Editing }
   | { kind: 'info'; cardId: number; unknownFilters: string[] }
   | { kind: 'delete'; cards: number }
   | null;
@@ -99,6 +103,18 @@ export function Study({ deckId }: { deckId: number | null }) {
     }
   };
 
+  const editingOf = (c: SessionCard): Editing => ({ noteType: c.noteType, fields: c.note.fields, deckId: c.card.deckId });
+  // The leech toast outlives the card on screen, so this card is read back from the database.
+  const editCardById = async (cardId: number) => {
+    try {
+      const card = await getCard(deps.db, cardId);
+      const note = await getNote(deps.db, card.noteId);
+      setOverlay({ kind: 'add', editing: { noteType: await getNoteType(deps.db, note.noteTypeId), fields: note.fields, deckId: card.deckId } });
+    } catch (e) {
+      toast.show({ message: `Atlas couldn't open that card: ${message(e)}` });
+    }
+  };
+
   const grade = (rating: Rating) => {
     if (phase !== 'answer' || !current) return;
     const id = current.card.id;
@@ -113,7 +129,7 @@ export function Study({ deckId }: { deckId: number | null }) {
           message: suspended
             ? "This card keeps slipping, so it's been tagged as a leech and suspended."
             : "This card keeps slipping, so it's been tagged as a leech.",
-          action: { label: 'Edit', onClick: () => setOverlay({ kind: 'edit', cardId: id }) },
+          action: { label: 'Edit', onClick: () => void editCardById(id) },
         });
       }
     }, "Atlas couldn't save that answer");
@@ -121,6 +137,11 @@ export function Study({ deckId }: { deckId: number | null }) {
 
   const reveal = () => {
     if (phase === 'question' && current) setPhase('answer');
+  };
+
+  // Turns the card over, and back again.
+  const flip = () => {
+    if (current) setPhase((p) => (p === 'question' ? 'answer' : 'question'));
   };
 
   const change = (work: () => Promise<void>, done?: string) =>
@@ -150,13 +171,13 @@ export function Study({ deckId }: { deckId: number | null }) {
   };
   if (current) {
     Object.assign(keys, {
-      Space: () => (phase === 'question' ? reveal() : grade(3)),
+      Space: flip,
       Enter: () => (phase === 'question' ? reveal() : grade(3)),
       1: () => grade(1),
       2: () => grade(2),
       3: () => grade(3),
       4: () => grade(4),
-      E: () => setOverlay({ kind: 'edit', cardId: current.card.id }),
+      E: () => setOverlay({ kind: 'add', editing: editingOf(current) }),
       I: () => setOverlay({ kind: 'info', cardId: current.card.id, unknownFilters: current.unknownFilters }),
       '-': () => change(() => session!.buryCurrent(current.card.id), 'Card buried until tomorrow'),
       '@': () => change(() => session!.suspendCurrent(current.card.id), 'Card suspended'),
@@ -185,6 +206,7 @@ export function Study({ deckId }: { deckId: number | null }) {
   const summary = session.summary();
   const left = session.remaining();
   const remaining = left.new + left.learn + left.review;
+  const batch = batchCounts(summary.answers, remaining);
   const crumbs = (current?.deckName ?? deckName).split(' › ').filter(Boolean);
 
   return (
@@ -205,7 +227,8 @@ export function Study({ deckId }: { deckId: number | null }) {
           {settings.showRemainingCount && (current || summary.answers > 0) && (
             <Tooltip block text={`New ${left.new} · Learning ${left.learn} · Review ${left.review}`}>
               <div className={styles.progress} tabIndex={0}>
-                <ProgressBar value={summary.answers / Math.max(1, summary.answers + remaining)} label="Progress" />
+                <span className={styles.batch} data-testid="study-batch">{batch.done}/{batch.total}</span>
+                <ProgressBar value={batchProgress(summary.answers, remaining)} label="Progress" />
                 <span className={styles.left_}>{remaining} left</span>
                 {settings.showTimer && current && <Timer since={shownAt.current} clock={deps.clock} />}
               </div>
@@ -215,9 +238,8 @@ export function Study({ deckId }: { deckId: number | null }) {
         <div className={styles.right}>
           {current && (
             <>
-              <IconButton icon="edit" label="Edit card" shortcut="E" onClick={() => setOverlay({ kind: 'edit', cardId: current.card.id })} />
+              <IconButton icon="edit" label="Edit card" shortcut="E" onClick={() => setOverlay({ kind: 'add', editing: editingOf(current) })} />
               <IconButton icon="flag" label="Flag" shortcut="Ctrl+1" onClick={(e) => setOverlay({ kind: 'flag', anchor: e.currentTarget })} />
-              <IconButton icon="more" label="More" onClick={(e) => setOverlay({ kind: 'more', anchor: e.currentTarget })} />
             </>
           )}
         </div>
@@ -225,7 +247,7 @@ export function Study({ deckId }: { deckId: number | null }) {
 
       <div className={styles.stage}>
         {current ? (
-          <StudyCard card={current} phase={phase} typed={typed} onTyped={setTyped} onReveal={reveal} mediaUrl={deps.media.url} />
+          <StudyCard card={current} phase={phase} typed={typed} onTyped={setTyped} onReveal={reveal} onFlip={flip} mediaUrl={deps.media.url} />
         ) : summary.answers === 0 ? (
           <div className={styles.box}>
             <EmptyState
@@ -242,22 +264,17 @@ export function Study({ deckId }: { deckId: number | null }) {
         )}
       </div>
 
-      {current && (
+      {current && phase === 'answer' && (
         <div className={styles.actions}>
-          {phase === 'question' ? (
-            <Button variant="primary" className={styles.show} kbd="Space" onClick={reveal}>Show answer</Button>
-          ) : (
-            <div className={styles.grades}>
-              {GRADES.map((g) => (
-                <button key={g.rating} type="button" className={`${styles.grade} ${styles[g.cls]}`} aria-keyshortcuts={String(g.rating)} onClick={() => grade(g.rating)}>
-                  <span className={styles.key} aria-hidden="true">{g.rating}</span>
-                  <span className={styles.word}>{g.word}</span>
-                  {settings.showIntervalsOnButtons && <span className={styles.interval}>{formatInterval(current.previews[g.rating])}</span>}
-                </button>
-              ))}
-            </div>
-          )}
-          <p className={styles.hint}>Space = Good · Ctrl+Z undoes the last answer · E edits this card</p>
+          <div className={styles.grades}>
+            {GRADES.map((g) => (
+              <button key={g.rating} type="button" className={`${styles.grade} ${styles[g.cls]}`} aria-keyshortcuts={String(g.rating)} onClick={() => grade(g.rating)}>
+                <span className={styles.key} aria-hidden="true">{g.rating}</span>
+                <span className={styles.word}>{g.word}</span>
+                {settings.showIntervalsOnButtons && <span className={styles.interval}>{formatInterval(current.previews[g.rating])}</span>}
+              </button>
+            ))}
+          </div>
         </div>
       )}
 
@@ -267,27 +284,7 @@ export function Study({ deckId }: { deckId: number | null }) {
           { label: 'Remove flag', shortcut: 'Ctrl+0', onSelect: () => flag(0) },
         ]} />
       )}
-      {overlay?.kind === 'more' && current && (
-        <Menu anchor={overlay.anchor} label="More" onClose={() => setOverlay(null)} items={[
-          { label: 'Bury card', icon: 'bury', shortcut: '-', onSelect: () => change(() => session.buryCurrent(current.card.id), 'Card buried until tomorrow') },
-          { label: 'Suspend card', icon: 'suspend', shortcut: '@', onSelect: () => change(() => session.suspendCurrent(current.card.id), 'Card suspended') },
-          { label: 'Card info', icon: 'info', shortcut: 'I', onSelect: () => setOverlay({ kind: 'info', cardId: current.card.id, unknownFilters: current.unknownFilters }) },
-          'divider',
-          { label: 'Delete note', icon: 'trash', shortcut: 'Ctrl+Delete', danger: true, onSelect: () => void askDelete() },
-        ]} />
-      )}
-      {overlay?.kind === 'edit' && (
-        <EditCardSheet cardId={overlay.cardId} onClose={(saved) => {
-          const id = overlay.cardId;
-          setOverlay(null);
-          if (saved) {
-            void session.refreshCard(id).then(
-              () => setCurrent((c) => (c?.card.id === id ? session.cardView(id) ?? session.current() : c)),
-              () => show(session),
-            );
-          }
-        }} />
-      )}
+      {overlay?.kind === 'add' && <AddCardOverlay editing={overlay.editing} onClose={() => setOverlay(null)} />}
       {overlay?.kind === 'info' && <CardInfoDialog cardId={overlay.cardId} unknownFilters={overlay.unknownFilters} onClose={() => setOverlay(null)} />}
       {overlay?.kind === 'delete' && (
         <Dialog title="Delete this note?" confirmLabel="Delete note" confirmVariant="danger" onCancel={() => setOverlay(null)}
@@ -303,12 +300,13 @@ export function Study({ deckId }: { deckId: number | null }) {
   );
 }
 
-function StudyCard({ card, phase, typed, onTyped, onReveal, mediaUrl }: {
+function StudyCard({ card, phase, typed, onTyped, onReveal, onFlip, mediaUrl }: {
   card: SessionCard;
   phase: 'question' | 'answer';
   typed: string;
   onTyped(v: string): void;
   onReveal(): void;
+  onFlip(): void;
   mediaUrl(n: string): string;
 }) {
   const q = questionView(card.question);
@@ -316,12 +314,15 @@ function StudyCard({ card, phase, typed, onTyped, onReveal, mediaUrl }: {
   card.noteType.fields.forEach((f, i) => (fields[f.name] = card.note.fields[i] ?? ''));
   const a = phase === 'answer' ? answerView(card.answer, q.typeIn ? { text: typed, fields } : undefined) : null;
   return (
-    <div className={styles.card} data-testid="study-card">
-      {card.note.tags.length > 0 && (
-        <div className={styles.chips} data-testid="study-chips">
-          {card.note.tags.slice(0, 2).map((t) => <Chip key={t}>{t}</Chip>)}
-        </div>
-      )}
+    <div
+      className={styles.card}
+      data-testid="study-card"
+      onClick={(e) => {
+        // Clicking the type-in box, a link or a hint is not a flip, and neither is finishing a text selection.
+        const onControl = e.nativeEvent.composedPath().some((el) => el instanceof HTMLElement && el.matches('input, button, a, summary'));
+        if (!onControl && window.getSelection()?.isCollapsed !== false) onFlip();
+      }}
+    >
       <div key={card.card.id} className={styles.cardBody}>
         {!a ? (
           <>

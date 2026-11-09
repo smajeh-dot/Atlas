@@ -3,16 +3,16 @@ import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { cardDecks, pickCardDeck } from '../../../core/deckChoices';
 import { fullName } from '../../../core/deckTree';
-import type { BuiltinNoteType } from '../../../core/model';
+import type { BuiltinNoteType, NoteType } from '../../../core/model';
 import { listDecks } from '../../../data/decks';
 import { listNoteTypes } from '../../../data/noteTypes';
 import { addNote, NoCardsError } from '../../../services/noteService';
 import { useAtlas, useData } from '../../app/AtlasContext';
 import { FieldEditor } from '../../editor/FieldEditor';
 import { Button } from '../../components/Button';
+import { Input } from '../../components/Input';
 import { MenuCard } from '../../components/MenuCard';
 import { useToast } from '../../components/Toast';
-import { Tooltip } from '../../components/Tooltip';
 import menuStyles from '../../components/MenuCard.module.css';
 import { Icon } from '../../icons/icons';
 import { trapTab, useOverlayLayer, useRestoreFocus } from '../../components/overlayStack';
@@ -20,19 +20,31 @@ import { AddCardPreview } from './AddCardPreview';
 import { AddCardToolbar } from './AddCardToolbar';
 import styles from './AddCardOverlay.module.css';
 
+/** The rows of the card type dropdown, top to bottom. They don't do anything yet. */
+const TYPE_ROWS = ['Subject', 'Folder', 'Basic', 'Image Occlusion'];
+/** The rows that open a blank card (everything but Basic, which is the card that's built). */
+const BLANK_VIEWS = ['Subject', 'Folder', 'Image Occlusion'];
 const TYPES: BuiltinNoteType[] = ['basic', 'basic_reversed', 'basic_typein', 'cloze'];
 
 /**
  * A large card in the middle of the window over the Home screen, with everything around it darkened.
  * The X, Esc or a click outside the card closes it. Along the top: the card type, then the deck it's being added to
- * (the type just shows the current choice for now; the deck opens a dropdown of your decks), and in the corner the triple-dot
- * button, which doesn't do anything yet. Under those, a row of placeholder text-editing buttons, then a field for each side of the card
- * (Front and Back for Basic) in the left half, and a live preview card in the right. Along the bottom: a tag button on the left (it doesn't do anything yet), and Add and Close on
+ * (the type opens a dropdown of Subject, Folder, Basic and Image Occlusion, and each row opens its own version of this card: Basic is the one described below, the others are blank for now, with only these two buttons, Add, Close and the X; the deck opens a dropdown of your decks),
+ * and in the corner the close button. Under those, a row of placeholder text-editing buttons, then a field for each side of the card
+ * (Front and Back for Basic) in the left half, and a live preview card in the right. Along the bottom: a tag icon on the left with a field beside it (a plain icon, not a button; the field is left out when editing a card), and Add and Close on
  * the right. Add saves the card in the chosen deck, empties the fields, puts the cursor back on the first one and leaves the card open for the next;
  * if the card would be empty it says why and keeps what was typed. The deck and card type used are remembered for next time.
+ * The tags field isn't saved yet, so a card is added without tags. Add does nothing on the blank views or when editing a card.
  * `deckId` is the deck it was opened for (from a deck's menu), if any.
+ *
+ * With `editing` set (opened from Study's Edit card icon) it is about one existing card: the fields start filled in with that card's text, the preview
+ * shows it, the card type is the card's own, and there is no deck button because the card stays in its deck.
  */
-export function AddCardOverlay({ deckId, onClose }: { deckId?: number; onClose(): void }) {
+export function AddCardOverlay({ deckId, editing, onClose }: {
+  deckId?: number;
+  editing?: { noteType: NoteType; fields: string[]; deckId: number };
+  onClose(): void;
+}) {
   const { deps, settings, saveSettings, changed } = useAtlas();
   const toast = useToast();
   const { data } = useData(async () => ({
@@ -41,13 +53,23 @@ export function AddCardOverlay({ deckId, onClose }: { deckId?: number; onClose()
   }), []);
   // The dropdown under the deck button: the button it hangs from while open, else null. And the deck picked from it, if any.
   const [deckMenu, setDeckMenu] = useState<HTMLElement | null>(null);
+  // The dropdown under the card type button, the same way. It is blank apart from its four rows for now.
+  const [typeMenu, setTypeMenu] = useState<HTMLElement | null>(null);
+  // The row picked from the card type dropdown, else null (the card as it opened: the type you used last, Basic to begin with).
+  const [view, setView] = useState<string | null>(null);
   const [chosenDeck, setChosenDeck] = useState<number | null>(null);
   // What's been typed into each field, in the order of the card type's fields.
-  const [fields, setFields] = useState<string[]>([]);
+  // What's been typed into the tags field (nothing uses it yet).
+  const [tagText, setTagText] = useState('');
+  const [fields, setFields] = useState<string[]>(editing?.fields ?? []);
   // The type you used last (else Basic). The deck is the one picked here, else the one this was opened for, else the one you used last,
   // else the first deck. Subjects aren't decks, so a subject stands for the first deck inside it.
-  const noteType = data && (data.types.find((t) => t.id === settings.lastNoteTypeId) ?? data.types.find((t) => t.builtin === 'basic') ?? data.types[0]);
-  const deck = data && pickCardDeck(data.decks, [chosenDeck, deckId, settings.lastDeckId]);
+  const basic = data?.types.find((t) => t.builtin === 'basic');
+  const noteType = editing?.noteType ?? (data && ((view === 'Basic' ? basic : undefined) ?? data.types.find((t) => t.id === settings.lastNoteTypeId) ?? basic ?? data.types[0]));
+  // Subject, Folder and Image Occlusion are blank cards for now: only the type and deck buttons, Add, Close and the X.
+  const blank = !editing && view !== null && BLANK_VIEWS.includes(view);
+  const typeName = blank ? view : noteType?.name;
+  const deck = data && pickCardDeck(data.decks, [chosenDeck, editing?.deckId ?? deckId, settings.lastDeckId]);
   const card = useRef<HTMLDivElement>(null);
   const isTop = useOverlayLayer();
   useRestoreFocus();
@@ -60,7 +82,8 @@ export function AddCardOverlay({ deckId, onClose }: { deckId?: number; onClose()
   const firstField = useRef<Editor | null>(null);
   const adding = useRef(false);
   const add = async () => {
-    if (adding.current || !noteType || !deck) return;
+    // Editing a card would add a copy of it, and a blank view hides fields that still hold what was typed: neither saves a card here.
+    if (adding.current || editing || blank || !noteType || !deck) return;
     adding.current = true;
     try {
       await addNote(deps, {
@@ -95,7 +118,7 @@ export function AddCardOverlay({ deckId, onClose }: { deckId?: number; onClose()
         ref={card}
         role="dialog"
         aria-modal="true"
-        aria-label="Add card"
+        aria-label={editing ? 'Edit card' : 'Add card'}
         data-deck-id={deckId}
         tabIndex={-1}
         className={styles.card}
@@ -110,60 +133,92 @@ export function AddCardOverlay({ deckId, onClose }: { deckId?: number; onClose()
       >
         {data && noteType && deck && (
           <div className={styles.selectors}>
-            <button type="button" className={styles.selector} aria-label={`Card type: ${noteType.name}`}>{noteType.name}</button>
-            <button
-              type="button"
-              className={styles.selector}
-              aria-label={`Deck: ${fullName(data.decks, deck.id)}`}
-              aria-haspopup="menu"
-              aria-expanded={deckMenu !== null}
-              onClick={(e) => setDeckMenu(deckMenu ? null : e.currentTarget)}
-            >
-              {fullName(data.decks, deck.id)}
-            </button>
+            {editing ? (
+              <button type="button" className={styles.selector} aria-label={`Card type: ${noteType.name}`}>{noteType.name}</button>
+            ) : (
+              <button
+                type="button"
+                className={styles.selector}
+                aria-label={`Card type: ${typeName}`}
+                aria-haspopup="menu"
+                aria-expanded={typeMenu !== null}
+                onClick={(e) => {
+                  setDeckMenu(null);
+                  setTypeMenu(typeMenu ? null : e.currentTarget);
+                }}
+              >
+                {typeName}
+              </button>
+            )}
+            {!editing && (
+              <button
+                type="button"
+                className={styles.selector}
+                aria-label={`Deck: ${fullName(data.decks, deck.id)}`}
+                aria-haspopup="menu"
+                aria-expanded={deckMenu !== null}
+                onClick={(e) => {
+                  setTypeMenu(null);
+                  setDeckMenu(deckMenu ? null : e.currentTarget);
+                }}
+              >
+                {fullName(data.decks, deck.id)}
+              </button>
+            )}
           </div>
         )}
-        {data && noteType && deck && <AddCardToolbar />}
+        {data && noteType && deck && !blank && <AddCardToolbar />}
         {data && noteType && deck && (
           <div className={styles.body}>
-            <div className={styles.halves}>
-              <div className={styles.fields}>
-                {noteType.fields.map((f, i) => (
-                  <FieldEditor
-                    key={`${noteType.id}-${f.name}`}
-                    label={f.name}
-                    value={fields[i] ?? ''}
-                    autoFocus={i === 0}
-                    mediaUrl={deps.media.url}
-                    getAllText={() => fields.join('\n')}
-                    editorRef={(e) => {
-                      if (i === 0) firstField.current = e;
-                    }}
-                    // Pictures would be saved to your media folder for a card that can't be saved yet, so they wait.
-                    onImage={async () => {
-                      throw new Error("Pictures can't be added to a card here yet.");
-                    }}
-                    onChange={(html) =>
-                      setFields((prev) => {
-                        const next = [...prev];
-                        while (next.length < noteType.fields.length) next.push('');
-                        next[i] = html;
-                        return next;
-                      })
-                    }
-                  />
-                ))}
+            {blank ? (
+              <div className={styles.blank} data-testid="add-card-blank" />
+            ) : (
+              <div className={styles.halves}>
+                <div className={styles.fields}>
+                  {noteType.fields.map((f, i) => (
+                    <FieldEditor
+                      key={`${noteType.id}-${f.name}`}
+                      label={f.name}
+                      value={fields[i] ?? ''}
+                      autoFocus={i === 0}
+                      mediaUrl={deps.media.url}
+                      getAllText={() => fields.join('\n')}
+                      editorRef={(e) => {
+                        if (i === 0) firstField.current = e;
+                      }}
+                      // Pictures would be saved to your media folder for a card that can't be saved yet, so they wait.
+                      onImage={async () => {
+                        throw new Error("Pictures can't be added to a card here yet.");
+                      }}
+                      onChange={(html) =>
+                        setFields((prev) => {
+                          const next = [...prev];
+                          while (next.length < noteType.fields.length) next.push('');
+                          next[i] = html;
+                          return next;
+                        })
+                      }
+                    />
+                  ))}
+                </div>
+                <div className={styles.right} data-testid="add-card-right">
+                  <AddCardPreview noteType={noteType} fields={fields} deckFullName={fullName(data.decks, deck.id, '::')} />
+                </div>
               </div>
-              <div className={styles.right} data-testid="add-card-right">
-                <AddCardPreview noteType={noteType} fields={fields} deckFullName={fullName(data.decks, deck.id, '::')} />
-              </div>
-            </div>
+            )}
             <div className={styles.footer} data-testid="add-card-footer">
-              <Tooltip text="Tags">
-                <button type="button" className={styles.iconButton} aria-label="Tags">
-                  <Icon name="tag" />
-                </button>
-              </Tooltip>
+              {!blank && (
+                <div className={styles.tags}>
+                  <span className={styles.tagIcon} data-testid="add-card-tag-icon" aria-hidden="true">
+                    <Icon name="tag" />
+                  </span>
+                  {!editing && (
+                    <div className={styles.tagField}>
+                      <Input label="Tags" hideLabel placeholder="Add tags" value={tagText} onChange={(e) => setTagText(e.target.value)} />
+                    </div>
+                  )}
+                </div>
+              )}
               <div className={styles.actions}>
                 <Button variant="primary" size="sm" className={styles.add} onClick={() => void add()}>Add</Button>
                 <Button variant="secondary" size="sm" onClick={onClose}>Close</Button>
@@ -172,14 +227,30 @@ export function AddCardOverlay({ deckId, onClose }: { deckId?: number; onClose()
           </div>
         )}
         <div className={styles.corner} data-testid="add-card-corner">
-          <button type="button" className={styles.iconButton} aria-label="More options" aria-haspopup="menu">
-            <Icon name="moreVertical" />
-          </button>
           <button type="button" className={styles.iconButton} aria-label="Close" onClick={onClose}>
             <Icon name="close" />
           </button>
         </div>
       </div>
+      {typeMenu && (
+        <MenuCard anchor={typeMenu} label="Card type" onClose={() => setTypeMenu(null)} className={styles.typeDropdown}>
+          {TYPE_ROWS.map((name) => (
+            <button
+              key={name}
+              type="button"
+              role="menuitem"
+              className={menuStyles.menuItem}
+              onClick={() => {
+                setView(name);
+                setTypeMenu(null);
+                typeMenu.focus();
+              }}
+            >
+              {name}
+            </button>
+          ))}
+        </MenuCard>
+      )}
       {deckMenu && data && deck && (
         <MenuCard anchor={deckMenu} label="Deck" onClose={() => setDeckMenu(null)} className={styles.dropdown}>
           {cardDecks(data.decks).map((d) => (

@@ -28,7 +28,7 @@ test('the Add card overlay has a Front field, then a Back field, below the toolb
   const front = await within(card).findByRole('textbox', { name: 'Front' });
   const back = within(card).getByRole('textbox', { name: 'Back' });
   const toolbar = within(card).getByRole('toolbar', { name: 'Formatting' });
-  expect(within(card).getAllByRole('textbox').map((t) => t.getAttribute('aria-label'))).toEqual(['Front', 'Back']);
+  expect(within(card).getAllByRole('textbox').map((t) => t.getAttribute('aria-label'))).toEqual(['Front', 'Back', null]);
   expect(toolbar.compareDocumentPosition(front) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   expect(front.compareDocumentPosition(back) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
 });
@@ -54,35 +54,37 @@ test('Esc still closes the card from inside a field', async () => {
 test('the fields follow the card type: a Cloze card has Text and Extra', async () => {
   const { card } = await openAddCard('cloze');
   await within(card).findByRole('textbox', { name: 'Text' });
-  expect(within(card).getAllByRole('textbox').map((t) => t.getAttribute('aria-label'))).toEqual(['Text', 'Extra']);
+  expect(within(card).getAllByRole('textbox').map((t) => t.getAttribute('aria-label'))).toEqual(['Text', 'Extra', null]);
   expect(within(card).getByRole('button', { name: 'Card type: Cloze' })).toBeTruthy();
 });
 
-test('the tag prompt is gone; a tag icon sits at the bottom left with its real icon', async () => {
+test('a tag icon sits at the bottom left with its real icon, is not clickable, and has a tags field beside it', async () => {
   const { card } = await openAddCard();
   const footer = await within(card).findByTestId('add-card-footer');
-  expect(within(card).queryByRole('combobox', { name: 'Tags' })).toBeNull();
-  expect(within(card).queryByPlaceholderText('Add a tag')).toBeNull();
-  expect(within(card).queryByText('Tags')).toBeNull();
-  const tag = within(footer).getByRole('button', { name: 'Tags' });
+  const tag = within(footer).getByTestId('add-card-tag-icon');
   expect(tag.querySelector('svg path')).not.toBeNull();
   expect(tag.querySelector('[data-placeholder="true"]')).toBeNull();
-  // Leftmost in the bottom row, and after the Back field.
-  expect(within(footer).getAllByRole('button')[0]).toBe(tag);
+  expect(tag.closest('button')).toBeNull();
+  expect(within(footer).queryByRole('button', { name: 'Tags' })).toBeNull();
+  // The field sits right after the icon, and the whole thing is after the Back field.
+  const field = within(footer).getByRole('textbox', { name: 'Tags' });
+  expect(tag.compareDocumentPosition(field) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   expect(within(card).getByRole('textbox', { name: 'Back' }).compareDocumentPosition(footer) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
 });
 
-test('Add and Close sit at the bottom right, in that order, after the tag icon', async () => {
+test('Add and Close sit at the bottom right, in that order, after the tag icon and field', async () => {
   const { card } = await openAddCard();
   const footer = await within(card).findByTestId('add-card-footer');
-  expect(within(footer).getAllByRole('button').map((b) => b.getAttribute('aria-label') ?? b.textContent)).toEqual(['Tags', 'Add', 'Close']);
+  expect(within(footer).getAllByRole('button').map((b) => b.getAttribute('aria-label') ?? b.textContent)).toEqual(['Add', 'Close']);
 });
 
-test('Close at the bottom closes the card; the tag icon does nothing yet', async () => {
+test('Close at the bottom closes the card, and the tags field takes typing', async () => {
   const { user, card } = await openAddCard();
   const footer = await within(card).findByTestId('add-card-footer');
   await user.keyboard('A question');
-  await user.click(within(footer).getByRole('button', { name: 'Tags' }));
+  await user.click(within(footer).getByRole('textbox', { name: 'Tags' }));
+  await user.keyboard('chem');
+  expect(within(footer).getByRole('textbox', { name: 'Tags' })).toHaveProperty('value', 'chem');
   expect(screen.getByRole('dialog', { name: 'Add card' })).toBeTruthy();
   expect((within(card).getByRole('textbox', { name: 'Front' }) as HTMLTextAreaElement).value).toBe('A question');
   await user.click(within(footer).getByRole('button', { name: 'Close' }));
@@ -133,6 +135,18 @@ test('Add with nothing in the Front saves nothing, says why, and keeps what was 
 
   expect(await screen.findByText(/would not make any cards/)).toBeTruthy();
   expect(textOf(within(card).getByRole('textbox', { name: 'Back' }))).toBe('Only a back');
+  expect(await countRows(db, 'notes')).toBe(0);
+  expect(await countRows(db, 'cards')).toBe(0);
+});
+
+test('Add on a blank view (Folder) saves nothing, even though Basic fields were typed in before switching', async () => {
+  const { user, card, db } = await openAddCard();
+  await within(card).findByRole('textbox', { name: 'Front' });
+  await user.keyboard('Typed before switching');
+  await user.click(within(card).getByRole('button', { name: 'Card type: Basic' }));
+  await user.click(within(await screen.findByRole('menu', { name: 'Card type' })).getByRole('menuitem', { name: 'Folder' }));
+  await within(card).findByTestId('add-card-blank');
+  await user.click(addButton(card));
   expect(await countRows(db, 'notes')).toBe(0);
   expect(await countRows(db, 'cards')).toBe(0);
 });

@@ -38,7 +38,7 @@
   outline: none;
 }
 
-/* Top right corner: the triple-dot button, then the close button. */
+/* Top right corner: the close button. */
 .corner {
   position: absolute;
   top: var(--inset);
@@ -76,7 +76,7 @@
   position: absolute;
   top: var(--inset);
   left: var(--inset);
-  right: calc(var(--inset) + 2 * var(--control) + var(--sp-4) + var(--sp-12));
+  right: calc(var(--inset) + var(--control) + var(--sp-12));
   display: flex;
   align-items: center;
   gap: var(--sp-8);
@@ -109,6 +109,11 @@ div.dropdown {
   width: 220px;
   max-height: 280px;
   overflow-y: auto;
+}
+
+/* The card type dropdown: the shared MenuCard, raised above this overlay like the deck one. */
+div.typeDropdown {
+  z-index: 80;
 }
 
 /* One deck per row: just its name, cut off with "…" if it is too long (hover shows the full path). The chosen deck is a little bolder. */
@@ -169,7 +174,7 @@ div.dropdown {
   padding-top: calc(var(--fs-label) * var(--lh-label) + var(--sp-6));
 }
 
-/* The bottom row: the tag button on the left, Add and Close on the right. */
+/* The bottom row: the tag icon and its field on the left, Add and Close on the right. */
 .footer {
   flex: none;
   display: flex;
@@ -178,7 +183,59 @@ div.dropdown {
   gap: var(--sp-12);
 }
 
+/* The empty space of the Subject, Folder and Image Occlusion cards, to be designed. */
+.blank {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+/* The tag icon is only a picture, so it has no hover or pointer. The field beside it is kept to a sensible width and a button-sized height. */
+.tags {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-8);
+}
+
+.tagIcon {
+  flex: none;
+  width: var(--control);
+  height: var(--control);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text);
+}
+
+.tagIcon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.tagField {
+  flex: 1;
+  min-width: 0;
+  max-width: 320px;
+}
+
+.tagField input {
+  padding: 6px 10px;
+}
+
+/* Same frame as the Front and Back boxes when clicked into: a solid blue border, no soft halo. */
+.tagField input:focus {
+  border-color: var(--accent);
+  box-shadow: var(--field-focus-shadow);
+}
+
+/* The "Add tags" prompt is a little smaller than the text you type: halfway between the body size and the small size. */
+.tagField input::placeholder {
+  font-size: calc((var(--fs-body) + var(--fs-sm)) / 2);
+}
+
 .actions {
+  margin-left: auto;
   display: flex;
   align-items: center;
   gap: var(--sp-8);
