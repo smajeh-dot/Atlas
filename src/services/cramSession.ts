@@ -34,8 +34,14 @@ export const cramKey = (deckId: number): string => `cram:${deckId}`;
 const isIds = (v: unknown): v is number[] => Array.isArray(v) && v.every((x) => Number.isInteger(x));
 const isCount = (v: unknown, min: number): v is number => Number.isInteger(v) && (v as number) >= min;
 
+interface SavedRound {
+  /** The deck's `createdAt` when saved: ids are reused after a delete, so this tells decks apart. */
+  deckCreatedAt: number;
+  state: CramState;
+}
+
 /** The saved round, or null if the text is not exactly what `persist` writes. */
-function parseSaved(raw: string): CramState | null {
+function parseSaved(raw: string): SavedRound | null {
   let v: unknown;
   try {
     v = JSON.parse(raw);
@@ -44,13 +50,16 @@ function parseSaved(raw: string): CramState | null {
   }
   if (typeof v !== 'object' || v === null || Array.isArray(v)) return null;
   const o = v as Record<string, unknown>;
-  if (o.version !== 1 || !isCount(o.round, 1) || !isCount(o.right, 0) || !isCount(o.wrong, 0)) return null;
+  if (o.version !== 1 || !Number.isInteger(o.deckCreatedAt) || !isCount(o.round, 1) || !isCount(o.right, 0) || !isCount(o.wrong, 0)) return null;
   if (!isIds(o.pool) || !isIds(o.queue)) return null;
   const pool = new Set(o.pool);
   const queue = new Set(o.queue);
   if (pool.size !== o.pool.length || queue.size !== o.queue.length) return null;
   if (!o.queue.every((id) => pool.has(id))) return null;
-  return { round: o.round, pool: o.pool, queue: o.queue, right: o.right, wrong: o.wrong };
+  return {
+    deckCreatedAt: o.deckCreatedAt as number,
+    state: { round: o.round, pool: o.pool, queue: o.queue, right: o.right, wrong: o.wrong },
+  };
 }
 
 /**
@@ -66,6 +75,7 @@ export class CramSession {
   private constructor(
     private readonly deps: CramDeps,
     private readonly deckId: number,
+    private readonly deckCreatedAt: number,
     private readonly rng: Rng,
     private decks: Deck[],
     private cram: CramState,
@@ -75,22 +85,30 @@ export class CramSession {
     const rng = deps.rng ?? mulberry32(hash32(deps.clock.now(), deckId));
     const decks = await listDecks(deps.db);
     const pool = await CramSession.readPool(deps.db, decks, deckId);
-    const state = await CramSession.resumeOrStart(deps.db, deckId, pool, rng);
-    const session = new CramSession(deps, deckId, rng, decks, state);
+    const deckCreatedAt = decks.find((d) => d.id === deckId)?.createdAt ?? 0;
+    const state = await CramSession.resumeOrStart(deps.db, deckId, deckCreatedAt, pool, rng);
+    const session = new CramSession(deps, deckId, deckCreatedAt, rng, decks, state);
     session.front = await session.loadFront(state, decks);
     return session;
   }
 
   /**
    * Continues the saved round, limited to the cards that are still eligible (new cards are not added
-   * mid-round). Nothing usable saved starts round 1; a saved round with no cards left starts the next one.
+   * mid-round). Nothing usable saved, or a round saved for an earlier deck that had this id, starts round 1;
+   * a saved round with no cards left starts the next one.
    */
-  private static async resumeOrStart(db: Db, deckId: number, pool: number[], rng: Rng): Promise<CramState> {
+  private static async resumeOrStart(
+    db: Db,
+    deckId: number,
+    deckCreatedAt: number,
+    pool: number[],
+    rng: Rng,
+  ): Promise<CramState> {
     const [row] = await db.query<{ value: string }>(`SELECT value FROM meta WHERE key = ?`, [cramKey(deckId)]);
-    const savedState = row ? parseSaved(String(row.value)) : null;
-    if (!savedState) return startRound(pool, 1, rng);
-    const kept = pruneState(savedState, new Set(pool));
-    return kept.queue.length > 0 ? kept : startRound(pool, savedState.round + 1, rng);
+    const saved = row ? parseSaved(String(row.value)) : null;
+    if (!saved || saved.deckCreatedAt !== deckCreatedAt) return startRound(pool, 1, rng);
+    const kept = pruneState(saved.state, new Set(pool));
+    return kept.queue.length > 0 ? kept : startRound(pool, saved.state.round + 1, rng);
   }
 
   /** Every card of the deck and its subdecks that is not suspended, whatever its schedule says. */
@@ -173,6 +191,7 @@ export class CramSession {
   }
 
   private async newRound(round: number): Promise<SaveResult> {
+    if (this.busy) return { saved: true };
     this.busy = true;
     try {
       const decks = await listDecks(this.deps.db);
@@ -213,7 +232,7 @@ export class CramSession {
         await db.execute(`DELETE FROM meta WHERE key = ?`, [key]);
       } else {
         const { round, pool, queue, right, wrong } = this.cram;
-        const value = JSON.stringify({ version: 1, round, pool, queue, right, wrong });
+        const value = JSON.stringify({ version: 1, deckCreatedAt: this.deckCreatedAt, round, pool, queue, right, wrong });
         await db.execute(`INSERT OR REPLACE INTO meta (key, value) VALUES (?, ?)`, [key, value]);
       }
       return true;

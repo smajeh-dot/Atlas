@@ -1,5 +1,6 @@
 import { beforeEach, expect, test } from 'vitest';
 import { mulberry32 } from '../../src/core/random';
+import { createDeck, deleteDeck } from '../../src/data/decks';
 import { CramSession, cramKey, type CramDeps } from '../../src/services/cramSession';
 import { UndoStack } from '../../src/services/undo';
 import { createMigratedDb } from '../helpers/testDb';
@@ -281,7 +282,7 @@ async function saved(deckId: number): Promise<unknown> {
   return raw === null ? null : JSON.parse(raw);
 }
 
-const asSaved = (st: ReturnType<CramSession['state']>) => ({ version: 1, ...st });
+const asSaved = (st: ReturnType<CramSession['state']>) => ({ version: 1, deckCreatedAt: T0, ...st });
 
 async function addMany(deckId: number, n: number): Promise<number[]> {
   const ids: number[] = [];
@@ -380,7 +381,7 @@ test('if every saved card is gone, open starts a fresh round over the current ca
 test('bad saved values start a fresh round and do not throw', async () => {
   const ids = await addMany(deck, 3);
   const [a, b, c] = ids as [number, number, number];
-  const good = { version: 1, round: 5, pool: [a, b, c], queue: [a, b], right: 1, wrong: 1 };
+  const good = { version: 1, deckCreatedAt: T0, round: 5, pool: [a, b, c], queue: [a, b], right: 1, wrong: 1 };
   const bad: Record<string, string> = {
     'not json': 'not json{',
     'a bare number': '7',
@@ -397,8 +398,12 @@ test('bad saved values start a fresh round and do not throw', async () => {
     'round 0': JSON.stringify({ ...good, round: 0 }),
     'non-integer pool id': JSON.stringify({ ...good, pool: [a, b, c + 0.5], queue: [a] }),
     'string id': JSON.stringify({ ...good, pool: [a, b, String(c)], queue: [a] }),
+    'missing deckCreatedAt': JSON.stringify({ version: 1, round: 5, pool: [a, b, c], queue: [a, b], right: 1, wrong: 1 }),
+    'fractional deckCreatedAt': JSON.stringify({ ...good, deckCreatedAt: T0 + 0.5 }),
+    'string deckCreatedAt': JSON.stringify({ ...good, deckCreatedAt: String(T0) }),
+    'deckCreatedAt of another deck': JSON.stringify({ ...good, deckCreatedAt: T0 + 1 }),
     'queue not an array': JSON.stringify({ ...good, queue: 'ab' }),
-    'missing wrong': JSON.stringify({ version: 1, round: 5, pool: [a, b, c], queue: [a], right: 0 }),
+    'missing wrong': JSON.stringify({ version: 1, deckCreatedAt: T0, round: 5, pool: [a, b, c], queue: [a], right: 0 }),
   };
   // the good one does resume, so the table above is really testing the validator
   await deps.db.execute(`INSERT OR REPLACE INTO meta (key, value) VALUES (?, ?)`, [cramKey(deck), JSON.stringify(good)]);
@@ -493,4 +498,65 @@ test('a failed delete of the saved row when the round completes also reports sav
   const s2 = await CramSession.open({ ...deps, db: metaWriteFails(deps.db) }, deck);
   expect(await s2.answer(true)).toEqual({ saved: false });
   expect(s2.isComplete()).toBe(true);
+});
+
+test('a saved round of a deleted deck is not resumed by a new deck that reuses its id', async () => {
+  await addMany(deck, 6);
+  const old = await CramSession.open(deps, deck);
+  await old.answer(true);
+  await old.answer(false);
+  await old.answer(true);
+  expect(await savedRow(deck)).not.toBeNull();
+
+  await deleteDeck(deps.db, deck);
+  const reused = await createDeck(deps.db, { name: 'Biology' }, T0 + DAY);
+  expect(reused).toBe(deck);
+  const ids = await addMany(reused, 10);
+
+  const s = await CramSession.open(deps, reused);
+  expect(s.state().round).toBe(1);
+  expect(s.state().right).toBe(0);
+  expect(s.state().wrong).toBe(0);
+  expect(sorted(s.state().pool)).toEqual(sorted(ids));
+  expect(sorted(s.state().queue)).toEqual(sorted(ids));
+});
+
+test('two overlapping goAgain calls reshuffle once', async () => {
+  await addMany(deck, 3);
+  const s = await CramSession.open(deps, deck);
+  const first = s.goAgain();
+  const second = s.goAgain();
+  expect(await first).toEqual({ saved: true });
+  expect(await second).toEqual({ saved: true });
+  expect(s.state().round).toBe(2);
+  expect(await saved(deck)).toEqual(asSaved(s.state()));
+  // the flag was released by the call that took it, so the session still works
+  expect(await s.answer(true)).toEqual({ saved: true });
+});
+
+test('undo after the round completed restores the last card and saves the row again', async () => {
+  await addMany(deck, 2);
+  const s = await CramSession.open(deps, deck);
+  await s.answer(true);
+  const lastCard = s.current()!.card.id;
+  const beforeLast = structuredClone(s.state());
+  await s.answer(true);
+  expect(s.isComplete()).toBe(true);
+  expect(await savedRow(deck)).toBeNull();
+
+  expect(await s.undo()).toEqual({ saved: true });
+  expect(s.isComplete()).toBe(false);
+  expect(s.state()).toEqual(beforeLast);
+  expect(s.current()!.card.id).toBe(lastCard);
+  expect(await saved(deck)).toEqual(asSaved(s.state()));
+});
+
+test('goAgain clears the undo history after an answered round', async () => {
+  await addMany(deck, 2);
+  const s = await CramSession.open(deps, deck);
+  while (!s.isComplete()) await s.answer(true);
+  expect(s.canUndo()).toBe(true);
+  await s.goAgain();
+  expect(s.canUndo()).toBe(false);
+  expect(await s.undo()).toBeNull();
 });
