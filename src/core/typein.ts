@@ -67,3 +67,8 @@ export function stripTypeIn(html: string): string {
 export function fillTypeIn(answerHtml: string, typed: string, fields: Record<string, string>): string {
   return answerHtml.replace(RESULT, (_all, field: string) => typeInResultHtml(typed, stripHtml(fields[field] ?? '')));
 }
+
+/** Replaces the type-in placeholders on the back with the expected text alone, for screens with no type-in box. */
+export function revealTypeIn(answerHtml: string, fields: Record<string, string>): string {
+  return answerHtml.replace(RESULT, (_all, field: string) => `<div class="atlas-typein-answer">${escapeHtml(tidy(stripHtml(fields[field] ?? '')))}</div>`);
+}

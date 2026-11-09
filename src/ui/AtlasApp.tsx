@@ -6,6 +6,7 @@ import { AtlasProvider, useAtlas, useData, type AppDeps, type Route } from './ap
 import { anyOverlayOpen } from './components/overlayStack';
 import { ToastProvider, useToast } from './components/Toast';
 import { useHotkeys } from './keys';
+import { Cram } from './screens/Cram/Cram';
 import { ImportScreen } from './screens/Import/ImportScreen';
 import { Session } from './screens/Session/Session';
 import { Settings } from './screens/Settings/Settings';
@@ -50,7 +51,7 @@ function Frame({ notice }: { notice?: string }) {
   const { data: tree } = useData(() => getDeckTreeWithCounts(deps.db, deps.clock.now()), []);
   const hasDecks = (tree?.length ?? 0) > 0;
   // Studying and the import screen lock the rest of Atlas: no shortcuts while they're open.
-  const studying = route.name === 'study' || route.name === 'session' || route.name === 'import';
+  const studying = route.name === 'study' || route.name === 'cram' || route.name === 'session' || route.name === 'import';
   const main = useRef<HTMLElement>(null);
 
   // After moving to another screen, keys go to that screen (Space on Today, for example), not to the
@@ -92,6 +93,8 @@ function Screen({ route }: { route: Route }) {
       return <Today addCard={{ deckId: route.deckId }} />;
     case 'study':
       return <Study key={String(route.deckId)} deckId={route.deckId} />;
+    case 'cram':
+      return <Cram key={route.deckId} deckId={route.deckId} />;
     case 'session':
       return <Session target={route.target} />;
     case 'settings':

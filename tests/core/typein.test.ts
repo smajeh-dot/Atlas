@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import { compareTyped, fillTypeIn, hasTypeIn, stripTypeIn, typeInResultHtml } from '../../src/core/typein';
+import { compareTyped, fillTypeIn, hasTypeIn, revealTypeIn, stripTypeIn, typeInResultHtml } from '../../src/core/typein';
 
 test('compareTyped marks ok, wrong and missing', () => {
   expect(compareTyped('Pari', 'Paris')).toEqual([{ kind: 'ok', text: 'Pari' }, { kind: 'missing', text: 's' }]);
@@ -30,4 +30,9 @@ test('hasTypeIn and stripTypeIn', () => {
   expect(hasTypeIn(q)).toBe(true);
   expect(hasTypeIn('plain')).toBe(false);
   expect(stripTypeIn(q)).toBe('Capital of France?');
+});
+
+test('revealTypeIn shows the expected text alone, with no comparison', () => {
+  const html = revealTypeIn('Q<!--atlas:answer--><div class="atlas-typein-result" data-field="Back"></div>', { Back: '<b>Paris</b>' });
+  expect(html).toBe('Q<!--atlas:answer--><div class="atlas-typein-answer">Paris</div>');
 });
