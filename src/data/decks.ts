@@ -24,25 +24,34 @@ async function checkName(db: Db, name: string, parentId: number | null, exceptId
   return clean;
 }
 
+function checkColour(colour: number): number {
+  if (!Number.isInteger(colour) || colour < 1 || colour > DECK_COLOURS) throw new Error(`Deck colour ${colour} is not 1-${DECK_COLOURS}`);
+  return colour;
+}
+
 function nextColour(decks: Deck[]): number {
   const used = new Set(decks.filter((d) => d.parentId === null).map((d) => d.colour));
   for (let c = 1; c <= DECK_COLOURS; c++) if (!used.has(c)) return c;
   return (decks.filter((d) => d.parentId === null).length % DECK_COLOURS) + 1;
 }
 
+/**
+ * `colour` (1 to 8) is for a top-level deck and is the next free one when left out; a sub-deck has no colour, so one given for it is ignored.
+ */
 export async function createDeck(
   db: Db,
-  input: { name: string; parentId?: number | null; presetId?: number },
+  input: { name: string; parentId?: number | null; presetId?: number; colour?: number },
   now: number,
 ): Promise<number> {
   const parentId = input.parentId ?? null;
   const name = await checkName(db, input.name, parentId);
+  const colour = parentId === null && input.colour !== undefined ? checkColour(input.colour) : undefined;
   const decks = await listDecks(db);
   const siblings = decks.filter((d) => d.parentId === parentId);
   const position = siblings.reduce((m, d) => Math.max(m, d.position), -1) + 1;
   const r = await db.execute(
     `INSERT INTO decks (name, parent_id, preset_id, colour, position, created_at) VALUES (?, ?, ?, ?, ?, ?)`,
-    [name, parentId, input.presetId ?? 1, parentId === null ? nextColour(decks) : null, position, now],
+    [name, parentId, input.presetId ?? 1, parentId === null ? colour ?? nextColour(decks) : null, position, now],
   );
   return r.lastInsertId;
 }
@@ -119,7 +128,7 @@ export async function placeDeck(db: Db, id: number, parentId: number | null, ind
 }
 
 export async function setDeckColour(db: Db, id: number, colour: number): Promise<void> {
-  if (!Number.isInteger(colour) || colour < 1 || colour > DECK_COLOURS) throw new Error(`Deck colour ${colour} is not 1-${DECK_COLOURS}`);
+  checkColour(colour);
   const deck = await getDeck(db, id);
   if (deck.parentId !== null) throw new DeckMoveError('Only top-level decks have a colour.');
   await db.execute(`UPDATE decks SET colour = ? WHERE id = ?`, [colour, id]);

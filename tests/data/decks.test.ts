@@ -18,6 +18,20 @@ test('top-level decks get the next free colour; subdecks get none', async () => 
   expect(byId(sub).presetId).toBe(1);
 });
 
+test('a top-level deck can be given its colour; a bad colour is refused and a subdeck still gets none', async () => {
+  const db = await createMigratedDb();
+  const a = await createDeck(db, { name: 'Biology', colour: 3 }, T0);
+  const next = await createDeck(db, { name: 'Chemistry' }, T0);
+  const sub = await createDeck(db, { name: 'Cells', parentId: a, colour: 5 }, T0);
+  await expect(createDeck(db, { name: 'Physics', colour: 9 }, T0)).rejects.toThrow(/not 1-8/);
+  await expect(createDeck(db, { name: 'Maths', colour: 0 }, T0)).rejects.toThrow(/not 1-8/);
+  const all = await listDecks(db);
+  const byId = (id: number) => all.find((x) => x.id === id)!;
+  // Biology took 3, so the next free colour for Chemistry is 1; the refused decks were not created.
+  expect([byId(a).colour, byId(next).colour, byId(sub).colour]).toEqual([3, 1, null]);
+  expect(all.map((d) => d.name).sort()).toEqual(['Biology', 'Cells', 'Chemistry']);
+});
+
 test('sibling names are unique ignoring case; cousins may share names', async () => {
   const db = await createMigratedDb();
   const a = await createDeck(db, { name: 'Biology' }, T0);

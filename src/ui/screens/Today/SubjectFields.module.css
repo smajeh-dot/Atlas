@@ -1,0 +1,58 @@
+/* The Subject card's fields sit in the left half, the same width as Front and Back on the Basic card (half the card, less half the gap
+   between the halves). The right half is left empty, to be designed. */
+.subject {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: calc(50% - var(--sp-8));
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-16);
+}
+
+/* The name's label and focus frame follow the card's own settings, the same as Front and Back (the shared Input's label is small capitals
+   unless the card says otherwise). */
+.subject label {
+  color: var(--field-label-colour, var(--text-faint));
+  text-transform: var(--field-label-case, uppercase);
+  letter-spacing: var(--field-label-tracking, 0.07em);
+}
+
+.subject input:focus {
+  border-color: var(--accent);
+  box-shadow: var(--field-focus-shadow, 0 0 0 3px var(--focus-soft));
+}
+
+.colour {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-6);
+}
+
+.label {
+  font-size: var(--fs-label);
+  line-height: var(--lh-label);
+  font-weight: 500;
+  letter-spacing: var(--field-label-tracking, 0.07em);
+  text-transform: var(--field-label-case, uppercase);
+  color: var(--field-label-colour, var(--text-faint));
+}
+
+.swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-8);
+}
+
+/* Rounded squares, not circles. The chosen colour has a blue ring set off from it by a gap. */
+.swatch {
+  width: var(--control);
+  height: var(--control);
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.swatch[aria-pressed='true'] {
+  box-shadow: 0 0 0 2px var(--bg-panel), 0 0 0 4px var(--accent);
+}

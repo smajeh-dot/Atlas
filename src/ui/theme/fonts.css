@@ -1,4 +1,4 @@
-/* Anthropic font kit, bundled so Atlas works offline. Proprietary: check licensing before distributing publicly. */
+/* Anthropic font kit, bundled so Atlas works offline. MIT-licensed, per the site the fonts were downloaded from. */
 @font-face {
   font-family: 'Anthropic Sans';
   src: url('../../assets/fonts/AnthropicSans.woff2') format('woff2');
