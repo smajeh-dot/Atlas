@@ -19,11 +19,12 @@ import { Icon } from '../../icons/icons';
 import { trapTab, useOverlayLayer, useRestoreFocus } from '../../components/overlayStack';
 import { AddCardPreview } from './AddCardPreview';
 import { AddCardToolbar } from './AddCardToolbar';
+import { SubjectFields } from './SubjectFields';
 import styles from './AddCardOverlay.module.css';
 
-/** The rows of the card type dropdown, top to bottom. They don't do anything yet. */
+/** The rows of the card type dropdown, top to bottom. */
 const TYPE_ROWS = ['Subject', 'Folder', 'Basic', 'Image Occlusion'];
-/** The rows that open a blank card (everything but Basic, which is the card that's built). */
+/** The rows that open a card with no card fields, tags or preview (everything but Basic, which is the card that's built). Subject has its own fields; the others are empty. */
 const BLANK_VIEWS = ['Subject', 'Folder', 'Image Occlusion'];
 const TYPES: BuiltinNoteType[] = ['basic', 'basic_reversed', 'basic_typein', 'cloze'];
 
@@ -40,12 +41,12 @@ export interface EditingCard {
 /**
  * A large card in the middle of the window over the Home screen, with everything around it darkened.
  * The X, Esc or a click outside the card closes it. Along the top: the card type, then the deck it's being added to
- * (the type opens a dropdown of Subject, Folder, Basic and Image Occlusion, and each row opens its own version of this card: Basic is the one described below, the others are blank for now, with only these two buttons, Add, Close and the X; the deck opens a dropdown of your decks),
+ * (the type opens a dropdown of Subject, Folder, Basic and Image Occlusion, and each row opens its own version of this card: Basic is the one described below; Subject has a Name and a Colour; Folder and Image Occlusion are blank for now, with only these two buttons, Add, Close and the X; the deck opens a dropdown of your decks),
  * and in the corner the close button. Under those, a row of placeholder text-editing buttons, then a field for each side of the card
  * (Front and Back for Basic) in the left half, and a live preview card in the right. Along the bottom: a tag icon on the left with a field beside it (a plain icon, not a button; the field is left out when editing a card), and Add and Close on
  * the right. Add saves the card in the chosen deck, empties the fields, puts the cursor back on the first one and leaves the card open for the next;
  * if the card would be empty it says why and keeps what was typed. The deck and card type used are remembered for next time.
- * The tags field isn't saved yet, so a card is added without tags. Add does nothing on the blank views.
+ * The tags field isn't saved yet, so a card is added without tags. Add does nothing on the Subject, Folder and Image Occlusion views.
  * `deckId` is the deck it was opened for (from a deck's menu), if any.
  *
  * With `editing` set (opened from Study's Edit card icon) it is about one existing card: the fields start filled in with that card's text, the preview
@@ -75,12 +76,16 @@ export function AddCardOverlay({ deckId, editing, onSaved, onClose }: {
   // What's been typed into each field, in the order of the card type's fields.
   // What's been typed into the tags field (nothing uses it yet).
   const [tagText, setTagText] = useState('');
+  // What's been typed and picked on the Subject card (nothing uses them yet): its name, and its colour as a deck colour number (Green to begin with).
+  const [subjectName, setSubjectName] = useState('');
+  const [subjectColour, setSubjectColour] = useState(1);
   const [fields, setFields] = useState<string[]>(editing?.fields ?? []);
   // The type you used last (else Basic). The deck is the one picked here, else the one this was opened for, else the one you used last,
   // else the first deck. Subjects aren't decks, so a subject stands for the first deck inside it.
   const basic = data?.types.find((t) => t.builtin === 'basic');
   const noteType = editing?.noteType ?? (data && ((view === 'Basic' ? basic : undefined) ?? data.types.find((t) => t.id === settings.lastNoteTypeId) ?? basic ?? data.types[0]));
-  // Subject, Folder and Image Occlusion are blank cards for now: only the type and deck buttons, Add, Close and the X.
+  // Subject, Folder and Image Occlusion have no card fields, toolbar, tags or preview: only the type and deck buttons, Add, Close and the X
+  // (and the Subject card's own fields). Add saves nothing on them.
   const blank = !editing && view !== null && BLANK_VIEWS.includes(view);
   const typeName = blank ? view : noteType?.name;
   const deck = data && pickCardDeck(data.decks, [chosenDeck, editing?.deckId ?? deckId, settings.lastDeckId]);
@@ -189,7 +194,9 @@ export function AddCardOverlay({ deckId, editing, onSaved, onClose }: {
         {data && noteType && deck && !blank && <AddCardToolbar />}
         {data && noteType && deck && (
           <div className={styles.body}>
-            {blank ? (
+            {blank && view === 'Subject' ? (
+              <SubjectFields name={subjectName} colour={subjectColour} onName={setSubjectName} onColour={setSubjectColour} />
+            ) : blank ? (
               <div className={styles.blank} data-testid="add-card-blank" />
             ) : (
               <div className={styles.halves}>

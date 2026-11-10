@@ -238,7 +238,7 @@ test('the Add card overlay shows the card type, then the deck; the type button o
   expect(screen.getByRole('dialog', { name: 'Add card' })).toBeTruthy();
 });
 
-test.each(['Subject', 'Folder', 'Image Occlusion'])('%s opens a blank card: only the type and deck buttons, Add, Close and the X; Basic brings the full card back', async (row) => {
+test.each(['Folder', 'Image Occlusion'])('%s opens a blank card: only the type and deck buttons, Add, Close and the X; Basic brings the full card back', async (row) => {
   const { user } = await renderApp({ db: await seeded() });
   await user.click(within(await screen.findByTestId('today-notch')).getByRole('button', { name: 'Add' }));
   const card = await screen.findByRole('dialog', { name: 'Add card' });
@@ -281,6 +281,49 @@ const FORMAT_BUTTONS = [
   'Align left', 'Align centre', 'Align right', 'Justify',
   'Attach file',
 ];
+
+test('Subject opens a card with a Name and a Colour; there is no toolbar, tags or preview, and Add saves nothing', async () => {
+  const db = await seeded();
+  const decksBefore = (await listDecks(db)).length;
+  const { user } = await renderApp({ db });
+  await user.click(within(await screen.findByTestId('today-notch')).getByRole('button', { name: 'Add' }));
+  const card = await screen.findByRole('dialog', { name: 'Add card' });
+  await within(card).findByRole('textbox', { name: 'Front' });
+  await user.click(within(card).getByRole('button', { name: /^Card type: / }));
+  await user.click(within(await screen.findByRole('menu', { name: 'Card type' })).getByRole('menuitem', { name: 'Subject' }));
+  const type = within(card).getByRole('button', { name: 'Card type: Subject' });
+
+  // A Name box, then a Colour with the eight deck colours (Green chosen to begin with).
+  const name = within(card).getByRole('textbox', { name: 'Name' }) as HTMLInputElement;
+  expect(within(card).getAllByRole('textbox')).toEqual([name]);
+  const group = within(card).getByRole('group', { name: 'Colour' });
+  const swatches = within(group).getAllByRole('button');
+  expect(swatches.map((b) => b.getAttribute('aria-label'))).toEqual(['Green', 'Amber-brown', 'Blue', 'Red', 'Purple', 'Teal', 'Gold', 'Pink']);
+  expect(swatches.map((b) => b.getAttribute('aria-pressed'))).toEqual(['true', 'false', 'false', 'false', 'false', 'false', 'false', 'false']);
+  // Swatches are painted from the deck colour tokens.
+  expect(swatches[2]!.style.background).toBe('var(--deck-3)');
+
+  await user.type(name, 'Chemistry');
+  expect(name.value).toBe('Chemistry');
+  await user.click(within(group).getByRole('button', { name: 'Blue' }));
+  expect(swatches.map((b) => b.getAttribute('aria-pressed'))).toEqual(['false', 'false', 'true', 'false', 'false', 'false', 'false', 'false']);
+
+  // The card is still the Subject view: no toolbar, tags or preview, and Add does nothing.
+  expect(within(card).queryByRole('toolbar')).toBeNull();
+  expect(card.querySelector('[data-testid="add-card-tag-icon"], [data-testid="add-card-preview"], [data-testid="add-card-blank"]')).toBeNull();
+  await user.click(within(card).getByRole('button', { name: 'Add' }));
+  expect((await listDecks(db)).length).toBe(decksBefore);
+  expect(name.value).toBe('Chemistry');
+
+  // What was typed and picked is kept while you look at another type, and Basic brings the full card back.
+  await user.click(type);
+  await user.click(within(await screen.findByRole('menu', { name: 'Card type' })).getByRole('menuitem', { name: 'Basic' }));
+  expect(await within(card).findByRole('textbox', { name: 'Front' })).toBeTruthy();
+  await user.click(within(card).getByRole('button', { name: 'Card type: Basic' }));
+  await user.click(within(await screen.findByRole('menu', { name: 'Card type' })).getByRole('menuitem', { name: 'Subject' }));
+  expect((within(card).getByRole('textbox', { name: 'Name' }) as HTMLInputElement).value).toBe('Chemistry');
+  expect(within(within(card).getByRole('group', { name: 'Colour' })).getByRole('button', { name: 'Blue' }).getAttribute('aria-pressed')).toBe('true');
+});
 
 /** Biology and Maths are subjects (they hold decks); Solo is a deck on its own. */
 async function withSubjects() {
