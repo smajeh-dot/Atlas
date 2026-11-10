@@ -173,7 +173,7 @@ export function AddCardOverlay({ deckId, editing, onSaved, onClose }: {
               <button
                 type="button"
                 className={styles.selector}
-                aria-label={`Deck: ${fullName(data.decks, deck.id)}`}
+                aria-label={`Deck: ${fullName(data.decks, deck.id, ' · ')}`}
                 aria-haspopup="menu"
                 aria-expanded={deckMenu !== null}
                 onClick={(e) => {
@@ -181,7 +181,7 @@ export function AddCardOverlay({ deckId, editing, onSaved, onClose }: {
                   setDeckMenu(deckMenu ? null : e.currentTarget);
                 }}
               >
-                {fullName(data.decks, deck.id)}
+                {fullName(data.decks, deck.id, ' · ')}
               </button>
             )}
           </div>
