@@ -282,9 +282,8 @@ const FORMAT_BUTTONS = [
   'Attach file',
 ];
 
-test('Subject opens a card with a Name and a Colour; there is no toolbar, tags or preview, and Add saves nothing', async () => {
+test('Subject opens a card with a Name and a Colour, and no toolbar, tags or preview', async () => {
   const db = await seeded();
-  const decksBefore = (await listDecks(db)).length;
   const { user } = await renderApp({ db });
   await user.click(within(await screen.findByTestId('today-notch')).getByRole('button', { name: 'Add' }));
   const card = await screen.findByRole('dialog', { name: 'Add card' });
@@ -308,12 +307,9 @@ test('Subject opens a card with a Name and a Colour; there is no toolbar, tags o
   await user.click(within(group).getByRole('button', { name: 'Blue' }));
   expect(swatches.map((b) => b.getAttribute('aria-pressed'))).toEqual(['false', 'false', 'true', 'false', 'false', 'false', 'false', 'false']);
 
-  // The card is still the Subject view: no toolbar, tags or preview, and Add does nothing.
+  // The card is the Subject view: no toolbar, tags or preview.
   expect(within(card).queryByRole('toolbar')).toBeNull();
   expect(card.querySelector('[data-testid="add-card-tag-icon"], [data-testid="add-card-preview"], [data-testid="add-card-blank"]')).toBeNull();
-  await user.click(within(card).getByRole('button', { name: 'Add' }));
-  expect((await listDecks(db)).length).toBe(decksBefore);
-  expect(name.value).toBe('Chemistry');
 
   // What was typed and picked is kept while you look at another type, and Basic brings the full card back.
   await user.click(type);
@@ -323,6 +319,68 @@ test('Subject opens a card with a Name and a Colour; there is no toolbar, tags o
   await user.click(within(await screen.findByRole('menu', { name: 'Card type' })).getByRole('menuitem', { name: 'Subject' }));
   expect((within(card).getByRole('textbox', { name: 'Name' }) as HTMLInputElement).value).toBe('Chemistry');
   expect(within(within(card).getByRole('group', { name: 'Colour' })).getByRole('button', { name: 'Blue' }).getAttribute('aria-pressed')).toBe('true');
+});
+
+async function openSubjectCard() {
+  const db = await seeded();
+  const { user } = await renderApp({ db });
+  await user.click(within(await screen.findByTestId('today-notch')).getByRole('button', { name: 'Add' }));
+  const card = await screen.findByRole('dialog', { name: 'Add card' });
+  await within(card).findByRole('textbox', { name: 'Front' });
+  await user.click(within(card).getByRole('button', { name: /^Card type: / }));
+  await user.click(within(await screen.findByRole('menu', { name: 'Card type' })).getByRole('menuitem', { name: 'Subject' }));
+  return { db, user, card, name: within(card).getByRole('textbox', { name: 'Name' }) as HTMLInputElement };
+}
+
+test('Add on the Subject card makes a top-level deck with that name and colour, empties the name and keeps the card open', async () => {
+  const { db, user, card, name } = await openSubjectCard();
+  await user.type(name, '  Physics ');
+  await user.click(within(within(card).getByRole('group', { name: 'Colour' })).getByRole('button', { name: 'Purple' }));
+  await user.click(within(card).getByRole('button', { name: 'Add' }));
+
+  await waitFor(async () => expect((await listDecks(db)).map((d) => d.name)).toContain('Physics'));
+  const physics = (await listDecks(db)).find((d) => d.name === 'Physics')!;
+  expect([physics.parentId, physics.colour]).toEqual([null, 5]);
+  // Ready for the next one: the name is empty with the cursor in it, the colour stays, and nothing is complaining.
+  await waitFor(() => expect(name.value).toBe(''));
+  expect(name).toBe(document.activeElement);
+  expect(within(card).getByRole('button', { name: 'Purple' }).getAttribute('aria-pressed')).toBe('true');
+  expect(within(card).queryByRole('alert')).toBeNull();
+  expect(screen.getByRole('dialog', { name: 'Add card' })).toBeTruthy();
+  // Home behind the card shows it straight away.
+  expect(await within(screen.getByTestId('today-decks-card')).findByText('Physics')).toBeTruthy();
+});
+
+test('Add on the Subject card with no name says so, makes nothing, and the message goes when you type', async () => {
+  const { db, user, card, name } = await openSubjectCard();
+  const before = (await listDecks(db)).length;
+  await user.type(name, '   ');
+  await user.click(within(card).getByRole('button', { name: 'Add' }));
+  expect((await within(card).findByRole('alert')).textContent).toBe('Give the subject a name.');
+  expect((await listDecks(db)).length).toBe(before);
+  await user.type(name, 'P');
+  expect(within(card).queryByRole('alert')).toBeNull();
+});
+
+test('Add on the Subject card with a name already in use says so under the Name box and makes nothing', async () => {
+  const { db, user, card, name } = await openSubjectCard();
+  const before = (await listDecks(db)).length;
+  await user.type(name, 'chemistry');
+  await user.click(within(card).getByRole('button', { name: 'Add' }));
+  expect((await within(card).findByRole('alert')).textContent).toBe('There is already a deck called "chemistry" here.');
+  expect((await listDecks(db)).length).toBe(before);
+  // What was typed is kept so it can be fixed.
+  expect(name.value).toBe('chemistry');
+});
+
+test('a double click on Add on the Subject card makes one subject, not two', async () => {
+  const { db, user, card, name } = await openSubjectCard();
+  await user.type(name, 'Physics');
+  await user.dblClick(within(card).getByRole('button', { name: 'Add' }));
+  await waitFor(async () => expect((await listDecks(db)).map((d) => d.name)).toContain('Physics'));
+  await waitFor(() => expect(name.value).toBe(''));
+  expect((await listDecks(db)).filter((d) => d.name === 'Physics')).toHaveLength(1);
+  expect(within(card).queryByRole('alert')).toBeNull();
 });
 
 /** Biology and Maths are subjects (they hold decks); Solo is a deck on its own. */
